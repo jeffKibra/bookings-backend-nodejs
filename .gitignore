@@ -1,0 +1,8 @@
+# env variables
+.env
+.env.local
+# node modules
+node_modules/
+
+#private variables
+private/

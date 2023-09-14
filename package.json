@@ -1,0 +1,33 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@graphql-tools/resolvers": "^0.0.1-alpha-7f591803.0",
+    "@graphql-tools/resolvers-composition": "^7.0.0",
+    "@graphql-tools/schema": "^10.0.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-graphql": "^0.12.0",
+    "firebase-admin": "^11.10.1",
+    "graphql": "^16.8.0",
+    "lodash": "^4.17.21",
+    "mongoose": "^7.5.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.6.0",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
