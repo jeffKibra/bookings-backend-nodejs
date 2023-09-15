@@ -1,5 +1,7 @@
 import { VehicleModel } from '../../models';
 //
+import { getBySKU } from './getVehicle';
+//
 import { IVehicleFormData } from '../../../types';
 import { createSKU } from '../../../utils';
 
@@ -15,6 +17,15 @@ export default async function createVehicle(
   const reg = formData?.registration;
   const sku = createSKU(reg);
   console.log({ reg, sku, orgId, userUID });
+
+  const similarVehicle = await getBySKU(orgId, sku);
+  console.log({ similarVehicle });
+
+  if (similarVehicle) {
+    throw new Error(
+      'Unique Registration: There is another vehile with similar registration! '
+    );
+  }
 
   const instance = new VehicleModel({
     ...formData,

@@ -1,27 +1,34 @@
+import { services } from '../../../db';
+//
+import { IGQLContext } from '../../../types';
+
 const queryResolvers = {
-  vehicle: (
+  vehicle: async (
     parent: unknown,
     args: { id: string },
-    context: Record<string, unknown>
+    context: Required<IGQLContext>
   ) => {
-    console.log(`book: ${args?.id}`, { args, parent, context });
+    const orgId = context.orgId;
+    //
+    const vehicleId = args?.id;
 
-    // const book = _.find(books, { id: args?.id });
+    const vehicle = await services.vehicles.getById(orgId, vehicleId);
+    console.log({ vehicle });
 
-    // return book;
-    return { id: args?.id };
+    return vehicle;
   },
-  vehicles: (
+  vehicles: async (
     parent: unknown,
-    args: { id: string },
-    context: Record<string, unknown>
+    args: unknown,
+    context: Required<IGQLContext>
   ) => {
-    console.log(`book: ${args?.id}`, { args, parent, context });
+    const orgId = context.orgId;
 
-    // const book = _.find(books, { id: args?.id });
+    const vehicles = services.vehicles.getList(orgId);
 
-    // return book;
-    return { id: args?.id };
+    console.log('vehicles: ', vehicles);
+
+    return vehicles;
   },
 };
 

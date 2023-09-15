@@ -1,1 +1,1 @@
-export * from './vehicles';
+export * as vehicles from './vehicles';
