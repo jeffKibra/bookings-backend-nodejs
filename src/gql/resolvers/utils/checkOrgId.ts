@@ -6,11 +6,11 @@ export default function checkOrgId() {
   return (next: GraphQLFieldResolver<any, any, any>) => {
     return function func2(
       parent: unknown,
-      args: { orgId: string },
+      args: unknown,
       context: IGQLContext,
       info: GraphQLResolveInfo
     ) {
-      const orgId = args?.orgId;
+      const orgId = context?.orgId;
       console.log('checking orgId before proceeding...', orgId);
 
       if (!orgId) {

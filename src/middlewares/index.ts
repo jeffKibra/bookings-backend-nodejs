@@ -1,2 +1,2 @@
 export { default as graphqlMiddleware } from './graphql';
-export { default as checkAuthMiddleware } from './checkAuth';
+export { default as createGraphQLContextMiddleware } from './createGraphQLContext';

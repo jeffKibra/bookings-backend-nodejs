@@ -8,9 +8,13 @@ export default async function createVehicle(
   orgId: string,
   formData: IVehicleFormData
 ) {
+  if (!userUID || !orgId) {
+    throw new Error('Missing Params: Either userUID or orgId is missing!');
+  }
+
   const reg = formData?.registration;
   const sku = createSKU(reg);
-  console.log({ reg, sku });
+  console.log({ reg, sku, orgId, userUID });
 
   const instance = new VehicleModel({
     ...formData,

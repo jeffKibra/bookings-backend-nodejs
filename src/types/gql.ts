@@ -2,12 +2,12 @@ import { Request } from 'express';
 //
 import { IAuth } from './auth';
 
-export interface IAuthRequest extends Request {
-  auth?: IAuth;
-}
-
 export interface IGQLContext {
   auth?: IAuth;
+  orgId?: string;
+}
+export interface ICustomRequest extends Request {
+  appContext?: IGQLContext;
 }
 
 export type IGQLResolver<T> = (

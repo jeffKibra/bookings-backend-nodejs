@@ -6,10 +6,10 @@ const mutationResolvers = {
   async createVehicle(
     parent: unknown,
     args: { input: IVehicleFormData; orgId: string },
-    context: IGQLContext
+    context: Required<IGQLContext>
   ) {
     const formData = args?.input;
-    const orgId = args?.orgId;
+    const orgId = context.orgId;
     const userUID = context.auth?.uid || '';
 
     await services.createVehicle(userUID, orgId, formData);
