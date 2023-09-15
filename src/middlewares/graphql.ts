@@ -2,7 +2,7 @@ import { graphqlHTTP } from 'express-graphql';
 import { Response, NextFunction } from 'express';
 
 //
-import { schema } from '../gql';
+import { schema, gqlUtils } from '../gql';
 //
 import { IAuthRequest } from '../types';
 
@@ -12,13 +12,14 @@ export default function graphqlMiddleware(
   next: NextFunction
 ) {
   //check authentication
-  const auth = req?.auth || {};
-  console.log({ auth });
+  const auth = req?.auth;
+  // console.log({ auth });
 
   const gqlMiddleware = graphqlHTTP({
     schema,
     context: { auth },
     graphiql: true,
+    // customFormatErrorFn: gqlUtils.formatError,
   });
 
   return gqlMiddleware(req, res);

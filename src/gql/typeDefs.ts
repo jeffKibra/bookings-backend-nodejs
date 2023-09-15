@@ -1,22 +1,45 @@
 const typeDefs = `#graphql
-    type Book {
-        id: ID
-        name: String
-        genre: String
-        authorId: String
-        author: Author
+    type MetaData {
+        orgId: String!
+        createdBy: String!
+        createdAt: Int!
+        modifiedBy: String!
+        modifiedAt: Int!
     }
-    type Author {
-        id: ID
-        name: String
-        age: Int
-        books: [Book]
+    type Vehicle {
+        registration: String! 
+        rate: Int!
+        make: String! 
+        model: String! 
+        year: Int!
+        type: String! 
+        color: String! 
+        description: String 
+        id: String! 
+        metaData: MetaData! 
     }
+    
     type Query {
-        books: [Book]
-        book(id:ID): Book
-        authors: [Author]
-        author(id:ID): Author
+        vehicles: [Vehicle]
+        vehicle(id:ID): Vehicle
+    }
+
+    input VehicleInput {
+        registration: String! 
+        rate: Int!
+        make: String! 
+        model: String! 
+        year: Int!
+        type: String! 
+        color: String! 
+        description: String 
+    }
+
+    type Mutation {
+        createVehicle(input:VehicleInput!):String
+        updateVehicle(vehicleId:String!, input:VehicleInput!, ):String
+        deleteVehicle(vehicleId:String!):String
+
     }
 `;
 

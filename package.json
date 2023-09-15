@@ -15,6 +15,8 @@
     "@graphql-tools/resolvers": "^0.0.1-alpha-7f591803.0",
     "@graphql-tools/resolvers-composition": "^7.0.0",
     "@graphql-tools/schema": "^10.0.0",
+    "@types/cors": "^2.8.14",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-graphql": "^0.12.0",

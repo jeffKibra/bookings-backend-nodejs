@@ -1,7 +1,10 @@
-import { isAuthenticated } from './utils';
+import { isAuthenticated, checkOrgId } from './utils';
 
 const resolversComposition = {
-  'Query.!login': [isAuthenticated()],
+  'Query.!login': [
+    // isAuthenticated(),
+    checkOrgId(),
+  ],
 };
 
 export default resolversComposition;

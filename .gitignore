@@ -6,3 +6,6 @@ node_modules/
 
 #private variables
 private/
+
+#produced prod code
+dist/

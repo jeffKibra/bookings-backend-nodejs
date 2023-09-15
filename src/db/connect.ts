@@ -17,7 +17,9 @@ mongoose.connection.on('disconnected', () => {
 
 export default async function connect() {
   try {
-    await mongoose.connect(process.env.MONGO_DB_URI as string);
+    const dbURI = process.env.MONGO_DB_URI as string;
+    // console.log({ dbURI,  });
+    await mongoose.connect(dbURI);
     console.log('Connected to mongodb...');
   } catch (error) {
     console.error(error);
