@@ -36,10 +36,9 @@ const typeDefs = `#graphql
     }
 
     type Mutation {
-        createVehicle(formdata:VehicleInput!):String
-        updateVehicle(id:String!, formData:VehicleInput!, ):String
+        createVehicle(formData:VehicleInput!):String
+        updateVehicle(id:String!, formData:VehicleInput!):Vehicle
         deleteVehicle(id:String!):String
-
     }
 `;
 

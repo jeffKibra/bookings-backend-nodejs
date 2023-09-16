@@ -8,9 +8,10 @@ const mutationResolvers = {
     args: { formData: IVehicleFormData; orgId: string },
     context: Required<IGQLContext>
   ) {
-    const formData = args?.formData;
     const orgId = context.orgId;
     const userUID = context.auth?.uid || '';
+    //
+    const formData = args?.formData;
 
     await services.vehicles.create(userUID, orgId, formData);
   },
@@ -25,7 +26,7 @@ const mutationResolvers = {
     const vehicleId = args?.id;
     const formData = args?.formData;
 
-    await services.vehicles.update(userUID, orgId, vehicleId, formData);
+    return services.vehicles.update(userUID, orgId, vehicleId, formData);
   },
   async deleteVehicle(
     parent: unknown,

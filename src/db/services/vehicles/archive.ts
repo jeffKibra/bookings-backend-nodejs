@@ -15,7 +15,7 @@ export default async function archiveVehicle(
   //confirm registration is unique
 
   const writeResult = await VehicleModel.updateOne(
-    { id: new ObjectId(vehicleId) },
+    { _id: new ObjectId(vehicleId) },
     {
       $set: {
         status: -1,

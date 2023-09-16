@@ -13,7 +13,7 @@ const queryResolvers = {
     const vehicleId = args?.id;
 
     const vehicle = await services.vehicles.getById(orgId, vehicleId);
-    console.log({ vehicle });
+    // console.log({ vehicle });
 
     return vehicle;
   },
@@ -26,7 +26,7 @@ const queryResolvers = {
 
     const vehicles = services.vehicles.getList(orgId);
 
-    console.log('vehicles: ', vehicles);
+    // console.log('vehicles: ', vehicles);
 
     return vehicles;
   },

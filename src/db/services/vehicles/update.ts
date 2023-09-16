@@ -7,28 +7,29 @@ import { VehicleModel } from '../../models';
 import { IVehicleFormData } from '../../../types';
 import { createSKU } from '../../../utils';
 
-export default async function updateVehicle(
+export default async function updatedVehicle(
   userUID: string,
   orgId: string,
   vehicleId: string,
   formData: IVehicleFormData
 ) {
-  if (!userUID || !orgId || !vehicleId) {
+  if (!userUID || !orgId || !vehicleId || !formData) {
     throw new Error(
-      'Missing Params: Either userUID or orgId or vehicleId is missing!'
+      'Missing Params: Either userUID or orgId or vehicleId or formData is missing!'
     );
   }
   //confirm registration is unique
 
   const reg = formData?.registration;
   const sku = createSKU(reg);
-  console.log({ reg, sku, orgId, userUID });
+  // console.log({ reg, sku, orgId, userUID });
 
   const similarVehicle = await getBySKU(orgId, sku);
-  console.log({ similarVehicle });
+  // console.log({ similarVehicle });
 
-  const isSameVehicle = similarVehicle?.id === vehicleId;
-  console.log({ isSameVehicle, vehicleId });
+  const similarVehicleId = similarVehicle?._id?.toString();
+  const isSameVehicle = similarVehicleId === vehicleId;
+  // console.log({ isSameVehicle, vehicleId, similarVehicleId });
 
   if (!isSameVehicle) {
     throw new Error(
@@ -37,16 +38,17 @@ export default async function updateVehicle(
   }
 
   const updatedVehicle = await VehicleModel.findOneAndUpdate(
-    { id: new ObjectId() },
+    { _id: new ObjectId(vehicleId) },
     {
       $set: {
         ...formData,
         'metaData.modifiedAt': Date.now(),
         'metaData.modifiedBy': userUID,
       },
-    }
+    },
+    { new: true }
   );
-  console.log({ updateVehicle });
+  console.log('updated vehicle', updatedVehicle);
 
   return updatedVehicle;
 }
