@@ -48,7 +48,7 @@ export default async function updatedVehicle(
     },
     { new: true }
   );
-  console.log('updated vehicle', updatedVehicle);
+  // console.log('updated vehicle', updatedVehicle);
 
   return updatedVehicle;
 }

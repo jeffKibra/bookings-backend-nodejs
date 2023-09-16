@@ -12,7 +12,7 @@ export function getByRegistration(orgId: string, vehicleRegistration: string) {
   }
 
   const sku = createSKU(vehicleRegistration);
-  console.log({ sku });
+  // console.log({ sku });
 
   return getBySKU(orgId, sku);
 }
@@ -28,7 +28,7 @@ export async function getBySKU(orgId: string, sku: string) {
     status: { $gte: 0 },
   });
 
-  console.log({ vehicle });
+  // console.log({ vehicle });
 
   return vehicle;
 }
@@ -38,7 +38,7 @@ export async function getById(orgId: string, vehicleId: string) {
     throw new Error('Invalid Params: Errors in params [orgId|vehicleId]!');
   }
 
-  console.log('fetching vehicle for id ' + vehicleId);
+  // console.log('fetching vehicle for id ' + vehicleId);
 
   return VehicleModel.findOne({
     _id: new ObjectId(vehicleId),

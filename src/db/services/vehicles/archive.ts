@@ -24,7 +24,7 @@ export default async function archiveVehicle(
       },
     }
   );
-  console.log('delete vehicle result', writeResult);
+  // console.log('delete vehicle result', writeResult);
 
   return writeResult;
 }

@@ -11,7 +11,7 @@ export async function getList(orgId: string) {
     status: { $gte: 0 },
   });
 
-  console.log({ vehicles });
+  // console.log({ vehicles });
 
   return vehicles;
 }
