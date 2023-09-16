@@ -1,11 +1,11 @@
+import { MetaDataSharedFields } from './templates';
+
+//
 const typeDefs = `#graphql
-    type MetaData {
-        orgId: String!
-        createdBy: String!
-        createdAt: Int!
-        modifiedBy: String!
-        modifiedAt: Int!
+    type VehicleMetaData {
+       ${MetaDataSharedFields}
     }
+
     type Vehicle {
         registration: String! 
         rate: Int!
@@ -15,13 +15,8 @@ const typeDefs = `#graphql
         type: String! 
         color: String! 
         description: String 
-        _id: String! 
-        metaData: MetaData! 
-    }
-    
-    type Query {
-        vehicles: [Vehicle]
-        vehicle(id:ID): Vehicle
+        _id: ID! 
+        metaData: VehicleMetaData! 
     }
 
     input VehicleInput {
@@ -34,11 +29,16 @@ const typeDefs = `#graphql
         color: String! 
         description: String 
     }
-
-    type Mutation {
+   
+    extend type Query {
+        vehicles: [Vehicle]
+        vehicle(id:ID): Vehicle
+    }
+   
+    extend type Mutation {
         createVehicle(formData:VehicleInput!):String
-        updateVehicle(id:String!, formData:VehicleInput!):Vehicle
-        deleteVehicle(id:String!):String
+        updateVehicle(id:ID!, formData:VehicleInput!):Vehicle
+        deleteVehicle(id:ID!):String
     }
 `;
 

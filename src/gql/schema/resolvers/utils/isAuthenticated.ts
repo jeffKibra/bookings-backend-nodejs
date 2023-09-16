@@ -1,8 +1,8 @@
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
 //
-import { IGQLContext } from '../../../types';
+import { IGQLContext } from 'types';
 
-export default function checkOrgId() {
+export default function isAuthenticated() {
   return (next: GraphQLFieldResolver<any, any, any>) => {
     return function func2(
       parent: unknown,
@@ -10,11 +10,15 @@ export default function checkOrgId() {
       context: IGQLContext,
       info: GraphQLResolveInfo
     ) {
-      const orgId = context?.orgId;
-      console.log('checking orgId before proceeding...', orgId);
+      console.log(
+        'checking if request is authenticated before proceeding...',
+        context
+      );
 
-      if (!orgId) {
-        throw new Error(`Invalid OrgId: ${orgId} found. Must be a string!`);
+      const userUID = context?.auth?.uid;
+
+      if (!userUID) {
+        throw new Error('Not Authenticated!');
       }
 
       return next(parent, args, context, info);

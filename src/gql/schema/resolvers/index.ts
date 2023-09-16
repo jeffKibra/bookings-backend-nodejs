@@ -7,7 +7,7 @@ import mutationResolvers from './mutation';
 //
 import resolversComposition from './resolversComposition';
 //
-import { IGQLContext } from '../../types';
+import { IGQLContext } from '../../../types';
 //
 
 //
