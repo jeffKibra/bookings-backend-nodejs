@@ -8,6 +8,8 @@ import {
 } from './Generals';
 import { customerSummarySchema } from './Customer';
 import { VehicleSchemaForBookingForm } from './Vehicle';
+//
+import { initSchema } from './utils';
 //\
 
 const bookingMetaDataSchema = new Schema({
@@ -46,5 +48,16 @@ const schema = new Schema({
   payments: { type: paymentsSchema },
   metaData: { type: bookingMetaDataSchema },
 });
+
+// schema.pre('find', function () {
+//   this.where({ 'metaData.status': 0 });
+// });
+// schema.pre('findOne', function () {
+//   this.where({ 'metaData.status': 0 });
+// });
+// schema.pre('findOneAndUpdate', function () {
+//   this.where({ 'metaData.status': 0 });
+// });
+initSchema(schema);
 
 export default schema;

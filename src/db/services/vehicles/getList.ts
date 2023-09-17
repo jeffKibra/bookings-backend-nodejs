@@ -8,7 +8,6 @@ export async function getList(orgId: string) {
 
   const vehicles = await VehicleModel.find({
     'metaData.orgId': orgId,
-    'metaData.status': { $gte: 0 },
   });
 
   // console.log({ vehicles });

@@ -17,6 +17,5 @@ export async function getById(
   return BookingModel.findOne({
     _id: new ObjectId(bookingId),
     'metaData.orgId': orgId,
-    'metaData.status': { $gte: 0 },
   });
 }

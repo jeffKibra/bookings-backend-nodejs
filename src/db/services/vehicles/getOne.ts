@@ -25,7 +25,6 @@ export async function getBySKU(orgId: string, sku: string) {
   const vehicle = await VehicleModel.findOne({
     sku,
     'metaData.orgId': orgId,
-    'metaData.status': { $gte: 0 },
   });
 
   // console.log({ vehicle });
@@ -43,6 +42,5 @@ export async function getById(orgId: string, vehicleId: string) {
   return VehicleModel.findOne({
     _id: new ObjectId(vehicleId),
     'metaData.orgId': orgId,
-    "metaData.status": { $gte: 0 },
   });
 }

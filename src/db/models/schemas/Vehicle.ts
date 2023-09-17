@@ -1,6 +1,8 @@
 import { Schema } from 'mongoose';
 
 //
+import { initSchema } from './utils';
+//
 import { metaDataSchema } from './Generals';
 
 const VehicleSchemaSharedFields = {
@@ -26,5 +28,7 @@ const schema = new Schema({
   sku: { type: String, required: true, unique: true },
   metaData: metaDataSchema,
 });
+
+initSchema(schema);
 
 export default schema;
