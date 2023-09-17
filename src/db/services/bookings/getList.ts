@@ -1,4 +1,4 @@
-import { VehicleModel } from '../../models';
+import { BookingModel } from '../../models';
 //
 
 export async function getList(orgId: string) {
@@ -6,12 +6,12 @@ export async function getList(orgId: string) {
     throw new Error('Invalid Params: orgId is required!');
   }
 
-  const vehicles = await VehicleModel.find({
+  const bookings = await BookingModel.find({
     'metaData.orgId': orgId,
     'metaData.status': { $gte: 0 },
   });
 
-  // console.log({ vehicles });
+  console.log({ bookings });
 
-  return vehicles;
+  return bookings;
 }

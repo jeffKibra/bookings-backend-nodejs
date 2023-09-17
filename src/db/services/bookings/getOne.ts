@@ -1,9 +1,13 @@
 import { ObjectId } from 'mongodb';
 //
 import { BookingModel } from '../../models';
+import { IBooking } from '../../../types';
 //
 
-export async function getById(orgId: string, bookingId: string) {
+export async function getById(
+  orgId: string,
+  bookingId: string
+): Promise<IBooking | null> {
   if (!bookingId || !orgId) {
     throw new Error('Invalid Params: Errors in params [orgId|bookingId]!');
   }
