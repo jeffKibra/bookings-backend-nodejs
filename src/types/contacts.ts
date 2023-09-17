@@ -1,5 +1,5 @@
-import { FieldValue } from "firebase-admin/firestore";
-import { PaymentTerm } from ".";
+import { FieldValue } from 'firebase-admin/firestore';
+import { PaymentTerm } from '.';
 
 export interface IAddress {
   city: string;
@@ -10,7 +10,7 @@ export interface IAddress {
 }
 
 export interface IContactForm {
-  contactType: "customer" | "vendor";
+  contactType: 'customer' | 'vendor';
   companyName: string;
   displayName: string;
   email: string;
@@ -23,7 +23,7 @@ export interface IContactForm {
   salutation: string;
   billingAddress: IAddress;
   shippingAddress: IAddress;
-  type: "individual" | "company";
+  type: 'individual' | 'company';
   website: string;
   openingBalance: number;
 }
@@ -38,22 +38,22 @@ interface IMeta {
 }
 
 export interface IContactFromDb
-  extends Omit<IContactForm, "openingBalance">,
+  extends Omit<IContactForm, 'openingBalance'>,
     IMeta {
   openingBalance: {
     amount: number;
     transactionId: string;
   };
-  contactType: "customer" | "vendor";
+  contactType: 'customer' | 'vendor';
 }
 
 export interface IContact extends IContactFromDb {
-  id: string;
+  _id: string;
 }
 
 //eslint-disable-next-line
 export interface IContactSummary
   extends Pick<
     IContact,
-    "companyName" | "displayName" | "email" | "contactType" | "type" | "id"
+    'companyName' | 'displayName' | 'email' | 'contactType' | 'type' | '_id'
   > {}

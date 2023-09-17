@@ -6,8 +6,8 @@ import {
   paymentModeSchema,
   paymentTermSchema,
 } from './Generals';
-import VehicleSchema from './Vehicle';
 import { customerSummarySchema } from './Customer';
+import { VehicleSchemaForBookingForm } from './Vehicle';
 //\
 
 const bookingMetaDataSchema = new Schema({
@@ -29,7 +29,7 @@ const paymentsSchema = new Schema({
 
 const schema = new Schema({
   //formdata
-  vehicle: VehicleSchema,
+  vehicle: VehicleSchemaForBookingForm,
   customer: { type: customerSummarySchema, required: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },

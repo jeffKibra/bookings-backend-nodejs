@@ -17,7 +17,9 @@ export interface IVehicleFormData {
   // saleTaxType?: string;
 }
 
-export type IVehicleSummary = IVehicleFormData;
+export interface IVehicleSummary extends IVehicleFormData {
+  _id: string;
+}
 interface Meta {
   availableDates: Record<string, Record<string, string[]>>;
   createdAt: Date;
@@ -25,14 +27,14 @@ interface Meta {
   modifiedAt: Date;
   modifiedBy: string;
   unit: 'days';
+  orgId: string;
+  status: string;
 }
 
 export interface IVehicleFromDb extends IVehicleFormData {
-  orgId: string;
-  status: string;
   metaData: Meta;
 }
 
 export interface IVehicle extends IVehicleFromDb {
-  id: string;
+  _id: string;
 }

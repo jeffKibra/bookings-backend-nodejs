@@ -1,33 +1,30 @@
 import { MetaDataSharedFields } from './templates';
 
 //
+export const vehicleInputFields = `
+    registration: String! 
+    rate: Int!
+    make: String! 
+    model: String! 
+    year: Int!
+    type: String! 
+    color: String! 
+    description: String
+`;
+//
 const typeDefs = `#graphql
     type VehicleMetaData {
        ${MetaDataSharedFields}
     }
 
     type Vehicle {
-        registration: String! 
-        rate: Int!
-        make: String! 
-        model: String! 
-        year: Int!
-        type: String! 
-        color: String! 
-        description: String 
+        ${vehicleInputFields}
         _id: ID! 
         metaData: VehicleMetaData! 
     }
 
     input VehicleInput {
-        registration: String! 
-        rate: Int!
-        make: String! 
-        model: String! 
-        year: Int!
-        type: String! 
-        color: String! 
-        description: String 
+        ${vehicleInputFields}
     }
    
     extend type Query {

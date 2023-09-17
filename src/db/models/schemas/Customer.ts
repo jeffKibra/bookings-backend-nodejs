@@ -2,6 +2,6 @@ import { Schema } from 'mongoose';
 
 //
 export const customerSummarySchema = new Schema({
-  id: { type: 'string', required: true },
+  // _id is automatically added to the schema
   displayName: { type: 'string', required: true },
 });

@@ -9,13 +9,13 @@ export const metaDataSchema = new Schema({
   status: { type: Number, default: 0 },
 });
 
-export const paymentTermSchema = {
+export const paymentTermSchema = new Schema({
   days: { type: Number, required: true },
   name: { type: String, required: true },
   value: { type: Number, required: true },
-};
+});
 
-export const paymentModeSchema = {
+export const paymentModeSchema = new Schema({
   name: { type: String, required: true },
-  value: { type: Number, required: true },
-};
+  value: { type: String, required: true },
+});

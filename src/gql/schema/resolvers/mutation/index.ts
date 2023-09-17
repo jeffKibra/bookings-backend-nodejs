@@ -1,83 +1,10 @@
-import { services } from '../../../../db';
 //
-import { IGQLContext, IVehicleFormData } from '../../../../types';
+import vehiclesResolvers from './vehicles';
+import bookingsResolvers from './bookings';
 
 const mutationResolvers = {
-  async createVehicle(
-    parent: unknown,
-    args: { formData: IVehicleFormData; orgId: string },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context.orgId;
-    const userUID = context.auth?.uid || '';
-    //
-    const formData = args?.formData;
-
-    await services.vehicles.create(userUID, orgId, formData);
-  },
-  async updateVehicle(
-    parent: unknown,
-    args: { id: string; formData: IVehicleFormData },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context?.orgId;
-    const userUID = context.auth?.uid || '';
-    //\
-    const vehicleId = args?.id;
-    const formData = args?.formData;
-
-    return services.vehicles.update(userUID, orgId, vehicleId, formData);
-  },
-  async deleteVehicle(
-    parent: unknown,
-    args: { id: string },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context?.orgId;
-    const userUID = context.auth?.uid || '';
-    //
-    const vehicleId = args?.id;
-
-    await services.vehicles.archive(userUID, orgId, vehicleId);
-  },
-
-  async createBooking(
-    parent: unknown,
-    args: { formData: IVehicleFormData; orgId: string },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context.orgId;
-    const userUID = context.auth?.uid || '';
-    //
-    const formData = args?.formData;
-
-    await services.vehicles.create(userUID, orgId, formData);
-  },
-  async updateBooking(
-    parent: unknown,
-    args: { id: string; formData: IVehicleFormData },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context?.orgId;
-    const userUID = context.auth?.uid || '';
-    //\
-    const vehicleId = args?.id;
-    const formData = args?.formData;
-
-    return services.vehicles.update(userUID, orgId, vehicleId, formData);
-  },
-  async deleteBooking(
-    parent: unknown,
-    args: { id: string },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context?.orgId;
-    const userUID = context.auth?.uid || '';
-    //
-    const vehicleId = args?.id;
-
-    await services.vehicles.archive(userUID, orgId, vehicleId);
-  },
+  ...vehiclesResolvers,
+  ...bookingsResolvers,
 };
 
 export default mutationResolvers;

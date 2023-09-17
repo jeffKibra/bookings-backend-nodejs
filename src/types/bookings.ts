@@ -1,6 +1,6 @@
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from 'firebase-admin/firestore';
 //
-import { IContactSummary, Item, PaymentMode } from ".";
+import { IContactSummary, IVehicle, PaymentMode } from '.';
 
 export type IBookingDateRange = [string, string];
 
@@ -14,8 +14,16 @@ export type IMonthlyBookings = Record<string, Record<string, string>>;
 //eslint-disable-next-line
 export interface IBookingItem
   extends Pick<
-    Item,
-    "name" | "itemId" | "salesAccount" | "rate" | "sku" | "type" | "unit"
+    IVehicle,
+    | '_id'
+    | 'registration'
+    | 'rate'
+    | 'sku'
+    | 'type'
+    | 'make'
+    | 'model'
+    | 'type'
+    | 'year'
   > {}
 
 export interface IBookingDownPayment {
@@ -26,7 +34,7 @@ export interface IBookingDownPayment {
 
 export interface IBookingForm {
   customer: IContactSummary;
-  item: IBookingItem;
+  vehicle: IBookingItem;
   customerNotes: string;
   startDate: Date | string;
   endDate: Date | string;
@@ -51,15 +59,20 @@ export interface IBookingPayments {
   [key: string]: number;
 }
 
-interface Meta {
-  transactionType: "booking";
+interface ExtraFields {
   balance: number;
+  payments: {
+    count: number;
+    paymentsIds: string[];
+    amounts: IBookingPayments;
+  };
+}
+
+interface Meta {
+  transactionType: 'booking';
   isSent: boolean;
   isOverdue: boolean;
   overdueAt?: Timestamp;
-  paymentsCount: number;
-  paymentsIds: string[];
-  paymentsReceived: IBookingPayments;
   status: number;
   orgId: string;
   createdAt: Date | Timestamp;
@@ -68,10 +81,12 @@ interface Meta {
   modifiedBy: string;
 }
 
-export interface IBookingFromDb extends IBookingForm, Meta {}
+export interface IBookingFromDb extends IBookingForm, ExtraFields {
+  metaData: Meta;
+}
 
 export interface IBooking extends IBookingFromDb {
-  id: string;
+  _id: string;
 }
 
 export interface IMonthlyBookingUpdateData {

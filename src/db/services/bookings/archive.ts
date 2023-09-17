@@ -1,21 +1,22 @@
 import { ObjectId } from 'mongodb';
-import { VehicleModel } from '../../models';
+//
+import { BookingModel } from '../../models';
 //
 
-export default async function archiveVehicle(
+export default async function archiveBooking(
   userUID: string,
   orgId: string,
-  vehicleId: string
+  bookingId: string
 ) {
-  if (!userUID || !orgId || !vehicleId) {
+  if (!userUID || !orgId || !bookingId) {
     throw new Error(
-      'Missing Params: Either userUID or orgId or vehicleId is missing!'
+      'Missing Params: Either userUID or orgId or bookingId is missing!'
     );
   }
   //confirm registration is unique
 
-  const writeResult = await VehicleModel.updateOne(
-    { _id: new ObjectId(vehicleId) },
+  const writeResult = await BookingModel.updateOne(
+    { _id: new ObjectId(bookingId) },
     {
       $set: {
         'metaData.status': -1,
