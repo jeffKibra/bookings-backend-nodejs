@@ -18,6 +18,7 @@ const VehicleSchemaSharedFields = {
 export const VehicleSchemaForBookingForm = new Schema({
   //_id is automatically added to schema
   ...VehicleSchemaSharedFields,
+  _id: { type: String, required: true },
   registration: { type: String, required: true },
   sku: { type: String, required: true },
 });

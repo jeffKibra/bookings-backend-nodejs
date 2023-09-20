@@ -181,7 +181,7 @@ export default class Bookings {
       customer: { _id: currentCustomerId },
       payments,
     } = currentBooking;
-    const paymentsReceived  = payments?.amounts || {};
+    const paymentsReceived = payments?.amounts || {};
     /**
      * check to ensure the new total balance is not less than payments made.
      */

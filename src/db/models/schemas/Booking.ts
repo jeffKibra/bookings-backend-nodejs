@@ -31,7 +31,7 @@ const paymentsSchema = new Schema({
 
 const schema = new Schema({
   //formdata
-  vehicle: VehicleSchemaForBookingForm,
+  vehicle: { type: VehicleSchemaForBookingForm, required: true },
   customer: { type: customerSummarySchema, required: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },

@@ -1,5 +1,4 @@
-import { ObjectId } from 'mongodb';
-import BigNumber from 'bignumber.js';
+// import { ObjectId } from 'mongodb';
 
 import { IBookingForm } from '../../../../types';
 
@@ -12,11 +11,11 @@ export default function generateBookingFormData(currentValues: IBookingForm) {
     ...currentValues,
     customer: {
       ...customer,
-      _id: new ObjectId(customerId),
+      _id: customerId,
     },
     vehicle: {
       ...vehicle,
-      _id: new ObjectId(vehicleId),
+      _id: vehicleId,
     },
   };
 }

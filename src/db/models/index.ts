@@ -1,10 +1,19 @@
 import { model } from 'mongoose';
 
 //
-import { BookingSchema, VehicleSchema } from './schemas';
+import {
+  BookingSchema,
+  VehicleSchema,
+  ItemYearlyBookingsSchema,
+} from './schemas';
 //
 
 export const VehicleModel = model('Vehicle', VehicleSchema);
 //Run per model to init indexes for unique fields-run only once
 // VehicleModel.init().then()
 export const BookingModel = model('Booking', BookingSchema);
+
+export const ItemYearlyBookings = model(
+  'Item_Yearly_Bookings',
+  ItemYearlyBookingsSchema
+);

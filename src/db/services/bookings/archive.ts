@@ -1,6 +1,11 @@
 import { ObjectId } from 'mongodb';
+import { startSession } from 'mongoose';
 //
 import { BookingModel } from '../../models';
+import { handleDBError } from '../utils';
+import { updateItemBookings } from '../itemMonthlyBookings/utils';
+//
+import { getById } from './getOne';
 //
 
 export default async function archiveBooking(
@@ -15,17 +20,41 @@ export default async function archiveBooking(
   }
   //confirm registration is unique
 
-  const writeResult = await BookingModel.updateOne(
-    { _id: new ObjectId(bookingId) },
-    {
-      $set: {
-        'metaData.status': -1,
-        'metaData.modifiedAt': Date.now(),
-        'metaData.modifiedBy': userUID,
-      },
-    }
-  );
-  // console.log('delete vehicle result', writeResult);
+  const bookingData = await getById(orgId, bookingId);
+  if (!bookingData) {
+    throw new Error('Booking not found!');
+  }
 
-  return writeResult;
+  const {
+    vehicle: { _id: vehicleId },
+    selectedDates,
+  } = bookingData;
+
+  const session = await startSession();
+  session.startTransaction();
+
+  try {
+    const writeResult = await BookingModel.updateOne(
+      { _id: new ObjectId(bookingId) },
+      {
+        $set: {
+          'metaData.status': -1,
+          'metaData.modifiedAt': Date.now(),
+          'metaData.modifiedBy': userUID,
+        },
+      },
+      { session }
+    );
+    console.log('delete booking result', writeResult);
+
+    await updateItemBookings(session, orgId, vehicleId, [], selectedDates);
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+
+    handleDBError(error, 'Error deleting Booking');
+  } finally {
+    await session.endSession();
+  }
 }

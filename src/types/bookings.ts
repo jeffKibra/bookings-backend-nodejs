@@ -38,12 +38,13 @@ export interface IBookingForm {
   customerNotes: string;
   startDate: Date | string;
   endDate: Date | string;
+  selectedDates: string[];
   // dateRange: IBookingDateRange;
-  quantity: number;
   saleDate: Date;
   bookingRate: number;
   bookingTotal: number;
   transferAmount: number;
+  subTotal: number;
   total: number;
   downPayment: IBookingDownPayment;
   // transactionType: keyof SaleTransactionTypes;

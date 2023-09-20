@@ -1,11 +1,17 @@
 import BigNumber from 'bignumber.js';
+import { startSession } from 'mongoose';
 //
 import { generateBookingFormData } from './utils';
 //
+import { handleDBError } from '../utils';
 import { BookingModel } from '../../models';
 //
+import { utils as itemMonthlyBookingsUtils } from '../itemMonthlyBookings';
 //
 import { IBookingForm } from '../../../types';
+
+//
+const { updateItemBookings } = itemMonthlyBookingsUtils;
 
 export default async function createBooking(
   userUID: string,
@@ -36,6 +42,9 @@ export default async function createBooking(
   const balance = new BigNumber(total).minus(downPayment).dp(2).toNumber();
 
   const formattedFormData = generateBookingFormData(formData);
+  const {
+    vehicle: { _id: vehicleId },
+  } = formData;
 
   const instance = new BookingModel({
     ...formattedFormData,
@@ -50,6 +59,24 @@ export default async function createBooking(
     },
   });
 
-  const savedDoc = await instance.save();
-  console.log({ savedDoc });
+  const selectedDates = formattedFormData.selectedDates;
+
+  const session = await startSession();
+  session.startTransaction();
+  try {
+    //db operations
+    // instance.mark
+    const savedDoc = await instance.save({ session });
+    console.log({ savedDoc });
+
+    await updateItemBookings(session, orgId, vehicleId, selectedDates);
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    //handle errors
+    handleDBError(error, 'Error Saving Booking');
+  } finally {
+    await session.endSession();
+  }
 }

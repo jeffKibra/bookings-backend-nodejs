@@ -1,5 +1,6 @@
 export * from './gql';
 export * from './auth';
+export * from './monthlyBookings';
 //
 export type { OrgSummary, Org, OrgFormData, OrgFromDb } from './org';
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
