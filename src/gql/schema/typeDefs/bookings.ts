@@ -90,6 +90,7 @@ const typeDefs = `#graphql
     extend type Query {
         bookings: [Booking]
         booking(id:ID): Booking
+        findBookingWithAtleastOneSelectedDate(vehicleId:String!, dates:[String!]!): Booking
     }
    
     extend type Mutation {

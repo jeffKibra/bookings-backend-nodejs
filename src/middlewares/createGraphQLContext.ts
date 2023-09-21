@@ -7,6 +7,7 @@ import { handleError } from '../utils';
 import { ICustomRequest, IAuth } from '../types';
 
 //
+
 async function getAuthForContext(token?: string) {
   const decodedToken = await decodeFirebaseAuthToken(token);
 

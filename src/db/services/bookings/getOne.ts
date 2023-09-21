@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { ClientSession } from 'mongoose';
 //
 import { BookingModel } from '../../models';
 import { IBooking } from '../../../types';
@@ -18,4 +19,25 @@ export async function getById(
     _id: new ObjectId(bookingId),
     'metaData.orgId': orgId,
   });
+}
+
+export async function findBookingForVehicleWithAtleastOneSelectedDate(
+  orgId: string,
+  vehicleId: string,
+  selectedDates: string[],
+  session?: ClientSession
+) {
+  const booking = await BookingModel.findOne(
+    {
+      'vehicle._id': vehicleId,
+      'metaData.orgId': orgId,
+      selectedDates: { $in: [...selectedDates] },
+    },
+    {},
+    { ...(session ? { session } : {}) }
+  );
+
+  console.log({ booking });
+
+  return booking;
 }

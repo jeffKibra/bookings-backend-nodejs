@@ -30,6 +30,31 @@ const queryResolvers = {
 
     return bookings;
   },
+  async findBookingWithAtleastOneSelectedDate(
+    parent: unknown,
+    args: { dates: string[]; vehicleId: string },
+    context: Required<IGQLContext>
+  ) {
+    const orgId = context.orgId;
+    //
+    const argsIsValid = args && typeof args === 'object';
+    if (!argsIsValid) {
+      throw new Error('Invalid arguments received!');
+    }
+
+    const { dates, vehicleId } = args;
+
+    const bookings =
+      services.bookings.findBookingForVehicleWithAtleastOneSelectedDate(
+        orgId,
+        vehicleId,
+        dates
+      );
+
+    // console.log('bookings: ', bookings);
+
+    return bookings;
+  },
 };
 
 export default queryResolvers;
