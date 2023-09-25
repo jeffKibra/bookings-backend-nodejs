@@ -21,7 +21,7 @@ export async function getById(
   });
 }
 
-export async function findBookingForVehicleWithAtleastOneSelectedDate(
+export async function findVehicleBookingWithAtleastOneOfTheSelectedDates(
   orgId: string,
   vehicleId: string,
   selectedDates: string[],

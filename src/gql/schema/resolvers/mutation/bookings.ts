@@ -29,7 +29,14 @@ const mutationResolvers = {
     const bookingId = args?.id;
     const formData = args?.formData;
 
-    return services.bookings.update(userUID, orgId, bookingId, formData);
+    const updatedBooking = await services.bookings.update(
+      userUID,
+      orgId,
+      bookingId,
+      formData
+    );
+
+    return updatedBooking;
   },
   async deleteBooking(
     parent: unknown,

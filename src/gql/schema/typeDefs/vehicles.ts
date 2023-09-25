@@ -11,6 +11,7 @@ export const vehicleInputFields = `
     color: String! 
     description: String
 `;
+
 //
 const typeDefs = `#graphql
     type VehicleMetaData {
@@ -22,6 +23,10 @@ const typeDefs = `#graphql
         _id: ID! 
         metaData: VehicleMetaData! 
     }
+    type VehiclesSearchResult {
+        vehicles: [Vehicle]!
+        meta:SearchMeta
+    }
 
     input VehicleInput {
         ${vehicleInputFields}
@@ -30,6 +35,8 @@ const typeDefs = `#graphql
     extend type Query {
         vehicles: [Vehicle]
         vehicle(id:ID): Vehicle
+        searchVehicles(query:ID):VehiclesSearchResult
+        searchAvailableVehicles(query:ID, selectedDates:[String]):VehiclesSearchResult
         findVehiclesNotBookedInSelectedDates(selectedDates:[String!]!):[Vehicle]
     }
    
@@ -42,6 +49,9 @@ const typeDefs = `#graphql
 
 export default typeDefs;
 
+// findVehiclesNotBookedInSelectedDates(selectedDates:[String!]!):[Vehicle]
+
+// valid aggregation to fetch items not booked.
 // [
 //   {
 //     $addFields: {
@@ -52,53 +62,41 @@ export default typeDefs;
 //   },
 //   {
 //     $lookup: {
-//       from: 'item_yearly_bookings',
+//       from: 'bookings',
 //       localField: 'vehicleId',
-//       foreignField: 'itemId',
+//       foreignField: 'vehicle._id',
 //       pipeline: [
 //         {
 //           $match: {
-//             dates: {
-//               $in: ['2023-Sep-17', '2024-Jan-05'],
+//             'metaData.status': 0,
+//             'metaData.orgId': 'org1',
+//             selectedDates: {
+//               $in: ['2023-Sep-17'],
 //             },
 //           },
 //         },
 //         {
-//           $unwind: '$dates',
-//         },
-//         {
-//           $count: 'allDatesCount',
+//           $limit: 1,
 //         },
 //       ],
-//       as: 'allBookings',
+//       as: 'itemBookings',
 //     },
 //   },
 //   {
-//     $replaceRoot: {
-//       newRoot: {
-//         $mergeObjects: [
-//           {
-//             allDatesCount: 0,
-//           },
-//           {
-//             $arrayElemAt: ['$allBookings', 0],
-//           },
-//           '$$ROOT',
-//         ],
+//     $addFields: {
+//       similarBookings: {
+//         $size: '$itemBookings',
 //       },
 //     },
 //   },
 //   {
 //     $project: {
-//       allBookings: 0,
+//       itemBookings: 0,
 //     },
 //   },
 //   {
 //     $match: {
-//       allDatesCount: 0,
+//       similarBookings: 0,
 //     },
-//   },
-//   {
-//     $limit: 1,
 //   },
 // ];

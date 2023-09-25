@@ -26,7 +26,14 @@ const mutationResolvers = {
     const vehicleId = args?.id;
     const formData = args?.formData;
 
-    return services.vehicles.update(userUID, orgId, vehicleId, formData);
+    const updatedVehicle = await services.vehicles.update(
+      userUID,
+      orgId,
+      vehicleId,
+      formData
+    );
+
+    return updatedVehicle;
   },
   async deleteVehicle(
     parent: unknown,

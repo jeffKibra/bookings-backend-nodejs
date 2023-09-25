@@ -24,13 +24,14 @@ const queryResolvers = {
   ) => {
     const orgId = context.orgId;
 
-    const bookings = services.bookings.getList(orgId);
+    const bookings = await services.bookings.getList(orgId);
 
     // console.log('bookings: ', bookings);
 
     return bookings;
   },
-  async findBookingWithAtleastOneSelectedDate(
+
+  async findBookingWithAtleastOneOfTheSelectedDates(
     parent: unknown,
     args: { dates: string[]; vehicleId: string },
     context: Required<IGQLContext>
@@ -45,7 +46,7 @@ const queryResolvers = {
     const { dates, vehicleId } = args;
 
     const bookings =
-      services.bookings.findBookingForVehicleWithAtleastOneSelectedDate(
+      await services.bookings.findVehicleBookingWithAtleastOneOfTheSelectedDates(
         orgId,
         vehicleId,
         dates

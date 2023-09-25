@@ -24,11 +24,34 @@ const queryResolvers = {
   ) => {
     const orgId = context.orgId;
 
-    const vehicles = services.vehicles.getList(orgId);
+    const vehicles = await services.vehicles.getList(orgId);
 
     // console.log('vehicles: ', vehicles);
 
     return vehicles;
+  },
+  searchVehicles(
+    parent: unknown,
+    args: { query: string | number },
+    context: Required<IGQLContext>
+  ) {
+    const orgId = context.orgId;
+    //
+    const query = args?.query || '';
+
+    return services.vehicles.search(orgId, query);
+  },
+  searchAvailableVehicles(
+    parent: unknown,
+    args: { query: string | number; selectedDates?: string[] },
+    context: Required<IGQLContext>
+  ) {
+    const orgId = context.orgId;
+    //
+    const query = args?.query || '';
+    const selectedDates = args?.selectedDates || [];
+
+    return services.vehicles.search(orgId, query, selectedDates);
   },
 };
 
