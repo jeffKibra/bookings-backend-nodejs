@@ -42,9 +42,14 @@ export async function search(
     ...searchPipelineStages,
     {
       $facet: {
+        /**
+         * if some methods in facetPipeline not possible,
+         * unwind vehicles and use later in the main pipeline
+         */
         vehicles: [...availableVehiclesPipelineStages],
         meta: [
           {
+            //must be used before a lookup
             $replaceWith: '$$SEARCH_META',
           },
           {
@@ -60,6 +65,7 @@ export async function search(
     //   },
     // },
   ]);
+  // console.log('result', result);
 
   const { vehicles, meta } = result[0];
   // console.log('vehicles', vehicles);
