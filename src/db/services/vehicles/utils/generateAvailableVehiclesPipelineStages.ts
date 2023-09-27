@@ -1,5 +1,5 @@
 import { PipelineStage } from 'mongoose';
-import {} from 'mongodb'
+import {} from 'mongodb';
 
 export default function generateAvailableItemsPipelineStages(
   orgId: string,
@@ -58,5 +58,5 @@ export default function generateAvailableItemsPipelineStages(
     ];
   }
 
-  return []
+  return [];
 }

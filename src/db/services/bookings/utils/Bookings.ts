@@ -8,6 +8,8 @@ import BigNumber from 'bignumber.js';
 
 //
 import { getById } from '../getOne';
+import { formatBookingFormData } from '.';
+
 //
 import {
   Account,
@@ -45,63 +47,9 @@ export default class Bookings {
     this.userUID = userUID;
   }
 
-  async create(bookingData: IBookingForm) {
-    const {
-      customer: { _id: customerId },
-      downPayment: {
-        amount: downPayment,
-        paymentMode: { value: paymentModeId },
-      },
-      total,
-    } = bookingData;
-
-    if (downPayment > total) {
-      throw new Error(
-        `Failed to create Booking! Imprest given: ${Number(
-          downPayment
-        ).toLocaleString()} is more than the booking total amount: ${Number(
-          total
-        ).toLocaleString()}.`
-      );
-    }
-
-    const balance = new BigNumber(total).minus(downPayment).dp(2).toNumber();
-  }
-
-  //   async getCurrentBooking() {
-  //     const { orgId, transactionId, transaction } = this;
-
-  //     const bookingRef = Bookings.createBookingRef(orgId, transactionId);
-
-  //     const snap = await transaction.get(bookingRef);
-
-  //     return Bookings.processbookingDataFromFirestore(snap);
-  //   }
-
   //----------------------------------------------------------------
 
   //----------------------------------------------------------------
-
-  async delete(bookingData: IBooking) {
-    const { transactionId, orgId, userUID } = this;
-
-    Bookings.validateDelete(bookingData);
-
-    const {
-      customer: { _id: customerId },
-      downPayment: {
-        paymentMode: { value: paymentModeId },
-        amount: downPayment,
-      },
-    } = bookingData;
-
-    /**
-     * delete sale receipt
-     */
-    const downPaymentDecrement = new BigNumber(0 - downPayment)
-      .dp(2)
-      .toNumber();
-  }
 
   //----------------------------------------------------------------------
   //static functions
@@ -159,11 +107,13 @@ export default class Bookings {
   static async validateUpdate(
     orgId: string,
     bookingId: string,
-    incomingBooking: IBookingForm | null
+    formData: IBookingForm | null
   ) {
-    if (!incomingBooking) {
+    if (!formData) {
       throw new Error('Invalid Booking Form Data Received!.');
     }
+
+    const incomingBooking = formatBookingFormData(formData);
 
     const currentBooking = await getById(orgId, bookingId);
     if (!currentBooking) {

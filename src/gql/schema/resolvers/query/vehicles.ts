@@ -1,6 +1,7 @@
 import { services } from '../../../../db';
 //
-import { IGQLContext } from '../../../../types';
+import { IGQLContext, ISearchVehiclesQueryOptions } from '../../../../types';
+//
 
 const queryResolvers = {
   vehicle: async (
@@ -32,27 +33,34 @@ const queryResolvers = {
   },
   searchVehicles(
     parent: unknown,
-    args: { query: string | number },
+    args: {
+      query: string | number;
+      queryOptions?: ISearchVehiclesQueryOptions;
+    },
     context: Required<IGQLContext>
   ) {
     const orgId = context.orgId;
     //
     const query = args?.query || '';
+    const options = args?.queryOptions || {};
 
-    return services.vehicles.search(orgId, query);
+    return services.vehicles.search(orgId, query, options);
   },
-  searchAvailableVehicles(
-    parent: unknown,
-    args: { query: string | number; selectedDates?: string[] },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context.orgId;
-    //
-    const query = args?.query || '';
-    const selectedDates = args?.selectedDates || [];
+  // searchAvailableVehicles(
+  //   parent: unknown,
+  //   args: { query: string | number; selectedDates?: string[] },
+  //   context: Required<IGQLContext>
+  // ) {
+  //   const orgId = context.orgId;
+  //   //
+  //   const query = args?.query || '';
+  //   const selectedDates = args?.selectedDates || [];
 
-    return services.vehicles.search(orgId, query, selectedDates);
-  },
+  //   return services.vehicles.search(orgId, {
+  //     query,
+  //     selectedDates,
+  //   });
+  // },
 };
 
 export default queryResolvers;

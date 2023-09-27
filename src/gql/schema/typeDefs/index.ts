@@ -10,7 +10,18 @@ const mainTypeDefs = `#graphql
         lowerBound:Int
     }
     type SearchMeta {
-        count:SearchMetaCount
+        count:Int
+        page:Int
+    }
+
+    input PaginationLastDoc {
+        _id: String
+        searchScore: Float
+    }
+    input Pagination {
+        currentPage: Int
+        lastDoc:PaginationLastDoc
+        limit:Int
     }
 
     type Query {

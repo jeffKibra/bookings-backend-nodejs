@@ -57,7 +57,7 @@ export default async function updatedBooking(
       {
         $set: {
           ...formData,
-          'metaData.modifiedAt': Date.now(),
+          'metaData.modifiedAt': new Date(),
           'metaData.modifiedBy': userUID,
         },
         $inc: {

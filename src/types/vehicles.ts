@@ -38,3 +38,18 @@ export interface IVehicleFromDb extends IVehicleFormData {
 export interface IVehicle extends IVehicleFromDb {
   _id: string;
 }
+
+export interface IPaginationLastDoc {
+  _id: string;
+  searchScore: number;
+}
+export interface ISearchVehiclesPagination {
+  currentPage: number;
+  lastDoc: IPaginationLastDoc;
+  limit: number;
+}
+
+export interface ISearchVehiclesQueryOptions {
+  pagination?: ISearchVehiclesPagination;
+  selectedDates?: string[];
+}

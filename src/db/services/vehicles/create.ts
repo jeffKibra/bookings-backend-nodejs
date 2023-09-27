@@ -42,8 +42,8 @@ export default async function createVehicle(
       metaData: {
         orgId,
         status: 0,
-        createdAt: Date.now(),
-        modifiedAt: Date.now(),
+        createdAt: new Date(),
+        modifiedAt: new Date(),
         createdBy: userUID,
         modifiedBy: userUID,
       },

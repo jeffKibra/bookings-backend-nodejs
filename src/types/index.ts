@@ -3,6 +3,8 @@ export * from './auth';
 export * from './monthlyBookings';
 export * from './queries';
 export * from './searchResults';
+export * from './vehicles';
+export * from './bookings';
 //
 export type { OrgSummary, Org, OrgFormData, OrgFromDb } from './org';
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
@@ -43,24 +45,7 @@ export type {
 export type { ExpenseItem } from './expenseItem';
 export type { PaymentMode } from './paymentMode';
 export type { PaymentTerm } from './paymentTerm';
-export type {
-  IVehicle,
-  IVehicleFormData,
-  IVehicleFromDb,
-  IVehicleSummary,
-} from './vehicles';
-export type {
-  IBookingDateRange,
-  IBookingAdjustmentData,
-  IBookingForm,
-  IMonthlyBookingUpdateData,
-  IMonthlyBookings,
-  IBookingItem,
-  IBookingPayments,
-  IBooking,
-  IBookingFromDb,
-  IBookingDownPayment,
-} from './bookings';
+
 export type {
   Invoice,
   InvoiceSummary,

@@ -6,7 +6,11 @@ import {
 } from './utils';
 import generateAvailableItemsPipelineStages from './utils/generateAvailableVehiclesPipelineStages';
 //
-import { IVehicle, ISearchMeta } from '../../../types';
+import {
+  IVehicle,
+  ISearchMeta,
+  ISearchVehiclesQueryOptions,
+} from '../../../types';
 //
 
 export async function getList(orgId: string) {
@@ -26,12 +30,18 @@ export async function getList(orgId: string) {
 export async function search(
   orgId: string,
   query: string | number,
-  selectedDates?: string[]
+  options?: ISearchVehiclesQueryOptions
 ) {
-  const searchPipelineStages = generateSearchPipelineStages(orgId, query);
+  const pagination = options?.pagination;
+  console.log('pagination', pagination);
+  const limit = pagination?.limit;
+
+  const searchPipelineStages = generateSearchPipelineStages(orgId, query, {
+    paginationLastDoc: pagination?.lastDoc,
+  });
   const availableVehiclesPipelineStages = generateAvailableItemsPipelineStages(
     orgId,
-    selectedDates
+    options?.selectedDates || []
   );
 
   // aggregation to fetch items not booked.
@@ -46,11 +56,22 @@ export async function search(
          * if some methods in facetPipeline not possible,
          * unwind vehicles and use later in the main pipeline
          */
-        vehicles: [...availableVehiclesPipelineStages],
+        vehicles: [
+          ...availableVehiclesPipelineStages,
+          {
+            $limit: typeof limit === 'number' && limit > 0 ? limit : 10,
+          },
+        ],
         meta: [
+          // {
+          //   //must be used before a lookup
+          //   $replaceWith: '$$SEARCH_META',
+          // },
           {
             //must be used before a lookup
-            $replaceWith: '$$SEARCH_META',
+            $replaceWith: {
+              count: '$$SEARCH_META.count.lowerBound',
+            },
           },
           {
             $limit: 1,
@@ -58,6 +79,7 @@ export async function search(
         ],
       },
     },
+
     // ...availableVehiclesPipelineStages,
     // {
     //   $sort: {
@@ -68,14 +90,16 @@ export async function search(
   // console.log('result', result);
 
   const { vehicles, meta } = result[0];
-  // console.log('vehicles', vehicles);
+  console.log('vehicles', vehicles);
   const searchMeta = meta[0];
   // console.log({ meta, searchMeta });
 
-  // 'vehicle._id': vehicleId,
-  //       'metaData.orgId': orgId,
-  //       selectedDates: { $in: [...selectedDates] },
-  // console.log({ result });
-
-  return { vehicles, meta: searchMeta };
+  const currentPage = pagination?.currentPage || 0;
+  return {
+    vehicles,
+    meta: {
+      ...searchMeta,
+      page: currentPage + 1,
+    },
+  };
 }

@@ -21,6 +21,7 @@ const typeDefs = `#graphql
     type Vehicle {
         ${vehicleInputFields}
         _id: ID! 
+        searchScore:Float
         metaData: VehicleMetaData! 
     }
     type VehiclesSearchResult {
@@ -31,11 +32,16 @@ const typeDefs = `#graphql
     input VehicleInput {
         ${vehicleInputFields}
     }
+
+    input VehiclesQueryOptions {
+        pagination:Pagination
+        selectedDates:[String]
+    }
    
     extend type Query {
         vehicles: [Vehicle]
         vehicle(id:ID): Vehicle
-        searchVehicles(query:ID):VehiclesSearchResult
+        searchVehicles(query:ID, queryOptions:VehiclesQueryOptions):VehiclesSearchResult
         searchAvailableVehicles(query:ID, selectedDates:[String]):VehiclesSearchResult
         findVehiclesNotBookedInSelectedDates(selectedDates:[String!]!):[Vehicle]
     }

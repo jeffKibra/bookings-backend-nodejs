@@ -45,7 +45,7 @@ export default async function updatedVehicle(
         $set: {
           ...formData,
           sku,
-          'metaData.modifiedAt': Date.now(),
+          'metaData.modifiedAt': new Date(),
           'metaData.modifiedBy': userUID,
         },
       },

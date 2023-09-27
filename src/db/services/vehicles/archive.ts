@@ -19,7 +19,7 @@ export default async function archiveVehicle(
     {
       $set: {
         'metaData.status': -1,
-        'metaData.modifiedAt': Date.now(),
+        'metaData.modifiedAt': new Date(),
         'metaData.modifiedBy': userUID,
       },
     }
