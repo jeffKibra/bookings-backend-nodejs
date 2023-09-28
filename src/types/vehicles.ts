@@ -1,4 +1,4 @@
-// import { Account } from '.';
+import { IPaginationParams } from './pagination';
 
 // export type IVehicleType = 'Ivehicle' | 'opening_balance';
 
@@ -50,6 +50,6 @@ export interface ISearchVehiclesPagination {
 }
 
 export interface ISearchVehiclesQueryOptions {
-  pagination?: ISearchVehiclesPagination;
+  pagination?: IPaginationParams;
   selectedDates?: string[];
 }

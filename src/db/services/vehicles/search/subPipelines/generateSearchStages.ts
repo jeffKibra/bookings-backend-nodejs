@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb';
 import {
   ISearchVehiclesPagination,
   IPaginationLastDoc,
-} from '../../../../types';
+} from '../../../../../types';
 
 interface ISortOptions {
   field: string;
@@ -24,16 +24,11 @@ interface ISortOptions {
 //   return firstSortField;
 // }
 
-export default function generateSearchPipelineStages(
+export default function generateSearchStages(
   orgId: string,
-  query: string | number,
-  options: {
-    paginationLastDoc?: IPaginationLastDoc;
-  }
+  query: string | number
   // sortOptions?: ISortOptions
 ) {
-  const paginationLastDoc = options.paginationLastDoc;
-
   const stages: PipelineStage[] = [
     {
       $search: {
@@ -73,36 +68,25 @@ export default function generateSearchPipelineStages(
           ],
         },
 
-        sort: {
-          unused: { $meta: 'searchScore' }, //defaults to desc add order:1 for asc
-          //then order by _id to ensure docs with similar score are ordered
-          _id: -1, //desc
-        },
+        // sort: {
+        //   // unused: { $meta: 'searchScore' }, //defaults to desc add order:1 for asc
+        //   //then order by _id to ensure docs with similar score are ordered
+        //   _id: 1, //desc
+        // },
       },
     },
     {
       $addFields: {
+        //add searchscore field for sorting in next stages
         searchScore: {
           $meta: 'searchScore',
         },
       },
     },
-    ...(paginationLastDoc
-      ? [
-          {
-            $match: {
-              searchScore: { $lte: paginationLastDoc.searchScore }, //was sorted in desc
-              _id: { $gt: new ObjectId(paginationLastDoc._id) }, //was sorted in desc
-            },
-          },
-        ]
-      : []),
-
     // {
-    //   $replaceRoot: {
-    //     newRoot: {
-    //       $mergeObjects: [{ searchScore: { $meta: 'searchScore' } }, '$$ROOT'],
-    //     },
+    //   $sort: {
+    //     searchScore: -1,
+    //     _id: -1,
     //   },
     // },
   ];

@@ -1,7 +1,7 @@
 import { PipelineStage } from 'mongoose';
 import {} from 'mongodb';
 
-export default function generateAvailableItemsPipelineStages(
+export default function generateAvailableItemsStages(
   orgId: string,
   selectedDates?: string[]
 ) {

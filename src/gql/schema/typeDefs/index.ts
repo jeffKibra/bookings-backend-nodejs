@@ -14,14 +14,18 @@ const mainTypeDefs = `#graphql
         page:Int
     }
 
-    input PaginationLastDoc {
+    input PaginationCursor {
         _id: String
-        searchScore: Float
+        field: String
+        value: String
+        isNumber: Boolean
     }
+
     input Pagination {
         currentPage: Int
-        lastDoc:PaginationLastDoc
-        limit:Int
+        limit: Int
+        after:PaginationCursor
+        before:PaginationCursor
     }
 
     type Query {
