@@ -15,6 +15,8 @@ import { IPaginationCursor, IPaginationParams } from '../../../../../types';
 //   return firstSortField;
 // }
 
+export { default as generateFilters } from './generateFilters';
+
 export function generatePaginationOptions(pagination?: IPaginationParams) {
   const limit = generateLimit(pagination);
 

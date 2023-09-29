@@ -29,6 +29,14 @@ const typeDefs = `#graphql
         meta:SearchMeta
     }
 
+    input VehicleFilter {
+        make:[String]
+        model:[String]
+        type:[String]
+        color:[String]
+        rate:[Int]
+    }
+
     input VehicleInput {
         ${vehicleInputFields}
     }
@@ -36,6 +44,7 @@ const typeDefs = `#graphql
     input VehiclesQueryOptions {
         pagination:Pagination
         selectedDates:[String]
+        filters:VehicleFilter
     }
    
     extend type Query {

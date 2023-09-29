@@ -1,6 +1,8 @@
 import { PipelineStage } from 'mongoose';
-import { ObjectId } from 'mongodb';
 //
+import { generateFilters } from '../utils';
+//
+
 import {
   ISearchVehiclesPagination,
   IPaginationLastDoc,
@@ -26,47 +28,75 @@ interface ISortOptions {
 
 export default function generateSearchStages(
   orgId: string,
-  query: string | number
+  query: string | number,
+  userFilters?: Record<string, (string | number | Date)[]>,
+  retrieveFacets = false
   // sortOptions?: ISortOptions
 ) {
+  const filters = generateFilters(userFilters);
+  console.log('filters', filters);
+
+  const compoundOperators = {
+    must: [
+      ...(query
+        ? [
+            {
+              text: {
+                path: ['registration', 'make', 'model', 'color', 'description'],
+                query,
+                fuzzy: {},
+              },
+            },
+          ]
+        : []),
+    ],
+    filter: [
+      {
+        text: {
+          path: 'metaData.orgId',
+          query: orgId,
+        },
+      },
+      {
+        equals: {
+          path: 'metaData.status',
+          value: 0,
+        },
+      },
+      ...filters,
+    ],
+  };
+
   const stages: PipelineStage[] = [
     {
       $search: {
-        compound: {
-          must: [
-            ...(query
-              ? [
-                  {
-                    text: {
-                      path: [
-                        'registration',
-                        'make',
-                        'model',
-                        'color',
-                        'description',
-                      ],
-                      query,
-                      fuzzy: {},
-                    },
+        ...(retrieveFacets
+          ? {
+              facet: {
+                operator: {
+                  compound: compoundOperators,
+                },
+                facets: {
+                  makesFacet: {
+                    type: 'string',
+                    path: 'make',
                   },
-                ]
-              : []),
-          ],
-          filter: [
-            {
-              text: {
-                path: 'metaData.orgId',
-                query: orgId,
+                  modelsFacet: {
+                    type: 'string',
+                    path: 'model',
+                  },
+                  typesFacet: {
+                    type: 'string',
+                    path: 'type',
+                  },
+                  colorsFacet: {
+                    type: 'string',
+                    path: 'color',
+                  },
+                },
               },
-            },
-            {
-              equals: {
-                path: 'metaData.status',
-                value: 0,
-              },
-            },
-          ],
-        },
+            }
+          : { compound: compoundOperators }),
 
         // sort: {
         //   // unused: { $meta: 'searchScore' }, //defaults to desc add order:1 for asc

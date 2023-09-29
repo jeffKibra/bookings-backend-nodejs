@@ -52,4 +52,5 @@ export interface ISearchVehiclesPagination {
 export interface ISearchVehiclesQueryOptions {
   pagination?: IPaginationParams;
   selectedDates?: string[];
+  filters: Record<string, (string | number | Date)[]>;
 }

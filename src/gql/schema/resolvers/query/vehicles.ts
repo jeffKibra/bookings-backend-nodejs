@@ -42,7 +42,8 @@ const queryResolvers = {
     const orgId = context.orgId;
     //
     const query = args?.query || '';
-    const options = args?.queryOptions || {};
+    const options = args?.queryOptions;
+    console.log('options', options);
 
     return services.vehicles.search(orgId, query, options);
   },
