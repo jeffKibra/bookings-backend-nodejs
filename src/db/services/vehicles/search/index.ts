@@ -1,17 +1,7 @@
-import { VehicleModel } from '../../../models';
 //
-import {
-  generateSearchStages,
-  generateAvailableVehiclesStages,
-  generateSortAndPaginateStages,
-} from './subPipelines';
-import { generateLimit } from './utils';
+import getResult from './getResult';
 //
-import {
-  IVehicle,
-  ISearchMeta,
-  ISearchVehiclesQueryOptions,
-} from '../../../../types';
+import { ISearchVehiclesQueryOptions } from '../../../../types';
 //
 
 interface INumRange {
@@ -20,7 +10,6 @@ interface INumRange {
 }
 
 type ISortByCountFacetCategory = Record<string, string | number>;
-type ISortByCountFacetCategories = ISortByCountFacetCategory[];
 
 export default async function search(
   orgId: string,
@@ -28,109 +17,11 @@ export default async function search(
   options?: ISearchVehiclesQueryOptions
 ) {
   const pagination = options?.pagination;
-  console.log('pagination', pagination);
-  const filters = options?.filters;
-
-  const searchPipelineStages = generateSearchStages(
-    orgId,
-    query,
-    filters,
-    true
-  );
-  const availableVehiclesPipelineStages = generateAvailableVehiclesStages(
-    orgId,
-    options?.selectedDates || []
-  );
-  const sortAndPaginateStages = generateSortAndPaginateStages(pagination);
-  const limit = generateLimit(pagination);
+  // console.log('pagination', pagination);
 
   // aggregation to fetch items not booked.
-  const result = await VehicleModel.aggregate<{
-    vehicles: IVehicle[];
-    meta: ISearchMeta;
-  }>([
-    ...searchPipelineStages,
-    ...sortAndPaginateStages,
-    {
-      $facet: {
-        /**
-         * if some methods in facetPipeline not possible,
-         * unwind vehicles and use later in the main pipeline
-         */
-        vehicles: [
-          ...availableVehiclesPipelineStages,
-          {
-            //limit items returned
-            $limit: limit,
-          },
-        ],
-        ratesRange: [
-          {
-            $group: {
-              _id: null,
-              max: { $max: '$rate' },
-              min: { $min: '$rate' },
-            },
-          },
-        ],
-        meta: [
-          {
-            //must be used before a lookup
-            $replaceWith: {
-              $mergeObjects: '$$SEARCH_META',
-            },
-          },
-          {
-            $limit: 1,
-          },
-        ],
-      },
-    },
-    {
-      //change meta field from array to object
-      $set: {
-        meta: { $arrayElemAt: ['$meta', 0] },
-      },
-    },
-
-    {
-      //format metadata
-      $project: {
-        vehicles: 1,
-        meta: {
-          count: '$meta.count.lowerBound',
-          facets: {
-            $mergeObjects: [
-              {
-                makesFacet: [],
-                modelsFacet: [],
-                typesFacet: [],
-                colorsFacet: [],
-                ratesRangeFacet: {},
-              },
-              {
-                makesFacet: '$meta.facet.makesFacet.buckets',
-                modelsFacet: '$meta.facet.modelsFacet.buckets',
-                typesFacet: '$meta.facet.typesFacet.buckets',
-                colorsFacet: '$meta.facet.colorsFacet.buckets',
-                ratesRangeFacet: {
-                  $arrayElemAt: ['$ratesRange', 0],
-                },
-              },
-            ],
-          },
-        },
-      },
-    },
-
-    // ...availableVehiclesPipelineStages,
-    // {
-    //   $sort: {
-    //     registration: -1,
-    //   },
-    // },
-  ]);
-  console.log('result', result);
+  const result = await getResult(orgId, query, options);
+  // console.log('result', result);
 
   const { vehicles, meta } = result[0];
 
@@ -139,12 +30,13 @@ export default async function search(
   const { facets } = meta;
   console.log('facets', facets);
 
-  const currentPage = pagination?.currentPage || 0;
+  const page = pagination?.page || 0;
+
   return {
     vehicles,
     meta: {
       ...meta,
-      page: currentPage + 1,
+      page,
     },
   };
 }

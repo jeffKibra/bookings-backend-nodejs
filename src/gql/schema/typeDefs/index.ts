@@ -2,7 +2,7 @@ import vehiclesTypeDefs from './vehicles';
 import bookingsTypeDefs from './bookings';
 
 const mainTypeDefs = `#graphql
-    type SortParams{
+    input SortByInput{
         field:String,
         direction:String
     }
@@ -24,10 +24,8 @@ const mainTypeDefs = `#graphql
     }
 
     input Pagination {
-        currentPage: Int
+        page: Int
         limit: Int
-        after:PaginationCursor
-        before:PaginationCursor
     }
 
     type Query {

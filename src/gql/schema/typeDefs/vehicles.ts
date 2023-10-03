@@ -29,7 +29,7 @@ const typeDefs = `#graphql
         meta:SearchMeta
     }
 
-    input VehicleFilter {
+    input VehicleFilters {
         make:[String]
         model:[String]
         type:[String]
@@ -42,16 +42,16 @@ const typeDefs = `#graphql
     }
 
     input VehiclesQueryOptions {
+        sortBy:SortByInput
         pagination:Pagination
         selectedDates:[String]
-        filters:VehicleFilter
+        filters:VehicleFilters
     }
    
     extend type Query {
         vehicles: [Vehicle]
         vehicle(id:ID): Vehicle
         searchVehicles(query:ID, queryOptions:VehiclesQueryOptions):VehiclesSearchResult
-        searchAvailableVehicles(query:ID, selectedDates:[String]):VehiclesSearchResult
         findVehiclesNotBookedInSelectedDates(selectedDates:[String!]!):[Vehicle]
     }
    

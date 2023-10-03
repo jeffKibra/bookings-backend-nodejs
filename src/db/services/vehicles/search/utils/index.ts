@@ -20,9 +20,9 @@ export { default as generateFilters } from './generateFilters';
 export function generatePaginationOptions(pagination?: IPaginationParams) {
   const limit = generateLimit(pagination);
 
-  const cursors = generatePaginationCursors(pagination);
+  // const cursors = generatePaginationCursors(pagination);
 
-  return { limit, ...cursors };
+  return { limit };
 }
 
 export function formatCursor(cursor?: IPaginationCursor) {
@@ -47,19 +47,19 @@ export function formatCursor(cursor?: IPaginationCursor) {
   };
 }
 
-export function generatePaginationCursors(pagination?: IPaginationParams) {
-  let fowardCursor: IPaginationCursor | null = null;
-  let backwardCursor: IPaginationCursor | null = null;
+// export function generatePaginationCursors(pagination?: IPaginationParams) {
+//   let fowardCursor: IPaginationCursor | null = null;
+//   let backwardCursor: IPaginationCursor | null = null;
 
-  if (pagination && typeof pagination === 'object') {
-    fowardCursor =
-      'after' in pagination ? formatCursor(pagination.after) : null;
-    backwardCursor =
-      'before' in pagination ? formatCursor(pagination.before) : null;
-  }
+//   if (pagination && typeof pagination === 'object') {
+//     fowardCursor =
+//       'after' in pagination ? formatCursor(pagination.after) : null;
+//     backwardCursor =
+//       'before' in pagination ? formatCursor(pagination.before) : null;
+//   }
 
-  return { fowardCursor, backwardCursor };
-}
+//   return { fowardCursor, backwardCursor };
+// }
 
 export function generateLimit(pagination?: IPaginationParams) {
   const rawLimit = pagination?.limit;

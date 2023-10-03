@@ -1,9 +1,12 @@
 import { PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
 //
-import { generatePaginationCursors } from '../utils';
 //
-import { IPaginationParams } from '../../../../../types';
+import {
+  IPaginationParams,
+  IPaginationCursor,
+  ISortBy,
+} from '../../../../../types';
 
 // function generateFirstSortField(sortOptions?: ISortOptions) {
 //   const sortDirection =
@@ -18,49 +21,24 @@ import { IPaginationParams } from '../../../../../types';
 //   return firstSortField;
 // }
 
+type ISortFields = Record<string, 1 | -1>;
+
 export default function generateSortAndPaginateStages(
+  sortBy: ISortBy,
   pagination?: IPaginationParams
   // sortOptions?: ISortOptions
 ) {
   // const paginationFoward = options instanceof IPaginationFoward;
-
-  const { fowardCursor, backwardCursor } =
-    generatePaginationCursors(pagination);
+  const sortByField = sortBy.field;
+  const sortByDirection = sortBy.direction === 'asc' ? 1 : -1;
 
   const stages: PipelineStage[] = [
     {
-      $addFields: {
-        searchScore: {
-          $meta: 'searchScore',
-        },
-      },
-    },
-    {
       $sort: {
-        searchScore: -1,
-        _id: -1,
+        [sortByField]: sortByDirection,
+        _id: sortByDirection,
       },
     },
-    ...(fowardCursor
-      ? [
-          {
-            $match: {
-              // searchScore: { $lte: paginationLastDoc.searchScore }, //was sorted in desc
-              _id: { $gt: new ObjectId(fowardCursor._id) }, //was sorted in desc
-            },
-          },
-        ]
-      : []),
-    ...(backwardCursor
-      ? [
-          {
-            $match: {
-              // searchScore: { $lte: paginationLastDoc.searchScore }, //was sorted in desc
-              _id: { $gt: new ObjectId(backwardCursor._id) }, //was sorted in desc
-            },
-          },
-        ]
-      : []),
   ];
 
   return stages;

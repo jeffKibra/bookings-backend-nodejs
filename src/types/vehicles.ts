@@ -1,4 +1,4 @@
-import { IPaginationParams } from './pagination';
+import { IPaginationParams, ISortBy } from './pagination';
 
 // export type IVehicleType = 'Ivehicle' | 'opening_balance';
 
@@ -50,7 +50,8 @@ export interface ISearchVehiclesPagination {
 }
 
 export interface ISearchVehiclesQueryOptions {
+  sortBy?: ISortBy;
   pagination?: IPaginationParams;
   selectedDates?: string[];
-  filters: Record<string, (string | number | Date)[]>;
+  filters?: Record<string, (string | number | Date)[]>;
 }

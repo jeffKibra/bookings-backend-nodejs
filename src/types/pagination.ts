@@ -1,11 +1,11 @@
-interface ISortOptions {
+export type ISortByDirection = 'desc' | 'asc';
+export interface ISortBy {
   field: string;
-  direction?: 'desc' | 'asc';
+  direction?: ISortByDirection;
 }
 
 export interface IPaginationCursor {
   _id: string;
-  field: 'string';
   value: string | number;
   isNumber?: boolean;
 }
@@ -22,9 +22,10 @@ export type IPaginationDirection = IPaginationFoward | IPaginationBackwards;
 
 export interface IPaginationRoot {
   limit: number;
-  currentPage: number;
+  page: number;
+  // action?: 'PREV' | 'NEXT';
 }
-export type IPaginationParams = IPaginationRoot & IPaginationDirection;
+export type IPaginationParams = IPaginationRoot;
 
 export interface IPaginationOptions {
   limit: number;
