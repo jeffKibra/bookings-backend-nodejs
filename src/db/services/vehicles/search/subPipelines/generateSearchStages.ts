@@ -77,10 +77,10 @@ export default function generateSearchStages(
                   compound: compoundOperators,
                 },
                 facets: {
-                  makesFacet: {
-                    type: 'string',
-                    path: 'make',
-                  },
+                  // makesFacet: {
+                  //   type: 'string',
+                  //   path: 'make',
+                  // },
                   modelsFacet: {
                     type: 'string',
                     path: 'model',

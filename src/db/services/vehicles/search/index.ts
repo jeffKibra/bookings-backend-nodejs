@@ -1,7 +1,11 @@
 //
 import getResult from './getResult';
 //
-import { ISearchVehiclesQueryOptions } from '../../../../types';
+import {
+  ISearchVehiclesQueryOptions,
+  ICountFacet,
+  IVehicleMakeFacet,
+} from '../../../../types';
 //
 
 interface INumRange {
@@ -27,8 +31,43 @@ export default async function search(
 
   // console.log('vehicles', vehicles);
   console.log('meta', meta);
-  const { facets } = meta;
+  const facets = meta?.facets || {};
   console.log('facets', facets);
+  const { makes: makesFacet, models: modelsFacet, ...moreFacets } = facets;
+
+  console.log('makes', makesFacet);
+
+  const modelsFacetObject: Record<string, ICountFacet> = {};
+
+  if (Array.isArray(modelsFacet)) {
+    modelsFacet.forEach(modelFacet => {
+      const { _id } = modelFacet;
+      modelsFacetObject[_id] = modelFacet;
+    });
+  }
+
+  const formattedMakes: IVehicleMakeFacet[] = [];
+
+  if (Array.isArray(makesFacet)) {
+    makesFacet.forEach(makeFacet => {
+      const { models: modelsIds, ...makeFacetData } = makeFacet;
+
+      const makeModels: ICountFacet[] = [];
+
+      modelsIds.forEach(modelId => {
+        const modelFacetData = modelsFacetObject[modelId];
+
+        makeModels.push(modelFacetData);
+      });
+
+      formattedMakes.push({
+        ...makeFacetData,
+        models: makeModels,
+      });
+    });
+  }
+
+  console.log('formattedMakes: ', formattedMakes);
 
   const page = pagination?.page || 0;
 
@@ -36,6 +75,10 @@ export default async function search(
     vehicles,
     meta: {
       ...meta,
+      facets: {
+        ...moreFacets,
+        makes: formattedMakes,
+      },
       page,
     },
   };

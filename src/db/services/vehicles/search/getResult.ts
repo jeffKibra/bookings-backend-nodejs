@@ -8,7 +8,7 @@ import { generateLimit } from './utils';
 //
 import {
   IVehicle,
-  ISearchMeta,
+  IVehicleSearchAggregationMeta,
   ISearchVehiclesQueryOptions,
 } from '../../../../types';
 //
@@ -45,7 +45,7 @@ export default async function getResult(
   // aggregation to fetch items not booked.
   return VehicleModel.aggregate<{
     vehicles: IVehicle[];
-    meta: ISearchMeta;
+    meta: IVehicleSearchAggregationMeta;
   }>([
     ...searchPipelineStages,
     {
@@ -70,6 +70,21 @@ export default async function getResult(
             $limit: limit,
           },
         ],
+        makes: [
+          {
+            $group: {
+              _id: '$make',
+              count: { $sum: 1 },
+              models: {
+                $addToSet: '$model',
+              },
+              years: {
+                $addToSet: '$year',
+              },
+            },
+          },
+        ],
+
         ratesRange: [
           {
             $group: {
@@ -108,18 +123,20 @@ export default async function getResult(
           facets: {
             $mergeObjects: [
               {
-                makesFacet: [],
-                modelsFacet: [],
-                typesFacet: [],
-                colorsFacet: [],
-                ratesRangeFacet: {},
+                makes: [],
+                models: [],
+                types: [],
+                colors: [],
+                ratesRange: {},
               },
               {
-                makesFacet: '$meta.facet.makesFacet.buckets',
-                modelsFacet: '$meta.facet.modelsFacet.buckets',
-                typesFacet: '$meta.facet.typesFacet.buckets',
-                colorsFacet: '$meta.facet.colorsFacet.buckets',
-                ratesRangeFacet: {
+                // makes: '$meta.facet.makesFacet.buckets',
+                // models: '$meta.facet.modelsFacet.buckets',
+                makes: '$makes',
+                models: '$meta.facet.modelsFacet.buckets',
+                types: '$meta.facet.typesFacet.buckets',
+                colors: '$meta.facet.colorsFacet.buckets',
+                ratesRange: {
                   $arrayElemAt: ['$ratesRange', 0],
                 },
               },

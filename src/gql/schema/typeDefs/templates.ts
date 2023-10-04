@@ -6,3 +6,8 @@ export const MetaDataSharedFields = `
     modifiedAt: Int!
     status:Int!
 `;
+
+export const SearchMetaCommonFields = `
+    count:Int
+    page:Int
+`;

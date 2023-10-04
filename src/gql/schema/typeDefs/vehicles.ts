@@ -1,4 +1,4 @@
-import { MetaDataSharedFields } from './templates';
+import { MetaDataSharedFields, SearchMetaCommonFields } from './templates';
 
 //
 export const vehicleInputFields = `
@@ -24,9 +24,30 @@ const typeDefs = `#graphql
         searchScore:Float
         metaData: VehicleMetaData! 
     }
+
+    type VehicleMakeFacet {
+        _id:String
+        count:Int
+        models:[CountFacet]
+    }
+
+    type VehicleFacets {
+        makes:[VehicleMakeFacet]
+        types:[CountFacet]
+        colors: [CountFacet]
+        ratesRange: RangeFacet
+    }
+
+    type SearchVehicleMetaData {
+        ${SearchMetaCommonFields}
+        facets:VehicleFacets
+    }
+
+    
+
     type VehiclesSearchResult {
         vehicles: [Vehicle]!
-        meta:SearchMeta
+        meta:SearchVehicleMetaData
     }
 
     input VehicleFilters {
@@ -47,6 +68,8 @@ const typeDefs = `#graphql
         selectedDates:[String]
         filters:VehicleFilters
     }
+
+    
    
     extend type Query {
         vehicles: [Vehicle]

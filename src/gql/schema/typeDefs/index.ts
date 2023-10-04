@@ -1,20 +1,30 @@
 import vehiclesTypeDefs from './vehicles';
 import bookingsTypeDefs from './bookings';
 
+import { SearchMetaCommonFields } from './templates';
+
 const mainTypeDefs = `#graphql
     input SortByInput{
-        field:String,
+        field:String
         direction:String
     }
     type SearchMetaCount{
         lowerBound:Int
     }
     type SearchMeta {
-        count:Int
-        page:Int
+        ${SearchMetaCommonFields}
     }
 
+    type CountFacet {
+        _id:String
+        count:Int
+    }
     
+    type RangeFacet {
+        min:Int
+        max:Int
+    }
+
 
     input PaginationCursor {
         _id: String

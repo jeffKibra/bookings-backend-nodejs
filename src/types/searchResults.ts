@@ -2,20 +2,46 @@ export interface ISearchMetaCount {
   lowerBound: number;
 }
 
-type ISortByCountFacetCategory = Record<string, string | number>;
-type ISortByCountFacetCategories = ISortByCountFacetCategory[];
+export interface ICountFacet {
+  _id: string;
+  count: number;
+}
 
 interface INumRange {
   min: number;
   max: number;
 }
-export interface ISearchMeta {
+
+export interface IVehicleMakeAggregationFacet {
+  _id: string;
+  count: number;
+  models: string[];
+  years?: number[];
+}
+
+export interface IVehicleMakeFacet
+  extends Omit<IVehicleMakeAggregationFacet, 'models'> {
+  models: ICountFacet[];
+}
+
+export interface IVehicleAggregationFacets {
+  makes: IVehicleMakeAggregationFacet[];
+  models: ICountFacet[];
+  colors: ICountFacet[];
+  types: ICountFacet[];
+  ratesRange: INumRange;
+}
+
+export interface IVehicleFacets
+  extends Omit<IVehicleAggregationFacets, 'makes' | 'models'> {
+  makes: IVehicleMakeFacet[];
+}
+export interface IVehicleSearchAggregationMeta {
   count: ISearchMetaCount;
-  facets: {
-    makesFacet: ISortByCountFacetCategories;
-    modelsFacet: ISortByCountFacetCategories;
-    colorsFacet: ISortByCountFacetCategories;
-    typesFacet: ISortByCountFacetCategories;
-    ratesRangeFacet: INumRange;
-  };
+  facets: IVehicleAggregationFacets;
+}
+
+export interface IVehicleSearchMeta
+  extends Omit<IVehicleSearchAggregationMeta, 'facets'> {
+  facets: IVehicleFacets;
 }
