@@ -46,6 +46,8 @@ export default async function search(
     });
   }
 
+  console.log('models facet object', modelsFacetObject);
+
   const formattedMakes: IVehicleMakeFacet[] = [];
 
   if (Array.isArray(makesFacet)) {
