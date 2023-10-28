@@ -25,16 +25,17 @@ export default async function search(
 
   // aggregation to fetch items not booked.
   const result = await getResult(orgId, query, options);
-  // console.log('result', result);
+  console.log('result', result);
 
   const { vehicles, meta } = result[0];
 
-  // console.log('vehicles', vehicles);
+  console.log('vehicles', vehicles);
   console.log('meta', meta);
   const facets = meta?.facets || {};
   console.log('facets', facets);
   const { makes: makesFacet, models: modelsFacet, ...moreFacets } = facets;
 
+  console.log('models', modelsFacet);
   console.log('makes', makesFacet);
 
   const modelsFacetObject: Record<string, ICountFacet> = {};

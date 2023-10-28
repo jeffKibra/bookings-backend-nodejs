@@ -3,7 +3,7 @@ export default function handleError(
   title: string,
   shouldBubble = true
 ) {
-  const error = err as ReferenceError;
+  const error = err as Error;
 
   const originalError = JSON.stringify(error);
 

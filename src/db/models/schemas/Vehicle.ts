@@ -5,13 +5,19 @@ import { initSchema } from './utils';
 //
 import { metaDataSchema } from './Generals';
 
+const VehicleModelSchema = new Schema({
+  model: { type: String, required: true },
+  type: { type: String, required: true },
+  make: { type: String, required: true },
+});
+
 const VehicleSchemaSharedFields = {
   color: { type: String, required: true },
   description: { type: String },
   make: { type: String, required: true },
-  model: { type: String, required: true },
+  model: { type: VehicleModelSchema, required: true },
   year: { type: Number, required: true },
-  type: { type: String, required: true },
+  // type: { type: String, required: true },
   rate: { type: Number, required: true },
 };
 

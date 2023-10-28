@@ -1,7 +1,7 @@
 import { MetaDataSharedFields } from './templates';
 
 //
-import { vehicleInputFields } from './vehicles';
+import { VehicleInputFields } from './vehicles';
 
 //
 const CustomerSummaryFields = `
@@ -66,7 +66,7 @@ const typeDefs = `#graphql
 
     input BookingVehicleInput {
         _id:ID!
-        ${vehicleInputFields}
+        ${VehicleInputFields}
         sku:String!
     }
 

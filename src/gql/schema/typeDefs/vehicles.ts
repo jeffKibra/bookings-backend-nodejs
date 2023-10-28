@@ -1,25 +1,45 @@
 import { MetaDataSharedFields, SearchMetaCommonFields } from './templates';
 
 //
-export const vehicleInputFields = `
+const VehicleModelFields = `
+    model:String!
+    make:String!
+    type:String!
+`;
+//
+export const VehicleSharedFields = `
     registration: String! 
     rate: Int!
     make: String! 
-    model: String! 
-    year: Int!
-    type: String! 
+    year: String
     color: String! 
     description: String
+`;
+export const VehicleFields = `
+    ${VehicleSharedFields}
+    model: VehicleModel! 
+`;
+export const VehicleInputFields = `
+    ${VehicleSharedFields}
+    model: VehicleModelInput! 
 `;
 
 //
 const typeDefs = `#graphql
+
+    type VehicleModel {
+        ${VehicleModelFields}
+    } 
+    input VehicleModelInput {
+        ${VehicleModelFields}
+    } 
+
     type VehicleMetaData {
        ${MetaDataSharedFields}
     }
 
     type Vehicle {
-        ${vehicleInputFields}
+        ${VehicleFields}
         _id: ID! 
         searchScore:Float
         metaData: VehicleMetaData! 
@@ -58,9 +78,13 @@ const typeDefs = `#graphql
         rate:[Int]
     }
 
-    input VehicleInput {
-        ${vehicleInputFields}
-    }
+    input VehicleModelInput{
+        model:String!
+        make:String!
+        type:String!
+    } 
+
+    
 
     input VehiclesQueryOptions {
         sortBy:SortByInput
@@ -69,6 +93,9 @@ const typeDefs = `#graphql
         filters:VehicleFilters
     }
 
+    input VehicleInput {
+        ${VehicleInputFields}
+    }
     
    
     extend type Query {
@@ -79,6 +106,7 @@ const typeDefs = `#graphql
     }
    
     extend type Mutation {
+        cv(reg:String!):String
         createVehicle(formData:VehicleInput!):String
         updateVehicle(id:ID!, formData:VehicleInput!):Vehicle
         deleteVehicle(id:ID!):String

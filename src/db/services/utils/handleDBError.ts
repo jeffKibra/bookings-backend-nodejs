@@ -1,4 +1,9 @@
 import { handleError } from '../../../utils';
+
+//
+interface CustomError extends Error {
+  code?: unknown;
+}
 //
 export default function handleDBError(
   error: unknown,
@@ -9,7 +14,7 @@ export default function handleDBError(
   const errorCode = err?.code;
   // console.log({ errorCode });
 
-  let modifiedError: Record<string, unknown> | Error = err;
+  let modifiedError: Record<string, unknown> | CustomError = err;
 
   if (errorCode === 11000) {
     //mongodb unique field error
@@ -23,6 +28,8 @@ export default function handleDBError(
       modifiedError = new Error(msg);
     }
   }
+
+  modifiedError.code = errorCode;
 
   handleError(modifiedError, title, shouldBubble);
 }

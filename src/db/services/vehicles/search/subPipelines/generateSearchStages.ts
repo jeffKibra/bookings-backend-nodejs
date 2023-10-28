@@ -42,7 +42,13 @@ export default function generateSearchStages(
         ? [
             {
               text: {
-                path: ['registration', 'make', 'model', 'color', 'description'],
+                path: [
+                  'registration',
+                  'make',
+                  'model.model',
+                  'color',
+                  'description',
+                ],
                 query,
                 fuzzy: {},
               },
@@ -83,11 +89,11 @@ export default function generateSearchStages(
                   // },
                   modelsFacet: {
                     type: 'string',
-                    path: 'model',
+                    path: 'model.model',
                   },
                   typesFacet: {
                     type: 'string',
-                    path: 'type',
+                    path: 'model.type',
                   },
                   colorsFacet: {
                     type: 'string',

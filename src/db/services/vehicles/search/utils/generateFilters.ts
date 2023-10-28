@@ -4,6 +4,8 @@ import generateQueryStringFilter from './generateQueryStringFilter';
 
 const filterFields = ['make', 'model', 'type', 'color', 'rate'];
 
+type Filters = {};
+
 export default function generateFilters(
   userFilters?: Record<string, (string | number | Date)[]>
 ) {
@@ -24,12 +26,21 @@ export default function generateFilters(
           filter = tempFilter;
         }
       } else {
-        filter = generateQueryStringFilter(field, values);
+        let fieldPrefix = '';
+
+        const isModelField = field === 'model' || field === 'type';
+        if (isModelField) {
+          fieldPrefix = 'model.';
+        }
+
+        filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
       }
 
       filters.push(filter);
     }
   });
+
+  console.log({ filters });
 
   return filters;
 }
