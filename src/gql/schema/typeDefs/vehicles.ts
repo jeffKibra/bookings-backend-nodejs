@@ -41,6 +41,7 @@ const typeDefs = `#graphql
     type Vehicle {
         ${VehicleFields}
         _id: ID! 
+        id:String
         searchScore:Float
         metaData: VehicleMetaData! 
     }
@@ -106,10 +107,9 @@ const typeDefs = `#graphql
     }
    
     extend type Mutation {
-        cv(reg:String!):String
         createVehicle(formData:VehicleInput!):String
         updateVehicle(id:ID!, formData:VehicleInput!):Vehicle
-        deleteVehicle(id:ID!):String
+        deleteVehicle(id:ID!): String
     }
 `;
 

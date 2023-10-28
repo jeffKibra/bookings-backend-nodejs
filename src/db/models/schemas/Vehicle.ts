@@ -16,7 +16,7 @@ const VehicleSchemaSharedFields = {
   description: { type: String },
   make: { type: String, required: true },
   model: { type: VehicleModelSchema, required: true },
-  year: { type: Number, required: true },
+  year: { type: Number },
   // type: { type: String, required: true },
   rate: { type: Number, required: true },
 };

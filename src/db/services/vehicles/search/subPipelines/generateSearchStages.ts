@@ -69,9 +69,17 @@ export default function generateSearchStages(
           value: 0,
         },
       },
+      // {
+      //   equals: {
+      //     path: 'metaData.deleted',
+      //     value: false,
+      //   },
+      // },
       ...filters,
     ],
   };
+
+  console.log('compound operators', compoundOperators);
 
   const stages: PipelineStage[] = [
     {
@@ -116,6 +124,9 @@ export default function generateSearchStages(
         //add searchscore field for sorting in next stages
         searchScore: {
           $meta: 'searchScore',
+        },
+        id: {
+          $toString: '$_id',
         },
       },
     },

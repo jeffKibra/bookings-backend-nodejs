@@ -19,6 +19,7 @@ export default async function archiveVehicle(
     {
       $set: {
         'metaData.status': -1,
+        'metaData.deleted': true,
         'metaData.modifiedAt': new Date(),
         'metaData.modifiedBy': userUID,
       },

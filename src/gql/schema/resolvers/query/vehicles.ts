@@ -43,7 +43,7 @@ const queryResolvers = {
     //
     const query = args?.query || '';
     const options = args?.queryOptions;
-    console.log('options', options);
+    console.log('search vehicles options', options);
 
     return services.vehicles.search(orgId, query, options);
   },

@@ -26,12 +26,7 @@ export default async function getResult(
   //   console.log('pagination', pagination);
   const filters = options?.filters;
 
-  const searchPipelineStages = generateSearchStages(
-    orgId,
-    query,
-    filters,
-    true
-  );
+  const searchPipelineStages = generateSearchStages(orgId, query, filters);
   const availableVehiclesPipelineStages = generateAvailableVehiclesStages(
     orgId,
     options?.selectedDates || []

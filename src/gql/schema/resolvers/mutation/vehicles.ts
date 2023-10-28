@@ -3,13 +3,6 @@ import { services } from '../../../../db';
 import { IGQLContext, IVehicleFormData } from '../../../../types';
 
 const mutationResolvers = {
-  async cv(
-    parent: unknown,
-    args: { formData: IVehicleFormData; orgId: string },
-    context: Required<IGQLContext>
-  ) {
-    console.log({ parent, args, context });
-  },
   async createVehicle(
     parent: unknown,
     args: { formData: IVehicleFormData; orgId: string },
@@ -52,7 +45,13 @@ const mutationResolvers = {
     //
     const vehicleId = args?.id;
 
-    await services.vehicles.archive(userUID, orgId, vehicleId);
+    const deleteResult = await services.vehicles.archive(
+      userUID,
+      orgId,
+      vehicleId
+    );
+
+    console.log({ deleteResult });
   },
 };
 
