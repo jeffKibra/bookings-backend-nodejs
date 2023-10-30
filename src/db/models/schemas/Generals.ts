@@ -7,7 +7,6 @@ export const metaDataSchema = new Schema({
   modifiedAt: { type: Number, default: Date.now() },
   orgId: { type: String, required: true },
   status: { type: Number, default: 0 },
-  deleted: { type: Boolean, default: false },
 });
 
 export const paymentTermSchema = new Schema({

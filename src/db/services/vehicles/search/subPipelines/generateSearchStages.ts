@@ -33,7 +33,7 @@ export default function generateSearchStages(
   retrieveFacets = false
   // sortOptions?: ISortOptions
 ) {
-  const filters = generateFilters(userFilters);
+  const filters = generateFilters(orgId, userFilters);
   console.log('filters', filters);
 
   const compoundOperators = {
@@ -56,27 +56,7 @@ export default function generateSearchStages(
           ]
         : []),
     ],
-    filter: [
-      {
-        text: {
-          path: 'metaData.orgId',
-          query: orgId,
-        },
-      },
-      {
-        equals: {
-          path: 'metaData.status',
-          value: 0,
-        },
-      },
-      // {
-      //   equals: {
-      //     path: 'metaData.deleted',
-      //     value: false,
-      //   },
-      // },
-      ...filters,
-    ],
+    filter: [...filters],
   };
 
   console.log('compound operators', compoundOperators);

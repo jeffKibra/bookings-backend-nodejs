@@ -23,15 +23,22 @@ export default async function search(
   const pagination = options?.pagination;
   // console.log('pagination', pagination);
 
+  const requestedPage = options?.pagination?.page || 0;
+
+  const filtersIsEmpty = Object.keys(options?.filters || {}).length === 0;
+  const retrieveFacets = requestedPage === 0 && filtersIsEmpty;
+  console.log({ retrieveFacets, requestedPage, filtersIsEmpty });
+
   // aggregation to fetch items not booked.
-  const result = await getResult(orgId, query, options);
+  const result = await getResult(orgId, query, options, retrieveFacets);
   // console.log('result', result);
 
-  const { vehicles, meta } = result[0];
+  const { vehicles, meta: resultMeta } = result[0];
+  const meta = resultMeta || { facets: {} };
 
   console.log('searched vehicles', vehicles);
   // console.log('meta', meta);
-  const facets = meta?.facets || {};
+  const { facets, ...moreMetaOptions } = meta;
   // console.log('facets', facets);
   const { makes: makesFacet, models: modelsFacet, ...moreFacets } = facets;
 
@@ -77,12 +84,16 @@ export default async function search(
   return {
     vehicles,
     meta: {
-      ...meta,
-      facets: {
-        ...moreFacets,
-        makes: formattedMakes,
-      },
+      ...moreMetaOptions,
       page,
+      ...(retrieveFacets
+        ? {
+            facets: {
+              ...moreFacets,
+              makes: formattedMakes,
+            },
+          }
+        : {}),
     },
   };
 }

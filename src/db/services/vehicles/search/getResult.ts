@@ -16,7 +16,8 @@ import {
 export default async function getResult(
   orgId: string,
   query: string | number,
-  options?: ISearchVehiclesQueryOptions
+  options?: ISearchVehiclesQueryOptions,
+  retrieveFacets?: boolean
 ) {
   const sortBy = options?.sortBy || { field: 'searchScore', direction: 'desc' };
   const sortByField = sortBy.field;
@@ -26,10 +27,20 @@ export default async function getResult(
   //   console.log('pagination', pagination);
   const filters = options?.filters;
 
-  const searchPipelineStages = generateSearchStages(orgId, query, filters);
+  const searchPipelineStages = generateSearchStages(
+    orgId,
+    query,
+    filters,
+    retrieveFacets
+  );
   const availableVehiclesPipelineStages = generateAvailableVehiclesStages(
     orgId,
     options?.selectedDates || []
+  );
+
+  console.log(
+    'availableVehiclesPipelineStages',
+    availableVehiclesPipelineStages
   );
 
   const page = pagination?.page || 0;
