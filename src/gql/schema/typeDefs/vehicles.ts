@@ -88,7 +88,7 @@ const typeDefs = `#graphql
     
 
     input VehiclesQueryOptions {
-        sortBy:SortByInput
+        sortBy:[String!]
         pagination:Pagination
         selectedDates:[String]
         filters:VehicleFilters

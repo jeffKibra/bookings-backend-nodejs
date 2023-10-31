@@ -8,11 +8,6 @@ import {
   IPaginationLastDoc,
 } from '../../../../../types';
 
-interface ISortOptions {
-  field: string;
-  direction?: 'desc' | 'asc';
-}
-
 // function generateFirstSortField(sortOptions?: ISortOptions) {
 //   const sortDirection =
 //     String(sortOptions?.direction).toLowerCase() === 'desc' ? -1 : 1;

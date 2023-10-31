@@ -16,6 +16,7 @@ import { IPaginationCursor, IPaginationParams } from '../../../../../types';
 // }
 
 export { default as generateFilters } from './generateFilters';
+export { default as generateSortBy } from './generateSortBy';
 
 export function generatePaginationOptions(pagination?: IPaginationParams) {
   const limit = generateLimit(pagination);

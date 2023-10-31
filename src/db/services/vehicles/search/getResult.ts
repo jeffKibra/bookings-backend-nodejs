@@ -4,7 +4,7 @@ import {
   generateSearchStages,
   generateAvailableVehiclesStages,
 } from './subPipelines';
-import { generateLimit } from './utils';
+import { generateLimit, generateSortBy } from './utils';
 //
 import {
   IVehicle,
@@ -19,9 +19,7 @@ export default async function getResult(
   options?: ISearchVehiclesQueryOptions,
   retrieveFacets?: boolean
 ) {
-  const sortBy = options?.sortBy || { field: 'searchScore', direction: 'desc' };
-  const sortByField = sortBy.field;
-  const sortByDirection = sortBy.direction === 'asc' ? 1 : -1;
+  const [sortByField, sortByDirection] = generateSortBy(query, options?.sortBy);
 
   const pagination = options?.pagination;
   //   console.log('pagination', pagination);
