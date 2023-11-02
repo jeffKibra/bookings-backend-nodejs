@@ -1,16 +1,17 @@
 import { PipelineStage } from 'mongoose';
-import {} from 'mongodb';
+import { ObjectId } from 'mongodb';
 
 export default function generateAvailableItemsStages(
   orgId: string,
-  selectedDates?: string[]
+  selectedDates?: string[],
+  bookingId?: string
 ) {
+  console.log('generateAvailableItemsStages fn', { selectedDates });
   let stages: PipelineStage[] = [];
 
-  let userSelectedDates: string[] = [];
-  if (Array.isArray(selectedDates)) {
-    userSelectedDates = selectedDates;
-  }
+  const userSelectedDates: string[] = Array.isArray(selectedDates)
+    ? selectedDates
+    : [];
 
   return [
     {
@@ -23,7 +24,7 @@ export default function generateAvailableItemsStages(
     {
       $lookup: {
         from: 'bookings',
-        localField: 'vehicleId',
+        localField: 'id',
         foreignField: 'vehicle._id',
         pipeline: [
           {
@@ -33,6 +34,13 @@ export default function generateAvailableItemsStages(
               selectedDates: {
                 $in: [...userSelectedDates],
               },
+              ...(bookingId
+                ? {
+                    _id: {
+                      $ne: new ObjectId(bookingId),
+                    },
+                  }
+                : {}),
             },
           },
           {

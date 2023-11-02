@@ -50,6 +50,7 @@ export interface ISearchVehiclesPagination {
 }
 
 export interface ISearchVehiclesQueryOptions {
+  bookingId?: string;
   sortBy?: IUserSortBy;
   pagination?: IPaginationParams;
   selectedDates?: string[];

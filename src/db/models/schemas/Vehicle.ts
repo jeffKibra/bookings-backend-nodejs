@@ -26,7 +26,7 @@ export const VehicleSchemaForBookingForm = new Schema({
   ...VehicleSchemaSharedFields,
   _id: { type: String, required: true },
   registration: { type: String, required: true },
-  sku: { type: String, required: true },
+  // sku: { type: String, required: true },
 });
 
 const schema = new Schema({

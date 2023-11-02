@@ -88,6 +88,7 @@ const typeDefs = `#graphql
     
 
     input VehiclesQueryOptions {
+        bookingId:String
         sortBy:[String!]
         pagination:Pagination
         selectedDates:[String]

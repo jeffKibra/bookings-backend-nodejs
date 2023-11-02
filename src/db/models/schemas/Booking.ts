@@ -38,7 +38,7 @@ const schema = new Schema({
   selectedDates: { type: [String], required: true },
   bookingRate: { type: Number, required: true },
   bookingTotal: { type: Number, required: true },
-  transferAmount: { type: Number, required: true },
+  transferFee: { type: Number, required: true },
   subTotal: { type: Number, required: true },
   total: { type: Number, required: true },
   customerNotes: { type: Number, default: '' },

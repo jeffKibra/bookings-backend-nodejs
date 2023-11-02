@@ -22,7 +22,7 @@ const BookingSharedFields = `
     selectedDates:[String!]!
     bookingRate:Int!
     bookingTotal:Int!
-    transferAmount:Int!
+    transferFee:Int!
     subTotal:Int!
     total:Int!
     customerNotes:String
@@ -67,12 +67,12 @@ const typeDefs = `#graphql
     input BookingVehicleInput {
         _id:ID!
         ${VehicleInputFields}
-        sku:String!
+    
     }
 
     input BookingInput {
         customer:CustomerSummaryInput!
-        vehicle: BookingVehicleInput!
+        vehicle: BookingVehicleInput
         ${BookingSharedFields}
         downPayment:DownPaymentInput!
     }
@@ -81,6 +81,7 @@ const typeDefs = `#graphql
         customer:CustomerSummary!
         vehicle:Vehicle!
         ${BookingSharedFields}
+        balance:Int!
         downPayment:DownPayment!
         payments:BookingPayments!
         metaData: BookingMetaData!

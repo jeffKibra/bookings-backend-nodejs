@@ -33,7 +33,8 @@ export default async function getResult(
   );
   const availableVehiclesPipelineStages = generateAvailableVehiclesStages(
     orgId,
-    options?.selectedDates || []
+    options?.selectedDates || [],
+    options?.bookingId||''
   );
 
   console.log(
@@ -50,6 +51,7 @@ export default async function getResult(
   return VehicleModel.aggregate<{
     vehicles: IVehicle[];
     meta: IVehicleSearchAggregationMeta;
+    count: Record<string, unknown>;
   }>([
     ...searchPipelineStages,
     {
@@ -58,9 +60,9 @@ export default async function getResult(
         _id: sortByDirection,
       },
     },
-    {
-      $skip: offset,
-    },
+    // {
+    //   $skip: offset,
+    // },
     {
       $facet: {
         /**
@@ -70,8 +72,20 @@ export default async function getResult(
         vehicles: [
           ...availableVehiclesPipelineStages,
           {
+            $skip: offset,
+          },
+          {
             //limit items returned
             $limit: limit,
+          },
+        ],
+        count: [
+          ...availableVehiclesPipelineStages,
+          {
+            $group: {
+              _id: null,
+              count: { $sum: 1 },
+            },
           },
         ],
         makes: [
@@ -115,6 +129,7 @@ export default async function getResult(
       //change meta field from array to object
       $set: {
         meta: { $arrayElemAt: ['$meta', 0] },
+        count: { $arrayElemAt: ['$count', 0] },
       },
     },
 
@@ -123,7 +138,8 @@ export default async function getResult(
       $project: {
         vehicles: 1,
         meta: {
-          count: '$meta.count.lowerBound',
+          countForSearches: '$meta.count.lowerBound',
+          count: '$count.count',
           facets: {
             $mergeObjects: [
               {
