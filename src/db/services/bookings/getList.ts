@@ -8,6 +8,7 @@ export async function getList(orgId: string) {
 
   const bookings = await BookingModel.find({
     'metaData.orgId': orgId,
+    'metaData.status': 0,
   });
 
   console.log({ bookings });
