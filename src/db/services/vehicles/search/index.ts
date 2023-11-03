@@ -27,7 +27,7 @@ export default async function search(
 
   const filtersIsEmpty = Object.keys(options?.filters || {}).length === 0;
   const retrieveFacets = requestedPage === 0 && filtersIsEmpty;
-  console.log({ retrieveFacets, requestedPage, filtersIsEmpty });
+  // console.log({ retrieveFacets, requestedPage, filtersIsEmpty });
 
   // aggregation to fetch items not booked.
   const result = await getResult(orgId, query, options, retrieveFacets);

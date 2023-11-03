@@ -1,3 +1,4 @@
+import { PipelineStage } from 'mongoose';
 import { VehicleModel } from '../../../models';
 //
 import {
@@ -12,6 +13,25 @@ import {
   ISearchVehiclesQueryOptions,
 } from '../../../../types';
 //
+
+type FacetPipelineStage = PipelineStage.FacetPipelineStage;
+
+//----------------------------------------------------------------
+const unwindAvailableVehiclesStages: FacetPipelineStage[] = [
+  {
+    $project: {
+      availableVehicles: 1,
+    },
+  },
+  {
+    $unwind: '$availableVehicles',
+  },
+  {
+    $replaceWith: '$availableVehicles',
+  },
+];
+
+//----------------------------------------------------------------
 
 export default async function getResult(
   orgId: string,
@@ -34,7 +54,7 @@ export default async function getResult(
   const availableVehiclesPipelineStages = generateAvailableVehiclesStages(
     orgId,
     options?.selectedDates || [],
-    options?.bookingId||''
+    options?.bookingId || ''
   );
 
   console.log(
@@ -65,29 +85,7 @@ export default async function getResult(
     // },
     {
       $facet: {
-        /**
-         * if some methods in facetPipeline not possible,
-         * unwind vehicles and use later in the main pipeline
-         */
-        vehicles: [
-          ...availableVehiclesPipelineStages,
-          {
-            $skip: offset,
-          },
-          {
-            //limit items returned
-            $limit: limit,
-          },
-        ],
-        count: [
-          ...availableVehiclesPipelineStages,
-          {
-            $group: {
-              _id: null,
-              count: { $sum: 1 },
-            },
-          },
-        ],
+        availableVehicles: [...availableVehiclesPipelineStages],
         makes: [
           {
             $group: {
@@ -102,7 +100,6 @@ export default async function getResult(
             },
           },
         ],
-
         ratesRange: [
           {
             $group: {
@@ -126,20 +123,57 @@ export default async function getResult(
       },
     },
     {
+      $facet: {
+        vehicles: [
+          ...unwindAvailableVehiclesStages,
+          {
+            $skip: offset,
+          },
+          {
+            //limit items returned
+            $limit: limit,
+          },
+        ],
+        info: [
+          {
+            $project: {
+              count: {
+                $size: '$availableVehicles',
+              },
+              makes: 1,
+              ratesRange: 1,
+              meta: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      //restructure for all fields to be in root doc
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: [{ $arrayElemAt: ['$info', 0] }, '$$ROOT'],
+        },
+      },
+    },
+    {
+      $project: {
+        info: 0,
+      },
+    },
+    {
       //change meta field from array to object
       $set: {
         meta: { $arrayElemAt: ['$meta', 0] },
-        count: { $arrayElemAt: ['$count', 0] },
       },
     },
-
     {
       //format metadata
       $project: {
         vehicles: 1,
         meta: {
           countForSearches: '$meta.count.lowerBound',
-          count: '$count.count',
+          count: '$count',
           facets: {
             $mergeObjects: [
               {

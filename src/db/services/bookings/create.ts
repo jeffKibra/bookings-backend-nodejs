@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { startSession } from 'mongoose';
 //
-import { formatBookingFormData } from './utils';
+import { formatBookingFormData, Bookings } from './utils';
 //
 import { handleDBError } from '../utils';
 import { BookingModel } from '../../models';
@@ -42,6 +42,7 @@ export default async function createBooking(
   const balance = new BigNumber(total).minus(downPayment).dp(2).toNumber();
 
   const formattedFormData = formatBookingFormData(formData);
+
   const {
     vehicle: { _id: vehicleId },
   } = formData;
@@ -63,7 +64,10 @@ export default async function createBooking(
 
   const session = await startSession();
   session.startTransaction();
+
   try {
+    await Bookings.validateFormData(orgId, formattedFormData, session);
+
     //db operations
     // instance.mark
     const savedDoc = await instance.save({ session });

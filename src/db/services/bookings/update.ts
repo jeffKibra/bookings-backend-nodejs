@@ -23,28 +23,6 @@ export default async function updatedBooking(
     );
   }
 
-  //fetch current saved data
-
-  const { currentBooking, incomingBooking } = await Bookings.validateUpdate(
-    orgId,
-    bookingId,
-    formData
-  );
-  const {
-    selectedDates: incomingSelectedDates,
-    vehicle: { _id: incomingVehicleId },
-  } = incomingBooking;
-  const {
-    selectedDates: currentSelectedDates,
-    vehicle: { _id: currentVehicleId },
-  } = currentBooking;
-
-  const balanceAdjustment = Bookings.generateBalanceAdjustment(
-    incomingBooking,
-    currentBooking
-  );
-  console.log({ balanceAdjustment });
-
   const session = await startSession();
 
   session.startTransaction();
@@ -52,6 +30,27 @@ export default async function updatedBooking(
   let updatedBooking = null;
 
   try {
+    //fetch current saved data
+    const { currentBooking, incomingBooking } = await Bookings.validateUpdate(
+      orgId,
+      bookingId,
+      formData
+    );
+    const {
+      selectedDates: incomingSelectedDates,
+      vehicle: { _id: incomingVehicleId },
+    } = incomingBooking;
+    const {
+      selectedDates: currentSelectedDates,
+      vehicle: { _id: currentVehicleId },
+    } = currentBooking;
+
+    const balanceAdjustment = Bookings.generateBalanceAdjustment(
+      incomingBooking,
+      currentBooking
+    );
+    console.log({ balanceAdjustment });
+
     updatedBooking = await BookingModel.findOneAndUpdate(
       { _id: new ObjectId(bookingId) },
       {

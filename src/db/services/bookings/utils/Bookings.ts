@@ -5,6 +5,10 @@ import {
   DocumentSnapshot,
 } from 'firebase-admin/firestore';
 import BigNumber from 'bignumber.js';
+import { ObjectId } from 'mongodb';
+import { ClientSession } from 'mongoose';
+//
+import { BookingModel } from '../../../models';
 
 //
 import { getById } from '../getOne';
@@ -104,10 +108,84 @@ export default class Bookings {
   }
 
   //------------------------------------------------------------
+
+  static async findVehicleBookingWithAtleastOneOfTheSelectedDates(
+    orgId: string,
+    vehicleId: string,
+    selectedDates: string[],
+    session?: ClientSession
+  ) {
+    const booking = await BookingModel.findOne(
+      {
+        'vehicle._id': vehicleId,
+        'metaData.orgId': orgId,
+        'metaData.status': 0,
+        selectedDates: { $in: [...selectedDates] },
+      },
+      {},
+      { ...(session ? { session } : {}) }
+    );
+
+    console.log({ booking });
+
+    return booking;
+  }
+  //------------------------------------------------------------
+  static async validateFormData(
+    orgId: string,
+    formData: IBookingForm,
+    session?: ClientSession
+  ) {
+    const {
+      vehicle: { _id: vehicleId, registration },
+      selectedDates,
+    } = formData;
+
+    const booking =
+      await this.findVehicleBookingWithAtleastOneOfTheSelectedDates(
+        orgId,
+        vehicleId,
+        selectedDates,
+        session
+      );
+
+    if (booking) {
+      const error = new Error(
+        `Vehicle with registration ${registration} is already booked in some of the selected dates!`
+      );
+      error.name = 'unavailable';
+
+      throw error;
+    }
+  }
+
+  //------------------------------------------------------------
+  static async validateUpdateFormData(
+    orgId: string,
+    currentBooking: IBooking,
+    incomingBooking: IBookingForm,
+    session?: ClientSession
+  ) {
+    const { vehicle: currentVehicle } = currentBooking;
+    const { vehicle: incomingVehicle } = incomingBooking;
+
+    const vehicle = incomingVehicle || currentVehicle;
+
+    const formData = {
+      ...incomingBooking,
+      vehicle,
+    };
+
+    await this.validateFormData(orgId, formData, session);
+  }
+
+  //------------------------------------------------------------
+
   static async validateUpdate(
     orgId: string,
     bookingId: string,
-    formData: IBookingForm | null
+    formData: IBookingForm | null,
+    session?: ClientSession
   ) {
     if (!formData) {
       throw new Error('Invalid Booking Form Data Received!.');
@@ -122,16 +200,27 @@ export default class Bookings {
       );
     }
 
+    await this.validateUpdateFormData(
+      orgId,
+      currentBooking,
+      incomingBooking,
+      session
+    );
+
     const {
       total,
       customer: { _id: customerId },
       downPayment: { amount: downPayment },
+      selectedDates: incomingSelectedDates,
     } = incomingBooking;
     const {
       customer: { _id: currentCustomerId },
       payments,
+      vehicle: { _id: vehicleId },
     } = currentBooking;
     const paymentsReceived = payments?.amounts || {};
+    //
+
     /**
      * check to ensure the new total balance is not less than payments made.
      */
