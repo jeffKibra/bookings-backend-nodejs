@@ -15,6 +15,7 @@ router
   })
   .put((req, res) => {
     const data = req.body;
+    const { orgId } = data;
 
     console.log('updating org with id:' + orgId);
   });

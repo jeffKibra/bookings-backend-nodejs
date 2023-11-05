@@ -1,8 +1,8 @@
 import {
   Tax,
-  ItemFormData,
+  // ItemFormData,
   // PaymentTerm,
-} from ".";
+} from '.';
 
 export interface SaleTax extends Tax {
   totalTax: number;
@@ -16,9 +16,9 @@ export interface SaleSummary {
   // taxes: SaleTax[];
 }
 
-export interface SelectedItem extends ItemFormData {
-  itemId: string;
-}
+// export interface SelectedItem extends ItemFormData {
+//   itemId: string;
+// }
 
 // export interface GroupedItems {
 //   accountId: string;

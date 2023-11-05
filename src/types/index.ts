@@ -6,6 +6,7 @@ export * from './searchResults';
 export * from './vehicles';
 export * from './bookings';
 export * from './pagination';
+export * from './sale';
 //
 export type { OrgSummary, Org, OrgFormData, OrgFromDb } from './org';
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
@@ -35,14 +36,7 @@ export type {
   AccountFormData,
 } from './accounts';
 export type { Tax, TaxForm, TaxFromDb, TaxSummary } from './tax';
-export type {
-  // SaleItem,
-  SaleSummary,
-  SelectedItem,
-  SaleTax,
-  // GroupedItems,
-  SaleAccountSummary,
-} from './sale';
+
 export type { ExpenseItem } from './expenseItem';
 export type { PaymentMode } from './paymentMode';
 export type { PaymentTerm } from './paymentTerm';
@@ -54,11 +48,7 @@ export type {
   InvoicePayments,
   InvoiceFromDb,
 } from './invoice';
-export type {} from // Vendor,
-// VendorFromDb,
-// VendorFormData,
-// VendorSummary,
-'./vendor';
+
 export type {
   PaymentReceived,
   PaymentReceivedFromDb,

@@ -1,11 +1,11 @@
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from 'firebase-admin/firestore';
 import {
   Account,
-  DateDetails,
+  // DateDetails,
   AccountMapping,
   TransactionTypes,
   IContactSummary,
-} from ".";
+} from '.';
 
 export interface GroupedEntries {
   [key: string]: Entry[];
@@ -15,11 +15,12 @@ export interface MappedEntry extends Entry, AccountMapping {}
 
 export interface Entry {
   amount: number;
-  entryType: "credit" | "debit";
+  entryType: 'credit' | 'debit';
   account: Account;
   createdAt: Date | Timestamp;
   createdBy: string;
-  date: DateDetails;
+  // date: DateDetails;
+  date: Record<string, unknown>;
   modifiedAt: Date | Timestamp;
   modifiedBy: string;
   status: number;

@@ -7,7 +7,7 @@ import { handleError } from '../utils';
 
 export default async function decodeFirebaseAuthToken(token?: string) {
   try {
-    console.log('decoding auth token...', token);
+    // console.log('decoding auth token...', token);
 
     if (!token) {
       return null;

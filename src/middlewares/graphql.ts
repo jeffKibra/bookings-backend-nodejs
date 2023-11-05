@@ -13,7 +13,7 @@ export default function graphqlMiddleware(
 ) {
   //check authentication
   const context = req?.appContext;
-  console.log('graphqlMiddleware', { context });
+  // console.log('graphqlMiddleware', { context });
 
   const gqlMiddleware = graphqlHTTP({
     schema,
