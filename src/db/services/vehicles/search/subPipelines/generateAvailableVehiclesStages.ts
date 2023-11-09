@@ -1,5 +1,8 @@
 import { PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
+//
+// type FacetPipelineStage = PipelineStage.FacetPipelineStage;
+
 
 export default function generateAvailableItemsStages(
   orgId: string,

@@ -1,4 +1,5 @@
-import { IPaginationParams, IUserSortBy } from './pagination';
+import { IPaginationParams } from './pagination';
+import { ISearchQueryOptions } from './search';
 
 // export type IVehicleType = 'Ivehicle' | 'opening_balance';
 
@@ -49,10 +50,7 @@ export interface ISearchVehiclesPagination {
   limit: number;
 }
 
-export interface ISearchVehiclesQueryOptions {
+export interface ISearchVehiclesQueryOptions extends ISearchQueryOptions {
   bookingId?: string;
-  sortBy?: IUserSortBy;
-  pagination?: IPaginationParams;
   selectedDates?: string[];
-  filters?: Record<string, (string | number | Date)[]>;
 }

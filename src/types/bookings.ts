@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase-admin/firestore';
 //
-import { IContactSummary, IVehicle, PaymentMode } from '.';
+import { IContactSummary, IVehicle, PaymentMode, ISearchQueryOptions } from '.';
 
 export type IBookingDateRange = [string, string];
 
@@ -95,3 +95,5 @@ export interface IMonthlyBookingUpdateData {
   datesToDelete: string[];
   unchangedDates: string[];
 }
+
+export interface ISearchBookingsQueryOptions extends ISearchQueryOptions {}

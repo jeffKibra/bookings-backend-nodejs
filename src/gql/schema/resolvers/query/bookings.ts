@@ -1,6 +1,6 @@
 import { services } from '../../../../db';
 //
-import { IGQLContext } from '../../../../types';
+import { IGQLContext, ISearchBookingsQueryOptions } from '../../../../types';
 
 const queryResolvers = {
   booking: async (
@@ -29,6 +29,22 @@ const queryResolvers = {
     // console.log('bookings: ', bookings);
 
     return bookings;
+  },
+  searchBookings(
+    parent: unknown,
+    args: {
+      query: string | number;
+      queryOptions?: ISearchBookingsQueryOptions;
+    },
+    context: Required<IGQLContext>
+  ) {
+    const orgId = context.orgId;
+    //
+    const query = args?.query || '';
+    const options = args?.queryOptions;
+    console.log('search vehicles options', options);
+
+    return services.bookings.search(orgId, query, options);
   },
 
   async findBookingWithAtleastOneOfTheSelectedDates(

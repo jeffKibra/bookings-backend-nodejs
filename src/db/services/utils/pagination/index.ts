@@ -1,30 +1,21 @@
 import { ObjectId } from 'mongodb';
 //
-import { IPaginationCursor, IPaginationParams } from '../../../../../types';
+import { IPaginationCursor, IPaginationParams } from '../../../../types';
 
-export * as filters from './filters';
-export { default as generateSortBy } from './generateSortBy';
+export function generatePaginationOptions(pagination?: IPaginationParams) {
+  const limit = generateLimit(pagination);
 
-export function formatCursor(cursor?: IPaginationCursor) {
-  if (!cursor) {
-    return null;
-  }
+  // const cursors = generatePaginationCursors(pagination);
 
-  const { isNumber, ...more } = cursor;
-  let value = more.value;
+  return { limit };
+}
 
-  if (isNumber) {
-    //convert value to number... all values are string by default
-    const tempValue = Number(value);
-    if (!isNaN(tempValue)) {
-      value = tempValue;
-    }
-  }
+export function generateLimit(pagination?: IPaginationParams) {
+  const rawLimit = pagination?.limit;
 
-  return {
-    ...more,
-    value,
-  };
+  const limit = typeof rawLimit === 'number' && rawLimit > 0 ? rawLimit : 10;
+
+  return limit;
 }
 
 // function generateFirstSortField(sortOptions?: ISortOptions) {
@@ -38,6 +29,28 @@ export function formatCursor(cursor?: IPaginationCursor) {
 //   console.log({ firstSortField });
 
 //   return firstSortField;
+// }
+
+// export function formatCursor(cursor?: IPaginationCursor) {
+//   if (!cursor) {
+//     return null;
+//   }
+
+//   const { isNumber, ...more } = cursor;
+//   let value = more.value;
+
+//   if (isNumber) {
+//     //convert value to number... all values are string by default
+//     const tempValue = Number(value);
+//     if (!isNaN(tempValue)) {
+//       value = tempValue;
+//     }
+//   }
+
+//   return {
+//     ...more,
+//     value,
+//   };
 // }
 
 // export function generatePaginationCursors(pagination?: IPaginationParams) {

@@ -1,11 +1,18 @@
 export * from './gql';
 export * from './auth';
 export * from './monthlyBookings';
+
 export * from './queries';
 export * from './searchResults';
+export * from './searchVehiclesResults';
+export * from './searchBookingsResults';
+export * from './search';
+export * from './sortBy';
+
 export * from './vehicles';
 export * from './bookings';
 export * from './pagination';
+
 export * from './sale';
 //
 export type { OrgSummary, Org, OrgFormData, OrgFromDb } from './org';

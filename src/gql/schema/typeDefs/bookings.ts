@@ -1,4 +1,4 @@
-import { MetaDataSharedFields } from './templates';
+import { MetaDataSharedFields, SearchMetaCommonFields } from './templates';
 
 //
 import { VehicleInputFields } from './vehicles';
@@ -86,11 +86,31 @@ const typeDefs = `#graphql
         payments:BookingPayments!
         metaData: BookingMetaData!
         _id:ID!
+        id:String
+        searchScore:Float
     }
-   
+
+    type SearchBookingMetaData {
+        ${SearchMetaCommonFields}
+        facets:VehicleFacets
+    }
+
+    input BookingsQueryOptions {
+        customerId:String
+        sortBy:[String!]
+        pagination:Pagination
+        filters:VehicleFilters
+    }
+
+    type BookingsSearchResult {
+        bookings: [Booking]!
+        meta:SearchBookingMetaData
+    }
+
     extend type Query {
         bookings: [Booking]
         booking(id:ID): Booking
+        searchBookings(query:ID, queryOptions:BookingsQueryOptions):BookingsSearchResult
         findBookingWithAtleastOneOfTheSelectedDates(vehicleId:String!, dates:[String!]!): Booking
     }
    

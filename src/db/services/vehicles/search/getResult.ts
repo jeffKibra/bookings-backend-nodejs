@@ -5,7 +5,9 @@ import {
   generateSearchStages,
   generateAvailableVehiclesStages,
 } from './subPipelines';
-import { generateLimit, generateSortBy } from './utils';
+//
+import { sort, pagination } from '../../utils';
+
 //
 import {
   IVehicle,
@@ -30,6 +32,10 @@ const unwindAvailableVehiclesStages: FacetPipelineStage[] = [
     $replaceWith: '$availableVehicles',
   },
 ];
+
+//
+const { generateLimit } = pagination;
+const { generateSortBy } = sort;
 
 //----------------------------------------------------------------
 

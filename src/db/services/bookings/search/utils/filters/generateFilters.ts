@@ -1,6 +1,7 @@
-import generateRangeFilter from './generateRangeFilter';
-import generateQueryStringFilter from './generateQueryStringFilter';
+import { filters } from '../../../../utils';
 //
+
+const { generateQueryStringFilter, generateRangeFilter } = filters;
 
 const filterFields = ['make', 'model', 'type', 'color', 'rate'];
 
