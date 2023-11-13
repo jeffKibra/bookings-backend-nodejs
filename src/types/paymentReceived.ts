@@ -1,4 +1,4 @@
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from 'firebase-admin/firestore';
 import {
   IContactSummary,
   Account,
@@ -6,7 +6,7 @@ import {
   TransactionTypes,
   Invoice,
   IBooking,
-} from ".";
+} from '.';
 
 interface Meta {
   createdAt: Date | Timestamp;
@@ -15,7 +15,7 @@ interface Meta {
   modifiedBy: string;
   status: number;
   orgId: string;
-  transactionType: keyof Pick<TransactionTypes, "customer_payment">;
+  transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
   paidInvoicesIds: string[];
   excess: number;
 }

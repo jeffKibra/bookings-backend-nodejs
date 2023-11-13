@@ -2,9 +2,9 @@ import { Schema } from 'mongoose';
 
 export const metaDataSchema = new Schema({
   createdBy: { type: String },
-  createdAt: { type: Number, default: Date.now() },
+  createdAt: { type: Date, default: new Date() },
   modifiedBy: { type: String },
-  modifiedAt: { type: Number, default: Date.now() },
+  modifiedAt: { type: Date, default: new Date() },
   orgId: { type: String, required: true },
   status: { type: Number, default: 0 },
 });

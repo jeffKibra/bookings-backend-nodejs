@@ -14,20 +14,18 @@ export * from './bookings';
 export * from './pagination';
 
 export * from './sale';
+export * from './invoice';
+export * from './contacts';
 //
 export type { OrgSummary, Org, OrgFormData, OrgFromDb } from './org';
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
-export type {} from // Customer,
+// export type {} from
+// Customer,
 // CustomerSummary,
 // CustomerFromDb,
 // CustomerFormData,
-'./customer';
-export type {
-  IContactSummary,
-  IContact,
-  IContactForm,
-  IContactFromDb,
-} from './contacts';
+// './customer';
+
 export type {
   Entry,
   GroupedEntries,
@@ -47,14 +45,6 @@ export type { Tax, TaxForm, TaxFromDb, TaxSummary } from './tax';
 export type { ExpenseItem } from './expenseItem';
 export type { PaymentMode } from './paymentMode';
 export type { PaymentTerm } from './paymentTerm';
-
-export type {
-  Invoice,
-  InvoiceSummary,
-  InvoiceFormData,
-  InvoicePayments,
-  InvoiceFromDb,
-} from './invoice';
 
 export type {
   PaymentReceived,

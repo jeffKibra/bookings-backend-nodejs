@@ -53,7 +53,4 @@ export interface IContact extends IContactFromDb {
 
 //eslint-disable-next-line
 export interface IContactSummary
-  extends Pick<
-    IContact,
-    'companyName' | 'displayName' | 'email' | 'contactType' | 'type' | '_id'
-  > {}
+  extends Pick<IContact, 'displayName' | '_id'> {}

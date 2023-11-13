@@ -1,5 +1,12 @@
-import { IBookingForm, InvoiceTransactionTypes, PaymentTerm } from ".";
-import { Timestamp } from "firebase-admin/firestore";
+import {
+  IBookingForm,
+  InvoiceTransactionTypes,
+  PaymentTerm,
+  IContactSummary,
+  IBookingItem,
+  ISaleItem,
+} from '.';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // export interface InvoicePayment {
 //   account: Account;
@@ -20,41 +27,56 @@ export interface InvoicePayments {
   [key: string]: number;
 }
 
-interface Meta {
+interface IMeta {
   transactionType: keyof InvoiceTransactionTypes;
-  balance: number;
+  // balance: number;
   isSent: boolean;
-  isOverdue: boolean;
-  overdueAt?: Timestamp;
-  paymentsCount: number;
-  paymentsIds: string[];
-  paymentsReceived: InvoicePayments;
+  // isOverdue: boolean;
+  // overdueAt?: Timestamp;
+  // paymentsCount: number;
+  // paymentsIds: string[];
+  // paymentsReceived: InvoicePayments;
   status: number;
   orgId: string;
-  createdAt: Date | Timestamp;
+  createdAt: Date | String;
   createdBy: string;
-  modifiedAt: Date | Timestamp;
+  modifiedAt: Date | String;
   modifiedBy: string;
 }
 
-export interface InvoiceFormData extends IBookingForm {
-  dueDate: Date;
+export interface IInvoiceForm {
+  customer: IContactSummary;
+  customerNotes: string;
+  items: ISaleItem[];
+  invoiceDate: Date | string;
+  dueDate: Date | string;
+  //
   paymentTerm: PaymentTerm;
+  //
+  taxType?: 'inclusive' | 'exclusive';
+  discount?: number;
+  taxes?: string[];
+  totalTax?: number;
+  subTotal: number;
+  total: number;
+  // downPayment: IBookingDownPayment;
 }
 
-export interface InvoiceFromDb extends InvoiceFormData, Meta {}
+export interface IInvoiceFromDb extends IInvoiceForm {
+  metaData: IMeta;
+}
 
-interface InvoiceId {
+interface IInvoiceId {
   id: string;
 }
-export interface Invoice extends InvoiceFromDb, InvoiceId {}
+export interface IInvoice extends IInvoiceFromDb, IInvoiceId {}
 
-export interface InvoiceSummary extends InvoiceId {
-  balance: Invoice["balance"];
-  dueDate: Invoice["dueDate"];
-  saleDate: Invoice["saleDate"];
-  status: Invoice["status"];
-  transactionType: Invoice["transactionType"];
-  bookingTotal: Invoice["bookingTotal"];
-  total: Invoice["total"];
+export interface IInvoiceSummary extends IInvoiceId {
+  // balance: IInvoice['balance'];
+  dueDate: IInvoice['dueDate'];
+  // saleDate: IInvoice['saleDate'];
+  // status: IInvoice['status'];
+  // transactionType: IInvoice['transactionType'];
+  // bookingTotal: IInvoice['bookingTotal'];
+  total: IInvoice['total'];
 }

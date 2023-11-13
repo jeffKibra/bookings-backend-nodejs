@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { startSession } from 'mongoose';
+import { ObjectId } from 'mongodb';
 //
 import { formatBookingFormData, Bookings } from './utils';
 //
@@ -47,8 +48,13 @@ export default async function createBooking(
     vehicle: { _id: vehicleId },
   } = formData;
 
+  const bookingObjectId = new ObjectId();
+  const bookingId = bookingObjectId.toString();
+  console.log({ bookingId });
+
   const instance = new BookingModel({
     ...formattedFormData,
+    _id: bookingObjectId,
     balance,
     metaData: {
       orgId,
