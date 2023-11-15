@@ -5,6 +5,8 @@ import {
   IContactSummary,
   IBookingItem,
   ISaleItem,
+  ISaleForm,
+  ISaleMeta,
 } from '.';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -27,7 +29,7 @@ export interface InvoicePayments {
   [key: string]: number;
 }
 
-interface IMeta {
+interface IMeta extends ISaleMeta {
   transactionType: keyof InvoiceTransactionTypes;
   // balance: number;
   isSent: boolean;
@@ -36,29 +38,15 @@ interface IMeta {
   // paymentsCount: number;
   // paymentsIds: string[];
   // paymentsReceived: InvoicePayments;
-  status: number;
-  orgId: string;
-  createdAt: Date | String;
-  createdBy: string;
-  modifiedAt: Date | String;
-  modifiedBy: string;
 }
 
-export interface IInvoiceForm {
+export interface IInvoiceForm extends ISaleForm {
   customer: IContactSummary;
   customerNotes: string;
-  items: ISaleItem[];
-  invoiceDate: Date | string;
   dueDate: Date | string;
-  //
+
   paymentTerm: PaymentTerm;
   //
-  taxType?: 'inclusive' | 'exclusive';
-  discount?: number;
-  taxes?: string[];
-  totalTax?: number;
-  subTotal: number;
-  total: number;
   // downPayment: IBookingDownPayment;
 }
 

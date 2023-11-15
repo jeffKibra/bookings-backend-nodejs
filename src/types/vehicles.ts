@@ -6,10 +6,14 @@ import { ISearchQueryOptions } from './search';
 export interface IVehicleFormData {
   registration: string;
   rate: number;
-  sku: string;
+  // sku: string;
   make: string;
-  model: string;
-  type: string;
+  color: string;
+  model: {
+    model: string;
+    make: string;
+    type: string;
+  };
   year: number;
   description: string;
   // salesAccount: Account;

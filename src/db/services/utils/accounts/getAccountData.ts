@@ -1,4 +1,7 @@
-import { Account } from "../../types/accounts";
+//
+import { AccountModel } from '../../../models';
+//
+import { IAccountSummary, IAccountType } from '../../../../types';
 
 // export default function getAccountData(accountId: string,
 //  accounts: Record<string, Account>) {
@@ -14,21 +17,39 @@ import { Account } from "../../types/accounts";
 //   };
 // }
 
-export default function getAccountData(
-  accountId: string,
-  accounts: Record<string, Account>
-) {
-  const account = accounts[accountId];
+export default async function getAccountData(accountId: string) {
+  const rawAccount = await AccountModel.findById(accountId).exec();
 
-  if (!account) {
+  if (!rawAccount) {
     throw new Error(`Account data with id ${accountId} not found!`);
   }
 
-  const { accountType, name } = account;
+  const { accountType, name } = rawAccount;
 
-  return {
+  const account: IAccountSummary = {
     name,
     accountId,
-    accountType,
+    accountType: accountType as IAccountType,
   };
+
+  return account;
 }
+
+// export default function getAccountData(
+//   accountId: string,
+//   accounts: Record<string, Account>
+// ) {
+//   const account = accounts[accountId];
+
+//   if (!account) {
+//     throw new Error(`Account data with id ${accountId} not found!`);
+//   }
+
+//   const { accountType, name } = account;
+
+//   return {
+//     name,
+//     accountId,
+//     accountType,
+//   };
+// }

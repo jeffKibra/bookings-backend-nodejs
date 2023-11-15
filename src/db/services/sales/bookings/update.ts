@@ -1,76 +1,80 @@
-import * as functions from "firebase-functions";
-import { getFirestore } from "firebase-admin/firestore";
+import { ObjectId } from 'mongodb';
+import { startSession } from 'mongoose';
 //
-import regionalFunctions from "../../regionalFunctions";
+import { Bookings, updateBookingDates } from './utils';
+import { Invoice } from '../invoices/utils';
+//
+import { BookingModel } from '../../../models';
+//
+import { IBookingForm } from '../../../../types';
+//
+import { getById } from './getOne';
+import { handleDBError } from '../../utils';
 
-import { isAuthenticated } from "../../utils/auth";
-import { getAllAccounts } from "../../utils/accounts";
-
-import { Bookings } from "./utils";
-
-import { IBookingForm } from "../../types";
-
-//------------------------------------------------------------
-const db = getFirestore();
-
-const update = regionalFunctions.https.onCall(
-  async (
-    payload: {
-      orgId: string;
-      bookingId: string;
-      formData: IBookingForm;
-    },
-    context
-  ) => {
-    const auth = isAuthenticated(context);
-    const orgId = payload?.orgId;
-    const bookingId = payload?.bookingId;
-    let formData = payload?.formData;
-
-    if (
-      typeof orgId !== "string" ||
-      typeof bookingId !== "string" ||
-      !formData ||
-      typeof formData !== "object"
-    ) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Please provide an orgId, a bookingId and booking form data to continue"
-      );
-    }
-
-    //todo: add data validation
-
-    try {
-      formData = Bookings.reformatDates(formData);
-      const itemId = formData?.item?.itemId;
-
-      const userId = auth.uid;
-
-      const accounts = await getAllAccounts(orgId);
-
-      await db.runTransaction(async (transaction) => {
-        const receiptInstance = new Bookings(transaction, {
-          accounts,
-          orgId,
-          itemId,
-          userId,
-          bookingId,
-        });
-
-        const currentReceipt = await receiptInstance.getCurrentBooking();
-
-        await receiptInstance.update(formData, currentReceipt);
-      });
-    } catch (err) {
-      const error = err as Error;
-      console.log(error);
-      throw new functions.https.HttpsError(
-        "internal",
-        error.message || "unknown error"
-      );
-    }
+export default async function updatedBooking(
+  userUID: string,
+  orgId: string,
+  bookingId: string,
+  formData: IBookingForm
+) {
+  if (!userUID || !orgId || !bookingId || !formData) {
+    throw new Error(
+      'Missing Params: Either userUID or orgId or bookingId or formData is missing!'
+    );
   }
-);
 
-export default update;
+  const session = await startSession();
+
+  session.startTransaction();
+
+  let updatedBooking = null;
+
+  try {
+    // const { currentBooking, incomingBooking } = await Bookings.validateUpdate(
+    //   orgId,
+    //   bookingId,
+    //   formData
+    // );
+
+    const invoiceForm = Bookings.createInvoiceFormFromBooking(formData);
+
+    const invoiceInstance = new Invoice(session, {
+      invoiceId: bookingId,
+      orgId,
+      userId: userUID,
+      saleType: 'car_booking',
+    });
+
+    const updatedInvoice = await invoiceInstance.update(invoiceForm);
+    //fetch current saved data
+
+    // const {
+    //   selectedDates: incomingSelectedDates,
+    //   vehicle: { _id: incomingVehicleId },
+    // } = incomingBooking;
+    // const {
+    //   selectedDates: currentSelectedDates,
+    //   vehicle: { _id: currentVehicleId },
+    // } = currentBooking;
+
+    // const balanceAdjustment = Bookings.generateBalanceAdjustment(
+    //   incomingBooking,
+    //   currentBooking
+    // );
+    // console.log({ balanceAdjustment });
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+
+    handleDBError(error, 'Error Updating Booking');
+  } finally {
+    await session.endSession();
+  }
+
+  //confirm registration is unique
+
+  // console.log('updated vehicle', updatedBooking);
+
+  return updatedBooking;
+}

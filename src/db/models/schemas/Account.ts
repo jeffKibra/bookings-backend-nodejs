@@ -1,4 +1,6 @@
 import { Schema } from 'mongoose';
+//
+import { metaDataSchema } from './Generals';
 
 export const AccountTypeSchema = {
   name: { type: String, required: true },
@@ -12,11 +14,16 @@ export const AccountSummarySchema = {
   accountType: { type: AccountTypeSchema, required: true },
 };
 
-export const metaDataSchema = new Schema({
-  createdBy: { type: String },
-  createdAt: { type: Date, default: new Date() },
-  modifiedBy: { type: String },
-  modifiedAt: { type: Date, default: new Date() },
-  orgId: { type: String, required: true },
-  status: { type: Number, default: 0 },
+export const AccountMetaDataSchema = metaDataSchema.discriminator(
+  'AccountMetaData',
+  new Schema({}, { discriminatorKey: 'type' })
+);
+
+const schema = new Schema({
+  ...AccountSummarySchema,
+  description: String,
+  tags: { type: [String], required: true },
+  metaData: { type: AccountMetaDataSchema, required: true },
 });
+
+export default schema;

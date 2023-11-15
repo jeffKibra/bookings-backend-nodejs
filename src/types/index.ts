@@ -16,6 +16,7 @@ export * from './pagination';
 export * from './sale';
 export * from './invoice';
 export * from './contacts';
+export * from './accounts';
 //
 export type { OrgSummary, Org, OrgFormData, OrgFromDb } from './org';
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
@@ -32,14 +33,6 @@ export type {
   MappedEntry,
   InvoicePaymentEntry,
 } from './entries';
-export type {
-  Account,
-  AccountMapping,
-  AccountsMapping,
-  AccountType,
-  AccountFromDb,
-  AccountFormData,
-} from './accounts';
 export type { Tax, TaxForm, TaxFromDb, TaxSummary } from './tax';
 
 export type { ExpenseItem } from './expenseItem';

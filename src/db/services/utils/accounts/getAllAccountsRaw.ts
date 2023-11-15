@@ -1,26 +1,30 @@
-import { getFirestore } from "firebase-admin/firestore";
+import { AccountModel } from '../../../models';
 
-import { AccountFromDb } from "../../types";
+import { IAccount, IAccountType } from '../../../../types';
 
 //----------------------------------------------------------------
-const db = getFirestore();
 
 export default async function getAllAccountsRaw(orgId: string) {
-  const accountsDoc = await db
-    .doc(`organizations/${orgId}/orgDetails/accounts`)
-    .get();
+  const rawAccounts = await AccountModel.find({
+    $or: [{ 'metaData.orgId': orgId }, { 'metaData.orgId': 'all' }],
+  }).exec();
 
-  if (!accountsDoc.exists) {
-    throw new Error(
-      "Something went wrong with accounts! If the error persists, contact support for help!"
-    );
-  }
+  const accounts: IAccount[] = [];
 
-  const accountsData = accountsDoc.data() as {
-    [key: string]: AccountFromDb;
-  };
+  rawAccounts.forEach(account => {
+    const { accountType, name, description, tags, _id, metaData } = account;
 
-  console.log("accounts from db", accountsData);
+    accounts.push({
+      _id: _id.toString(),
+      name,
+      accountType: accountType as IAccountType,
+      description,
+      tags,
+      metaData: metaData,
+    });
+  });
 
-  return accountsData;
+  console.log('accounts', accounts);
+
+  return accounts;
 }

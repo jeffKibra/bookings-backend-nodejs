@@ -1,68 +1,83 @@
-import * as functions from "firebase-functions";
-import { getFirestore } from "firebase-admin/firestore";
+import BigNumber from 'bignumber.js';
+import { startSession } from 'mongoose';
+import { ObjectId } from 'mongodb';
 //
-import regionalFunctions from "../../regionalFunctions";
+import { formatBookingFormData, Bookings } from './utils';
+import { Invoice } from '../invoices/utils';
+//
+import { handleDBError } from '../../utils';
+import { BookingModel } from '../../../models';
+//
+//
+import { IBookingForm } from '../../../../types';
 
-import { isAuthenticated } from "../../utils/auth";
-import { getAllAccounts } from "../../utils/accounts";
+//
 
-import { Bookings } from "./utils";
-
-import { IBookingForm } from "../../types";
-
-//------------------------------------------------------------
-const db = getFirestore();
-
-const create = regionalFunctions.https.onCall(
-  async (payload: { orgId: string; formData: IBookingForm }, context) => {
-    // console.log("creating sales booking", payload);
-    const auth = isAuthenticated(context);
-    const orgId = payload?.orgId;
-    let formData = payload?.formData;
-
-    if (
-      typeof orgId !== "string" ||
-      !formData ||
-      typeof formData !== "object"
-    ) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Please provide an orgId and booking form data to continue"
-      );
-    }
-
-    //todo: add data validation
-
-    try {
-      formData = Bookings.reformatDates(formData);
-      const itemId = formData?.item?.itemId;
-      const userId = auth.uid;
-
-      const accounts = await getAllAccounts(orgId);
-
-      const bookingId = await Bookings.createBookingId(orgId);
-      // console.log({ bookingId });
-
-      await db.runTransaction(async (transaction) => {
-        const bookingInstance = new Bookings(transaction, {
-          accounts,
-          orgId,
-          itemId,
-          userId,
-          bookingId: bookingId,
-        });
-
-        await bookingInstance.create(formData);
-      });
-    } catch (err) {
-      const error = err as Error;
-      console.log(error);
-      throw new functions.https.HttpsError(
-        "internal",
-        error.message || "unknown error"
-      );
-    }
+export default async function createBooking(
+  userUID: string,
+  orgId: string,
+  formData: IBookingForm
+) {
+  if (!userUID || !orgId || !formData) {
+    throw new Error(
+      'Missing Params: Either userUID or orgId or formData is missing!'
+    );
   }
-);
 
-export default create;
+  const {
+    downPayment: { amount: downPayment },
+    total,
+  } = formData;
+
+  if (downPayment > total) {
+    throw new Error(
+      `Failed to create Booking! Imprest given: ${Number(
+        downPayment
+      ).toLocaleString()} is more than the booking total amount: ${Number(
+        total
+      ).toLocaleString()}.`
+    );
+  }
+
+  const balance = new BigNumber(total).minus(downPayment).dp(2).toNumber();
+
+  const formattedFormData = formatBookingFormData(formData);
+
+  const {
+    vehicle: { _id: vehicleId },
+  } = formData;
+
+  const bookingObjectId = new ObjectId();
+  const bookingId = bookingObjectId.toString();
+  console.log({ bookingId });
+
+  const session = await startSession();
+  session.startTransaction();
+
+  const invoiceId = new ObjectId().toString();
+
+  try {
+    await Bookings.validateFormData(orgId, formattedFormData, session);
+
+    const invoiceForm = Bookings.createInvoiceFormFromBooking(formData);
+
+    const invoiceInstance = new Invoice(session, {
+      invoiceId,
+      orgId,
+      userId: userUID,
+      saleType: 'car_booking',
+    });
+
+    const result = await invoiceInstance.create(invoiceForm);
+
+    console.log('result', result);
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    //handle errors
+    handleDBError(error, 'Error Saving Booking');
+  } finally {
+    await session.endSession();
+  }
+}

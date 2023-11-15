@@ -1,12 +1,12 @@
-import { AccountMapping } from "../../types/accounts";
+import { IAccountMapping } from '../../../../types/accounts';
 
-function getAccountsMapping(accounts: AccountMapping[]) {
-  let newAccounts: AccountMapping[] = [];
-  let updatedAccounts: AccountMapping[] = [];
-  let deletedAccounts: AccountMapping[] = [];
-  let similarAccounts: AccountMapping[] = [];
+function getAccountsMapping(accounts: IAccountMapping[]) {
+  let newAccounts: IAccountMapping[] = [];
+  let updatedAccounts: IAccountMapping[] = [];
+  let deletedAccounts: IAccountMapping[] = [];
+  let similarAccounts: IAccountMapping[] = [];
 
-  accounts.forEach((account) => {
+  accounts.forEach(account => {
     const { current, incoming } = account;
 
     if (current === incoming) {
@@ -21,7 +21,7 @@ function getAccountsMapping(accounts: AccountMapping[]) {
       }
     }
   });
-  similarAccounts = similarAccounts.filter((account) => account.incoming !== 0);
+  similarAccounts = similarAccounts.filter(account => account.incoming !== 0);
 
   return {
     newAccounts,

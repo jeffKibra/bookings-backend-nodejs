@@ -1,75 +1,52 @@
-import {
-  FieldValue,
-  DocumentReference,
-  Transaction,
-} from "firebase-admin/firestore";
+import { ClientSession } from 'mongodb';
+
 // import BigNumber from "bignumber.js";
 
-import { dbCollections } from "../../../utils/firebase";
 //Sale class
-import { SaleDataAndAccount } from "../../utils/sale";
-import {
-  OrgSummary,
-  ContactSummary,
-  SummaryData,
-} from "../../../utils/summaries";
-import { getAccountData } from "../../../utils/accounts";
+import { SaleDataAndAccount } from '../../utils/sale';
+import { getAccountData } from '../../../utils/accounts';
 
-import InvoiceSale, { InvoiceDetails } from "./invoiceSale";
+import InvoiceSale, { InvoiceDetails } from './invoiceSale';
 
 import {
-  Account,
-  InvoiceFormData,
-  InvoiceFromDb,
-  Invoice as InvoiceData,
-} from "../../../types";
+  IAccount,
+  IAccountSummary,
+  IInvoiceForm,
+  IInvoice as InvoiceData,
+} from '../../../../../types';
 
 //----------------------------------------------------------------
 
 //----------------------------------------------------------------
-const { increment, serverTimestamp } = FieldValue;
 
 export default class Invoice extends InvoiceSale {
-  invoiceRef: DocumentReference<InvoiceFromDb>;
-  // incomingInvoice: InvoiceFormData | null;
+  // incomingInvoice: IInvoiceForm | null;
   // currentInvoice: Invoice | null;
-  ARAccount: Account;
 
   errors: {
     [key: string]: string;
-  } = { incoming: "Please provide incoming invoice data" };
+  } = { incoming: 'Please provide incoming invoice data' };
 
   constructor(
-    transaction: Transaction,
-    invoiceDetails: Omit<InvoiceDetails, "transactionType">
+    session: ClientSession,
+    invoiceDetails: Omit<InvoiceDetails, 'transactionType'>
   ) {
     // console.log({ invoiceDetails });
-    const { accounts, invoiceId, orgId, userId } = invoiceDetails;
+    const { invoiceId, orgId, userId, saleType } = invoiceDetails;
 
-    super(transaction, {
-      accounts,
+    super(session, {
       orgId,
       invoiceId,
-      transactionType: "invoice",
+      transactionType: 'invoice',
       userId,
+      saleType,
     });
-
-    const ARAccount = getAccountData("accounts_receivable", accounts);
-    this.ARAccount = ARAccount;
-
-    const invoicesCollection = dbCollections(orgId).invoices;
-    this.invoiceRef = invoicesCollection.doc(invoiceId);
   }
 
-  async create(incomingInvoice: InvoiceFormData) {
-    const { accounts, orgId, transaction, ARAccount } = this;
+  async create(incomingInvoice: IInvoiceForm) {
+    await this.getARAccount();
 
-    const {
-      customer: { id: customerId },
-      total,
-    } = incomingInvoice;
-
-    const { creditAccountsMapping, debitAccountsMapping, accountsSummary } =
+    const { creditAccountsMapping, debitAccountsMapping } =
       this.initCreateSale(incomingInvoice);
 
     //create invoice
@@ -78,32 +55,16 @@ export default class Invoice extends InvoiceSale {
       creditAccountsMapping,
       debitAccountsMapping
     );
-
-    //initialize summaries
-    const summary = new SummaryData(accounts);
-    summary.appendObject(accountsSummary);
-    summary.debitAccount(ARAccount.accountId, total);
-    summary.append("invoices", 1);
-
-    //update summaries on given collections
-    const orgSummary = new OrgSummary(transaction, orgId, accounts);
-    orgSummary.data = summary.data;
-    orgSummary.update();
-
-    const customerSummary = new ContactSummary(
-      transaction,
-      orgId,
-      customerId,
-      accounts
-    );
-    customerSummary.data = summary.data;
-    customerSummary.update();
   }
 
-  async update(incomingInvoice: InvoiceFormData, currentInvoice: InvoiceData) {
-    const { transaction, orgId, accounts, ARAccount } = this;
+  async update(incomingInvoice: IInvoiceForm) {
+    const ARAccount = await this.getARAccount();
+    const { invoiceId } = this;
 
-    InvoiceSale.validateUpdate(incomingInvoice, currentInvoice);
+    const { currentInvoice } = await InvoiceSale.validateUpdate(
+      invoiceId,
+      incomingInvoice
+    );
     /**
      * initialize sale update-happens after fetching current invoice
      */
@@ -116,23 +77,15 @@ export default class Invoice extends InvoiceSale {
       debitAccount: ARAccount,
     };
 
-    const { accountsSummary, creditAccountsMapping, debitAccountsMapping } =
-      this.generateAccountsMappingAndSummary(incomingInvoice, currentInvoice);
+    const { creditAccountsMapping, debitAccountsMapping } =
+      this.generateAccountsMapping(incomingInvoice, currentInvoice);
 
     // console.log({ accountsSummary, accountsMapping });
 
-    const {
-      customer: { id: customerId },
-      // total: incomingTotal,
-    } = incomingInvoice;
-
-    const {
-      customer: { id: currentCustomerId },
-      total: currentTotal,
-    } = currentInvoice;
+    const { total: currentTotal } = currentInvoice;
 
     //update invoice
-    await this.updateInvoice(
+    const updatedInvoice = await this.updateInvoice(
       incomingInvoice,
       currentInvoice,
       creditAccountsMapping,
@@ -144,56 +97,14 @@ export default class Invoice extends InvoiceSale {
     //   .dp(2)
     //   .toNumber();
 
-    const orgSummary = new OrgSummary(transaction, orgId, accounts);
-    //initialize summary
-    orgSummary.appendObject(accountsSummary);
-    // orgSummary.debitAccount(ARAccount.accountId, adjustment);
-
-    /**
-     * check if customer has been changed
-     */
-    const customerHasChanged = currentCustomerId !== customerId;
-    // console.log({ customerHasChanged });
-
-    if (customerHasChanged) {
-      this.changeCustomers(
-        {
-          ...incomingInvoiceAndAccount,
-          extraSummaryData: { invoices: increment(1) },
-        },
-        {
-          ...currentInvoiceAndAccount,
-          extraSummaryData: { invoices: increment(-1) },
-        }
-      );
-    } else {
-      const customerSummary = new ContactSummary(
-        transaction,
-        orgId,
-        customerId,
-        accounts
-      );
-      //initialize summaries
-      customerSummary.appendObject(orgSummary.data);
-      customerSummary.update();
-    }
-
-    //update org summary
-    orgSummary.update();
+    return updatedInvoice;
   }
 
   async delete(currentInvoice: InvoiceData) {
     InvoiceSale.validateDelete(currentInvoice);
 
-    const { transaction, orgId, accounts } = this;
-
-    const {
-      customer: { id: customerId },
-      // total,
-    } = currentInvoice;
-
-    const { accountsSummary, creditAccountsMapping, debitAccountsMapping } =
-      this.generateAccountsMappingAndSummary(null, currentInvoice);
+    const { creditAccountsMapping, debitAccountsMapping } =
+      this.generateAccountsMapping(null, currentInvoice);
 
     /**
      * delete invoice
@@ -205,42 +116,20 @@ export default class Invoice extends InvoiceSale {
       debitAccountsMapping.deletedAccounts
     );
     // console.log({ accountsSummary, accountsMapping });
-
-    const summary = new SummaryData(accounts);
-    summary.appendObject(accountsSummary);
-    //reduce deibt amount
-    // summary.debitAccount(
-    //   ARAccount.accountId,
-    //   new BigNumber(0 - total).dp(2).toNumber()
-    // );
-    summary.append("deletedInvoices", 1, 0);
-
-    const orgSummary = new OrgSummary(transaction, orgId, accounts);
-    orgSummary.data = summary.data;
-    orgSummary.update();
-
-    const customerSummary = new ContactSummary(
-      transaction,
-      orgId,
-      customerId,
-      accounts
-    );
-    customerSummary.data = summary.data;
-    customerSummary.update();
   }
 
   //-------------------------------------------------------------
 
   static generateSystemUpdateData(
     data: Record<string, unknown>,
-    systemTask = "UPDATE_OVERDUE_STATE"
+    systemTask = 'UPDATE_OVERDUE_STATE'
   ) {
     return {
       ...data,
-      overdueAt: serverTimestamp(),
-      modifiedBy: "system", //mark to avoid infinite loops
+      overdueAt: new Date(),
+      modifiedBy: 'system', //mark to avoid infinite loops
       systemTask: systemTask,
-      modifiedAt: serverTimestamp(),
+      modifiedAt: new Date(),
     };
   }
 }

@@ -1,385 +1,172 @@
-import {
-  Transaction,
-  FieldValue,
-  Timestamp,
-  DocumentSnapshot,
-} from 'firebase-admin/firestore';
 import BigNumber from 'bignumber.js';
+import { ObjectId } from 'mongodb';
+import { ClientSession } from 'mongoose';
+//
+import { BookingModel } from '../../../../models';
+//
+import { paymentTerms } from '../../../../../constants';
+//
+import { getById } from '../getOne';
+import { formatBookingFormData } from '.';
 
-import { Sale } from '../../../sales/utils';
+import { getAccountData } from '../../../utils/accounts';
 
+//
 import {
-  Account,
+  IAccount,
   IBookingForm,
   IBookingFromDb,
   IBooking,
   IBookingPayments,
+  IInvoiceForm,
+  ISaleItem,
 } from '../../../../../types';
 
 //----------------------------------------------------------------
 
-const { serverTimestamp, increment } = FieldValue;
-
 interface IBookingDetails {
-  accounts: Record<string, Account>;
   orgId: string;
-  itemId: string;
+  vehicleId: string;
   bookingId: string;
-  userId: string;
+  userUID: string;
 }
 
 //------------------------------------------------------------
 
-export default class Bookings extends Sale {
-  constructor(transaction: Transaction, bookingDetails: IBookingDetails) {
-    const { accounts, orgId, itemId, bookingId, userId } = bookingDetails;
+const vehicleBookingsAccountId = 'vehicle_bookings';
+const transferChargeAccountId = 'transfer_charge';
 
-    super(transaction, {
-      accounts,
-      orgId,
-      itemId,
-      transactionId: bookingId,
-      transactionType: 'booking',
-      userId,
-      collectionPath: `organizations/${orgId}/bookings`,
-    });
-  }
+export default class Bookings {
+  orgId: string;
+  vehicleId: string;
+  transactionId: string;
+  userUID: string;
 
-  async create(bookingData: IBookingForm) {
-    const {
-      customer: { id: customerId },
-      downPayment: {
-        amount: downPayment,
-        paymentMode: { value: paymentModeId },
-      },
-      total,
-    } = bookingData;
+  constructor(bookingDetails: IBookingDetails) {
+    const { orgId, vehicleId, bookingId, userUID } = bookingDetails;
 
-    if (downPayment > total) {
-      throw new Error(
-        `Failed to create Booking! Imprest given: ${Number(
-          downPayment
-        ).toLocaleString()} is more than the booking total amount: ${Number(
-          total
-        ).toLocaleString()}.`
-      );
-    }
-
-    const { creditAccountsMapping, debitAccountsMapping, accountsSummary } =
-      this.generateAccountsMappingAndSummary(bookingData);
-    const {
-      transaction,
-      orgId,
-      userId,
-      transactionId,
-      accounts,
-      transactionType,
-    } = this;
-
-    /**
-     * create sales
-     */
-    await this.createSale(
-      bookingData,
-      creditAccountsMapping,
-      debitAccountsMapping
-    );
-
-    const isOverdue =
-      transactionType === 'customer_opening_balance' ? true : false;
-    const balance = new BigNumber(total).minus(downPayment).dp(2).toNumber();
-
-    /**
-     * create booking
-     */
-    const bookingsCollection = dbCollections(orgId).bookings;
-    const bookingRef = bookingsCollection.doc(transactionId);
-    // console.log({ salebookingData });
-    transaction.create(bookingRef, {
-      ...bookingData,
-      balance,
-      paymentsReceived: {},
-      paymentsIds: [],
-      paymentsCount: 0,
-      isOverdue,
-      status: 0,
-      isSent: false,
-      transactionType: 'booking',
-      orgId,
-      createdBy: userId,
-      createdAt: serverTimestamp() as Timestamp,
-      modifiedBy: userId,
-      modifiedAt: serverTimestamp() as Timestamp,
-    });
-  }
-
-  async getCurrentBooking() {
-    const { orgId, transactionId, transaction } = this;
-
-    const bookingRef = Bookings.createBookingRef(orgId, transactionId);
-
-    const snap = await transaction.get(bookingRef);
-
-    return Bookings.processbookingDataFromFirestore(snap);
+    this.orgId = orgId;
+    this.vehicleId = vehicleId;
+    this.transactionId = bookingId;
+    this.userUID = userUID;
   }
 
   //----------------------------------------------------------------
 
   //----------------------------------------------------------------
-
-  async update(incomingBooking: IBookingForm, currentBooking: IBooking) {
-    const { transaction, orgId, userId, transactionId, accounts } = this;
-
-    Bookings.validateUpdate(incomingBooking, currentBooking);
-
-    const { accountsSummary, creditAccountsMapping, debitAccountsMapping } =
-      this.generateAccountsMappingAndSummary(incomingBooking, currentBooking);
-
-    const {
-      customer: { id: incomingCustomerId },
-      total: incomingTotal,
-      downPayment: {
-        paymentMode: { value: incomingPaymentModeId },
-        amount: incomingDownPayment,
-      },
-    } = incomingBooking;
-
-    const {
-      customer: { id: currentCustomerId },
-      total: currentTotal,
-      downPayment: {
-        paymentMode: { value: currentPaymentModeId },
-        amount: currentDownPayment,
-      },
-    } = currentBooking;
-
-    const downPaymentAdjustment = new BigNumber(incomingDownPayment)
-      .minus(currentDownPayment)
-      .dp(2)
-      .toNumber();
-    const currentDownPaymentDecrement = new BigNumber(0 - currentDownPayment)
-      .dp(2)
-      .toNumber();
-
-    /**
-     * update sale
-     */
-    await this.updateSale(
-      incomingBooking,
-      currentBooking,
-      creditAccountsMapping,
-      debitAccountsMapping
-    );
-
-    /**
-     * update org summary
-     */
-    const orgSummary = new OrgSummary(transaction, orgId, accounts);
-    orgSummary.appendObject(accountsSummary);
-
-    const paymentModeHasChanged =
-      incomingPaymentModeId !== currentPaymentModeId;
-
-    if (paymentModeHasChanged) {
-      //increase debit amount of incoming mode
-      orgSummary.debitPaymentMode(incomingPaymentModeId, incomingDownPayment);
-      //reduce debit of current mode
-      orgSummary.debitPaymentMode(
-        currentPaymentModeId,
-        currentDownPaymentDecrement
-      );
-    } else {
-      orgSummary.debitPaymentMode(incomingPaymentModeId, downPaymentAdjustment);
-    }
-
-    orgSummary.update();
-    /**
-     * update customers summaries
-     */
-    const customerHasChanged = currentCustomerId !== incomingCustomerId;
-    if (customerHasChanged) {
-      const incomingCustomerSummary = new SummaryData(accounts);
-      incomingCustomerSummary.append('bookings', 1, 0);
-      //increment incoming customer payment mode debit
-      incomingCustomerSummary.debitPaymentMode(
-        incomingPaymentModeId,
-        incomingDownPayment
-      );
-      //
-      const currentCustomerSummary = new SummaryData(accounts);
-      currentCustomerSummary.append('bookings', 0, 1);
-      //decrease current customer payment mode debit
-      currentCustomerSummary.debitPaymentMode(
-        currentPaymentModeId,
-        currentDownPaymentDecrement
-      );
-
-      this.changeCustomers(
-        {
-          saleDetails: incomingBooking,
-          extraSummaryData: { ...incomingCustomerSummary.data },
-        },
-        {
-          saleDetails: currentBooking,
-          extraSummaryData: { ...currentCustomerSummary.data },
-        }
-      );
-    } else {
-      const customerSummary = new ContactSummary(
-        transaction,
-        orgId,
-        incomingCustomerId,
-        accounts
-      );
-      customerSummary.appendObject(orgSummary.data);
-      customerSummary.update();
-    }
-
-    /**
-     * calculate balance adjustment
-     */
-    const currentBalance = new BigNumber(currentTotal).minus(
-      currentDownPayment
-    );
-    const incomingBalance = new BigNumber(incomingTotal).minus(
-      incomingDownPayment
-    );
-    const balanceAdjustment = incomingBalance
-      .minus(currentBalance)
-      .dp(2)
-      .toNumber();
-    // console.log({ balanceAdjustment });
-
-    /**
-     * update sales receipt
-     */
-    const bookingsCollection = dbCollections(orgId).bookings;
-    const bookingRef = bookingsCollection.doc(transactionId);
-    transaction.update(bookingRef, {
-      ...incomingBooking,
-      balance: increment(balanceAdjustment) as unknown as number,
-      // classical: "plus",
-      modifiedBy: userId,
-      modifiedAt: serverTimestamp(),
-    });
-  }
-
-  async delete(bookingData: IBooking) {
-    const { transaction, transactionId, orgId, userId, accounts } = this;
-
-    Bookings.validateDelete(bookingData);
-
-    const {
-      customer: { id: customerId },
-      downPayment: {
-        paymentMode: { value: paymentModeId },
-        amount: downPayment,
-      },
-    } = bookingData;
-
-    const { accountsSummary, creditAccountsMapping, debitAccountsMapping } =
-      this.generateAccountsMappingAndSummary(null, bookingData);
-
-    /**
-     * delete sale
-     */
-    await this.deleteSale(
-      bookingData,
-      creditAccountsMapping.deletedAccounts,
-      debitAccountsMapping.deletedAccounts
-    );
-    /**
-     * delete sale receipt
-     */
-    const downPaymentDecrement = new BigNumber(0 - downPayment)
-      .dp(2)
-      .toNumber();
-
-    const summary = new SummaryData(accounts);
-    summary.appendObject(accountsSummary);
-    //decrease payment mode debit
-    summary.debitPaymentMode(paymentModeId, downPaymentDecrement);
-    summary.append('deletedbookings', 1, 0);
-
-    const orgSummary = new OrgSummary(transaction, orgId, accounts);
-    orgSummary.data = summary.data;
-    orgSummary.update();
-
-    const customerSummary = new ContactSummary(
-      transaction,
-      orgId,
-      customerId,
-      accounts
-    );
-    customerSummary.data = summary.data;
-    customerSummary.update();
-
-    /**
-     * mark booking as deleted
-     */
-    const bookingsCollection = dbCollections(orgId).bookings;
-    const bookingRef = bookingsCollection.doc(transactionId);
-    transaction.update(bookingRef, {
-      status: -1,
-      modifiedBy: userId,
-      modifiedAt: serverTimestamp(),
-    });
-  }
 
   //----------------------------------------------------------------------
   //static functions
   //----------------------------------------------------------------------
-  static createBookingRef(orgId: string, bookingId: string) {
-    return dbCollections(orgId).bookings.doc(bookingId);
+
+  //----------------------------------------------------------------------
+  static createInvoiceFormFromBooking(bookingForm: IBookingForm) {
+    const {
+      customer,
+      customerNotes,
+      vehicle,
+      transferFee,
+      saleDate,
+      endDate,
+      bookingRate,
+      bookingTotal,
+      selectedDates,
+      subTotal,
+      total,
+    } = bookingForm;
+
+    const bookedDaysCount = selectedDates?.length || 0;
+    const vehicleBookingSubTotal = new BigNumber(bookingRate)
+      .times(bookedDaysCount)
+      .dp(2)
+      .toNumber();
+    const vehicleBookingTaxAmount = 0;
+    // const vehicleBookingTotal = new BigNumber(vehicleBookingSubTotal)
+    //   .plus(vehicleBookingTaxAmount)
+    //   .dp(2)
+    //   .toNumber();
+
+    const {
+      model: { make, model },
+      color,
+    } = vehicle;
+
+    const items: ISaleItem[] = [
+      {
+        name: vehicle.registration,
+        qty: bookedDaysCount,
+        rate: bookingRate,
+        subTotal: vehicleBookingSubTotal,
+        tax: vehicleBookingTaxAmount,
+        total: bookingTotal,
+        description: `${color} ${make} ${model}`,
+        salesAccountId: vehicleBookingsAccountId,
+        details: { ...vehicle, taxType: 'inclusive' },
+      },
+      {
+        name: 'Transfer Fee',
+        rate: transferFee,
+        qty: 1,
+        subTotal,
+        tax: 0,
+        total: transferFee,
+        description: '',
+        salesAccountId: 'transfer_charge',
+        details: { taxType: 'inclusive' },
+      },
+    ];
+
+    const invoiceForm: IInvoiceForm = {
+      customer,
+      customerNotes,
+      items,
+      saleDate,
+      dueDate: endDate,
+      //
+      // taxes:[],
+      taxType: 'inclusive',
+      totalTax: 0,
+      discount: 0,
+      subTotal,
+      total,
+      paymentTerm: paymentTerms.on_receipt,
+    };
+
+    return invoiceForm;
   }
   //----------------------------------------------------------------------
-  static processbookingDataFromFirestore(
-    docSnap: DocumentSnapshot<IBookingFromDb>
+  static generateBalanceAdjustment(
+    incomingBooking: IBookingForm,
+    currentBooking: IBooking
   ) {
-    const data = docSnap.data();
-    const id = docSnap.id;
+    const {
+      total: incomingTotal,
+      downPayment: { amount: incomingDownPayment },
+    } = incomingBooking;
 
-    if (!docSnap.exists || !data || data.status === -1) {
-      throw new Error(`Booking with id ${id} not found!`);
-    }
+    const {
+      total: currentTotal,
+      downPayment: { amount: currentDownPayment },
+    } = currentBooking;
 
-    const booking: IBooking = {
-      ...data,
-      id,
-    };
-    return booking;
-  }
-  //----------------------------------------------------------------------
+    /**
+     * calculate balance adjustment
+     */
+    const currentBalanceWithoutPayments = new BigNumber(currentTotal).minus(
+      currentDownPayment
+    );
+    const incomingBalanceWithoutPayments = new BigNumber(incomingTotal).minus(
+      incomingDownPayment
+    );
+    const balanceAdjustment = incomingBalanceWithoutPayments
+      .minus(currentBalanceWithoutPayments)
+      .dp(2)
+      .toNumber();
+    // console.log({ balanceAdjustment });
 
-  static async getBookingData(
-    orgId: string,
-    bookingId: string
-  ): Promise<IBooking> {
-    const bookingRef = Bookings.createBookingRef(orgId, bookingId);
-    const snap = await bookingRef.get();
-
-    return Bookings.processbookingDataFromFirestore(snap);
-  }
-
-  //------------------------------------------------------------
-  static createBookingId(orgId: string) {
-    const bookingsCollection = dbCollections(orgId).bookings;
-
-    const bookingId = bookingsCollection.doc().id;
-
-    return bookingId;
+    return balanceAdjustment;
   }
 
-  //----------------------------------------------------------------
-  static reformatDates(data: IBookingForm): IBookingForm {
-    const { saleDate } = data;
-    const formData = {
-      ...data,
-      saleDate: new Date(saleDate),
-    };
-
-    return formData;
-  }
   //----------------------------------------------------------------
   static getPaymentsTotal(
     downPayment: number,
@@ -394,19 +181,119 @@ export default class Bookings extends Sale {
   }
 
   //------------------------------------------------------------
-  static validateUpdate(
-    incomingBooking: IBookingForm,
-    currentBooking: IBooking
+
+  static async findVehicleBookingWithAtleastOneOfTheSelectedDates(
+    orgId: string,
+    vehicleId: string,
+    selectedDates: string[],
+    session?: ClientSession
+  ) {
+    const booking = await BookingModel.findOne(
+      {
+        'vehicle._id': vehicleId,
+        'metaData.orgId': orgId,
+        'metaData.status': 0,
+        selectedDates: { $in: [...selectedDates] },
+      },
+      {},
+      { ...(session ? { session } : {}) }
+    );
+
+    console.log({ booking });
+
+    return booking;
+  }
+  //------------------------------------------------------------
+  static async validateFormData(
+    orgId: string,
+    formData: IBookingForm,
+    session?: ClientSession
   ) {
     const {
+      vehicle: { _id: vehicleId, registration },
+      selectedDates,
+    } = formData;
+
+    const booking =
+      await this.findVehicleBookingWithAtleastOneOfTheSelectedDates(
+        orgId,
+        vehicleId,
+        selectedDates,
+        session
+      );
+
+    if (booking) {
+      const error = new Error(
+        `Vehicle with registration ${registration} is already booked in some of the selected dates!`
+      );
+      error.name = 'unavailable';
+
+      throw error;
+    }
+  }
+
+  //------------------------------------------------------------
+  static async validateUpdateFormData(
+    orgId: string,
+    currentBooking: IBooking,
+    incomingBooking: IBookingForm,
+    session?: ClientSession
+  ) {
+    const { vehicle: currentVehicle } = currentBooking;
+    const { vehicle: incomingVehicle } = incomingBooking;
+
+    const vehicle = incomingVehicle || currentVehicle;
+
+    const formData = {
+      ...incomingBooking,
+      vehicle,
+    };
+
+    await this.validateFormData(orgId, formData, session);
+  }
+
+  //------------------------------------------------------------
+
+  static async validateUpdate(
+    orgId: string,
+    bookingId: string,
+    formData: IBookingForm | null,
+    session?: ClientSession
+  ) {
+    if (!formData) {
+      throw new Error('Invalid Booking Form Data Received!.');
+    }
+
+    const incomingBooking = formatBookingFormData(formData);
+
+    const currentBooking = await getById(orgId, bookingId);
+    if (!currentBooking) {
+      throw new Error(
+        'Booking not found! Make sure the booking exists before editing.'
+      );
+    }
+
+    await this.validateUpdateFormData(
+      orgId,
+      currentBooking,
+      incomingBooking,
+      session
+    );
+
+    const {
       total,
-      customer: { id: customerId },
+      customer: { _id: customerId },
       downPayment: { amount: downPayment },
+      selectedDates: incomingSelectedDates,
     } = incomingBooking;
     const {
-      customer: { id: currentCustomerId },
-      paymentsReceived,
+      customer: { _id: currentCustomerId },
+      payments,
+      vehicle: { _id: vehicleId },
     } = currentBooking;
+    const paymentsReceived = payments?.amounts || {};
+    //
+
     /**
      * check to ensure the new total balance is not less than payments made.
      */
@@ -441,6 +328,11 @@ export default class Bookings extends Sale {
         `CUSTOMER cannot be changed in a Booking that has payments! This is because all the payments are from the PREVIOUS customer. If you are sure you want to change the customer, DELETE the associated payments first!`
       );
     }
+
+    return {
+      incomingBooking,
+      currentBooking,
+    };
   }
 
   //------------------------------------------------------------
@@ -450,7 +342,7 @@ export default class Bookings extends Sale {
      */
     const {
       downPayment: { amount: downPayment },
-      paymentsReceived,
+      payments: { amounts: paymentsReceived },
     } = booking;
 
     const paymentsTotal = Bookings.getPaymentsTotal(

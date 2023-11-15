@@ -18,7 +18,7 @@ export default function summarizeItemsIntoAccounts(
     {} as Record<string, number>
   );
 
-  return Object.keys(summaryObject).map((accountId) => {
+  return Object.keys(summaryObject).map(accountId => {
     return {
       accountId,
       amount: summaryObject[accountId],

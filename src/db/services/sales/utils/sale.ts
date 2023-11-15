@@ -1,17 +1,21 @@
 import { ClientSession } from 'mongodb';
 //
-// import { getAccountsMapping, getAccountData } from '../../utils/accounts';
+import { Accounts } from '../../accounts';
+//
+import { getAccountsMapping, getAccountData } from '../../utils/accounts';
 import { JournalEntry } from '../../journal';
-import BigNumber from 'bignumber.js';
+// import BigNumber from 'bignumber.js';
 
 import {
-  AccountsMapping,
-  AccountMapping,
-  Account,
+  IAccountsMapping,
+  IAccountMapping,
+  IAccountSummary,
   SaleTransactionTypes,
   IContactSummary,
   IContact,
   ISaleForm,
+  ISaleItem,
+  ISaleType,
 } from '../../../../types';
 
 type TransactionType = keyof SaleTransactionTypes;
@@ -22,13 +26,13 @@ interface SaleDetails {
   transactionId: string;
   userId: string;
   orgId: string;
-  accounts: Record<string, Account>;
   transactionType: TransactionType;
+  saleType: ISaleType;
 }
 
 export interface SaleDataAndAccount {
   saleDetails: ISaleForm;
-  debitAccount: Account;
+  debitAccount: IAccountSummary;
 }
 
 interface SummaryObject {
@@ -46,29 +50,32 @@ interface CustomerChangeData {
 
 //------------------------------------------------------------
 
-export default class Sale {
+export default class Sale extends Accounts {
   protected session: ClientSession;
 
   transactionId: string;
   orgId: string;
   userId: string;
-  accounts: Record<string, Account>;
   transactionType: TransactionType;
+  saleType: ISaleType;
 
   // ARAccount: Account;
   // UFAccount: Account;
 
   constructor(session: ClientSession, saleDetails: SaleDetails) {
-    const { accounts, orgId, userId, transactionId, transactionType } =
+    const { orgId, userId, transactionId, transactionType, saleType } =
       saleDetails;
+
+    super(session);
 
     this.session = session;
 
     this.transactionId = transactionId;
     this.userId = userId;
     this.orgId = orgId;
-    this.accounts = accounts;
     this.transactionType = transactionType;
+    this.saleType = saleType;
+
     //
 
     // this.ARAccount = getAccountData('accounts_receivable', accounts);
@@ -78,7 +85,7 @@ export default class Sale {
   //writing methods
 
   createJournalEntries(
-    newAccounts: AccountMapping[],
+    newAccounts: IAccountMapping[],
     incomingSale: ISaleForm,
     entriesType: 'debit' | 'credit'
   ) {
@@ -95,7 +102,7 @@ export default class Sale {
   }
 
   updateJournalEntries(
-    accountsMapping: AccountsMapping,
+    accountsMapping: IAccountsMapping,
     incomingSale: ISaleForm,
     entriesType: 'debit' | 'credit'
   ) {
@@ -114,17 +121,17 @@ export default class Sale {
   }
 
   //----------------------------------------------------------------
-  setJournalEntry(
-    accountToSet: AccountMapping,
+  async setJournalEntry(
+    accountToSet: IAccountMapping,
     contacts: IContactSummary[],
     journalInstance: JournalEntry,
     entriesType: 'debit' | 'credit'
   ) {
-    const { transactionId, accounts, transactionType } = this;
+    const { transactionId, transactionType } = this;
 
     const { accountId, incoming } = accountToSet;
 
-    const account = getAccountData(accountId, accounts);
+    const account = await getAccountData(accountId);
 
     if (entriesType === 'credit') {
       journalInstance.creditAccount({
@@ -149,7 +156,7 @@ export default class Sale {
     }
   }
 
-  deleteJournalEntries(deletedAccounts: AccountMapping[]) {
+  deleteJournalEntries(deletedAccounts: IAccountMapping[]) {
     const { session, userId, orgId, transactionId } = this;
 
     const journal = new JournalEntry(session, userId, orgId);
@@ -159,10 +166,10 @@ export default class Sale {
   }
 
   protected initCreateSale(incomingSale: ISaleForm) {
-    return this.generateAccountsMappingAndSummary(incomingSale);
+    return this.generateAccountsMapping(incomingSale);
   }
 
-  protected generateAccountsMappingAndSummary(
+  protected generateAccountsMapping(
     incomingSale: ISaleForm | null,
     currentSale?: ISaleForm
   ) {
@@ -175,40 +182,23 @@ export default class Sale {
       currentSale
     );
 
-    const { accounts } = this;
-    const creditAccountsSummary = Sale.generateAccountsSummary(
-      creditAccountsMapping,
-      accounts,
-      'credit'
-    );
-    const debitAccountsSummary = Sale.generateAccountsSummary(
-      debitAccountsMapping,
-      accounts,
-      'debit'
-    );
-
-    const accountsSummary = {
-      ...debitAccountsSummary,
-      ...creditAccountsSummary,
-    };
-
     return {
       creditAccountsMapping,
       debitAccountsMapping,
-      accountsSummary,
     };
   }
 
   protected async createSale(
     incomingSale: ISaleForm,
-    creditAccountsMapping: AccountsMapping,
-    debitAccountsMapping: AccountsMapping
+    creditAccountsMapping: IAccountsMapping,
+    debitAccountsMapping: IAccountsMapping
   ) {
     this.createJournalEntries(
       creditAccountsMapping.newAccounts,
       incomingSale,
       'credit'
     );
+
     this.createJournalEntries(
       debitAccountsMapping.newAccounts,
       incomingSale,
@@ -219,8 +209,8 @@ export default class Sale {
   protected async updateSale(
     incomingSale: ISaleForm,
     currentSale: ISaleForm,
-    creditAccountsMapping: AccountsMapping,
-    debitAccountsMapping: AccountsMapping
+    creditAccountsMapping: IAccountsMapping,
+    debitAccountsMapping: IAccountsMapping
   ) {
     //create journal entries
     this.createJournalEntries(
@@ -243,8 +233,8 @@ export default class Sale {
 
   protected async deleteSale(
     currentSale: ISaleForm,
-    creditDeletedAccounts: AccountMapping[],
-    debitDeletedAccounts: AccountMapping[]
+    creditDeletedAccounts: IAccountMapping[],
+    debitDeletedAccounts: IAccountMapping[]
   ) {
     this.deleteJournalEntries(creditDeletedAccounts);
     this.deleteJournalEntries(debitDeletedAccounts);
@@ -263,38 +253,42 @@ export default class Sale {
       );
     }
 
-    const currentSaleItem = currentSale?.items;
+    const currentSaleItems = currentSale?.items;
     const currentAccounts =
-      currentSale && currentSaleItem
+      currentSale && currentSaleItems
         ? [
-            {
-              accountId: currentSaleItem.salesAccount?.accountId,
-              amount: currentSale.bookingTotal || 0,
-            },
-            {
-              accountId: 'transfer_charge',
-              amount: currentSale.transferAmount || 0,
-            },
-            // { accountId: "tax_payable", amount
-            // : currentSale.totalTax || 0 },
+            ...Sale.getItemsAccounts(currentSaleItems),
+            // {
+            //   accountId: "shipping_charge",
+            //   amount: currentSummary.shipping || 0,
+            // },
+            // {
+            //   accountId: "other_charges",
+            //   amount: currentSummary.adjustment || 0,
+            // },
+            //uncomment when tax calculation is enabled
+            // { accountId: "tax_payable", amount: currentSummary.totalTax || 0 },
           ]
         : [];
 
-    const incomingSaleItem = incomingSale?.item;
+    const incomingSaleItems = incomingSale?.items;
     const incomingAccounts =
-      incomingSale && incomingSaleItem
+      incomingSale && incomingSaleItems
         ? [
-            {
-              accountId: incomingSaleItem.salesAccount?.accountId,
-              amount: incomingSale.bookingTotal || 0,
-            },
-            {
-              accountId: 'transfer_charge',
-              amount: incomingSale.transferAmount || 0,
-            },
+            ...Sale.getItemsAccounts(incomingSaleItems),
+
+            // {
+            //   accountId: "shipping_charge",
+            //   amount: incomingSummary.shipping || 0,
+            // },
+            // {
+            //   accountId: "other_charges",
+            //   amount: incomingSummary.adjustment || 0,
+            // },
+            //uncomment when tax calculation is enabled
             // {
             //   accountId: "tax_payable",
-            //   amount: incomingSale.totalTax || 0,
+            //   amount: incomingSummary.totalTax || 0,
             // },
           ]
         : [];
@@ -318,46 +312,30 @@ export default class Sale {
       );
     }
 
-    const currentDownPayment = currentSale?.downPayment?.amount || 0;
     const currentTotal = currentSale?.total || 0;
-    const currentBalance = new BigNumber(currentTotal)
-      .minus(currentDownPayment)
-      .dp(2)
-      .toNumber();
     const currentAccounts = currentSale
       ? [
           {
             accountId: 'accounts_receivable',
-            amount: currentBalance,
+            amount: currentTotal,
           },
-          {
-            accountId: 'undeposited_funds',
-            amount: currentDownPayment,
-          },
-          // { accountId: "tax_payable", amount
-          // : currentSale.totalTax || 0 },
+          // {
+          //   accountId: 'undeposited_funds',
+          //   amount: currentDownPayment,
+          // },
         ]
       : [];
 
-    const incomingDownPayment = incomingSale?.downPayment?.amount || 0;
     const incomingTotal = incomingSale?.total || 0;
-    const incomingBalance = new BigNumber(incomingTotal)
-      .minus(incomingDownPayment)
-      .dp(2)
-      .toNumber();
     const incomingAccounts = incomingSale
       ? [
           {
             accountId: 'accounts_receivable',
-            amount: incomingBalance,
-          },
-          {
-            accountId: 'undeposited_funds',
-            amount: incomingDownPayment,
+            amount: incomingTotal,
           },
           // {
-          //   accountId: "tax_payable",
-          //   amount: incomingSale.totalTax || 0,
+          //   accountId: 'undeposited_funds',
+          //   amount: incomingDownPayment,
           // },
         ]
       : [];
@@ -371,145 +349,53 @@ export default class Sale {
   }
 
   //----------------------------------------------------------------
-  static generateAccountsSummary(
-    accountsMapping: AccountsMapping,
-    accounts: Record<string, Account>,
-    entriesType: 'debit' | 'credit'
-  ) {
-    const { uniqueAccounts } = accountsMapping;
-
-    const summaryData = new SummaryData(accounts);
-
-    uniqueAccounts.forEach(accountMapping => {
-      const { accountId } = accountMapping;
-      const current = new BigNumber(accountMapping.current);
-      const incoming = new BigNumber(accountMapping.incoming);
-      const adjustment = incoming.minus(current).dp(2).toNumber();
-
-      if (adjustment === 0) {
-        return;
-      }
-
-      if (entriesType === 'credit') {
-        summaryData.creditAccount(accountId, adjustment);
-      } else {
-        summaryData.debitAccount(accountId, adjustment);
-      }
-    }, {});
-
-    return summaryData.data;
-  }
-
-  //------------------------------------------------------------
-  static generateChangedCustomersAccountsSummaries(
-    incomingSale: ISaleForm,
-    currentSale: ISaleForm,
-    accounts: Record<string, Account>
-  ) {
-    //delete values from previous customer
-
-    const currentCustomerCreditAccountsMapping = Sale.generateCreditAccounts(
-      null,
-      currentSale
-    );
-    const currentCustomerDebitAccountsMapping = Sale.generateDebitAccounts(
-      null,
-      currentSale
-    );
-
-    const currentCustomerCreditAccountsSummary = Sale.generateAccountsSummary(
-      currentCustomerCreditAccountsMapping,
-      accounts,
-      'credit'
-    );
-    const currentCustomerDebitAccountsSummary = Sale.generateAccountsSummary(
-      currentCustomerDebitAccountsMapping,
-      accounts,
-      'debit'
-    );
-
-    const currentCustomerAccountsSummary = {
-      ...currentCustomerCreditAccountsSummary,
-      ...currentCustomerDebitAccountsSummary,
-    };
-
-    //add new values to the incoming customer
-    const incomingCustomerCreditAccountsMapping =
-      Sale.generateCreditAccounts(incomingSale);
-    const incomingCustomerDebitAccountsMapping =
-      Sale.generateDebitAccounts(incomingSale);
-
-    const incomingCustomerCreditAccountsSummary = Sale.generateAccountsSummary(
-      incomingCustomerCreditAccountsMapping,
-      accounts,
-      'credit'
-    );
-    const incomingCustomerDebitAccountsSummary = Sale.generateAccountsSummary(
-      incomingCustomerDebitAccountsMapping,
-      accounts,
-      'debit'
-    );
-
-    const incomingCustomerAccountsSummary = {
-      ...incomingCustomerCreditAccountsSummary,
-      ...incomingCustomerDebitAccountsSummary,
-    };
-
-    return {
-      incomingCustomerAccountsSummary,
-      currentCustomerAccountsSummary,
-    };
-  }
-
-  //------------------------------------------------------------
-  static async getSaleDataWithTransaction(
-    transaction: Transaction,
-    collectionPath: string,
-    transactionId: string
-  ) {
-    const saleRef = db.collection(collectionPath).doc(transactionId);
-    const snap = await transaction.get(saleRef);
-
-    return Sale.retrieveSaleData(transactionId, snap);
-  }
-
-  //------------------------------------------------------------
-  static async getSaleData(collectionPath: string, transactionId: string) {
-    const saleRef = db.collection(collectionPath).doc(transactionId);
-    const snap = await saleRef.get();
-
-    return Sale.retrieveSaleData(transactionId, snap);
-  }
 
   //------------------------------------------------------------
 
-  static retrieveSaleData(transactionId: string, snap: DocumentSnapshot) {
-    const data = snap.data();
-
-    if (
-      !snap.exists ||
-      snap.data()?.status === 'deleted' ||
-      data === undefined
-    ) {
-      throw new Error(`Sale with id ${transactionId} not found!`);
-    }
-
-    return { ...data, id: snap.id };
-  }
-
   //------------------------------------------------------------
-  // static getItemsAccounts(items: SaleItem[]) {
-  //   return items.map((saleItem) => {
-  //     const {
-  //       itemRateTotal,
-  //       item: {
-  //         salesAccount: { accountId },
-  //       },
-  //     } = saleItem;
+  // static async getSaleDataWithTransaction(
+  //   transaction: Transaction,
+  //   collectionPath: string,
+  //   transactionId: string
+  // ) {
+  //   const saleRef = db.collection(collectionPath).doc(transactionId);
+  //   const snap = await transaction.get(saleRef);
 
-  //     return { accountId, amount: itemRateTotal };
-  //   });
+  //   return Sale.retrieveSaleData(transactionId, snap);
   // }
+
+  //------------------------------------------------------------
+  // static async getSaleData(collectionPath: string, transactionId: string) {
+  //   const saleRef = db.collection(collectionPath).doc(transactionId);
+  //   const snap = await saleRef.get();
+
+  //   return Sale.retrieveSaleData(transactionId, snap);
+  // }
+
+  //------------------------------------------------------------
+
+  // static retrieveSaleData(transactionId: string, snap: DocumentSnapshot) {
+  //   const data = snap.data();
+
+  //   if (
+  //     !snap.exists ||
+  //     snap.data()?.status === 'deleted' ||
+  //     data === undefined
+  //   ) {
+  //     throw new Error(`Sale with id ${transactionId} not found!`);
+  //   }
+
+  //   return { ...data, id: snap.id };
+  // }
+
+  //------------------------------------------------------------
+  static getItemsAccounts(items: ISaleItem[]) {
+    return items.map(saleItem => {
+      const { total, salesAccountId } = saleItem;
+
+      return { accountId: salesAccountId, amount: total };
+    });
+  }
   //------------------------------------------------------------
   static createContactsFromCustomer(
     customer?: IContactSummary | IContact | null

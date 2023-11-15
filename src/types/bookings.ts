@@ -15,15 +15,7 @@ export type IMonthlyBookings = Record<string, Record<string, string>>;
 export interface IBookingItem
   extends Pick<
     IVehicle,
-    | '_id'
-    | 'registration'
-    | 'rate'
-    | 'sku'
-    | 'type'
-    | 'make'
-    | 'model'
-    | 'type'
-    | 'year'
+    '_id' | 'registration' | 'rate' | 'color' | 'make' | 'model' | 'year'
   > {}
 
 export interface IBookingDownPayment {
@@ -43,7 +35,7 @@ export interface IBookingForm {
   saleDate: Date;
   bookingRate: number;
   bookingTotal: number;
-  transferAmount: number;
+  transferFee: number;
   subTotal: number;
   total: number;
   downPayment: IBookingDownPayment;

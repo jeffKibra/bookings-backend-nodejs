@@ -1,8 +1,10 @@
 import {
   Tax,
   InvoiceTransactionTypes,
+  SaleTransactionTypes,
   IContactSummary,
   PaymentTerm,
+  IAccountSummary,
   // ItemFormData,
 } from '.';
 
@@ -18,19 +20,27 @@ export interface ISaleSummary {
   // taxes: SaleTax[];
 }
 
+interface ISaleItemDetails {
+  [x: string]: unknown;
+  taxType: 'inclusive' | 'exclusive';
+}
 export interface ISaleItem {
   name: string;
   description: string;
   rate: number;
   qty: number;
+  subTotal: number;
+  tax: number;
   total: number;
-  details: Record<string, unknown>;
+  //
+  // salesAccount: IAccountSummary;
+  salesAccountId: string;
+  details: ISaleItemDetails;
 }
 
 export interface ISaleMeta {
-  transactionType: keyof InvoiceTransactionTypes;
+  transactionType: keyof SaleTransactionTypes;
   // balance: number;
-  isSent: boolean;
   // isOverdue: boolean;
   // overdueAt?: Timestamp;
   // paymentsCount: number;
@@ -70,3 +80,5 @@ export interface ISaleAccountSummary {
   accountId: string;
   saleAmount: number;
 }
+
+export type ISaleType = 'car_booking' | 'normal';

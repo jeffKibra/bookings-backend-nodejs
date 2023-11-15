@@ -1,16 +1,18 @@
 import { ClientSession } from 'mongoose';
 import { ObjectId } from 'mongodb';
 //
+
+//
 import { JournalEntryModel } from '../../models';
 
 import {
-  AccountType,
+  IAccountType,
   Entry,
   TransactionTypes,
   MappedEntry,
-  AccountMapping,
+  IAccountMapping,
   GroupedEntries,
-  Account,
+  IAccountSummary,
   IContactSummary,
 } from '../../../types';
 
@@ -26,10 +28,10 @@ import {
 
 type entryFnParams = {
   transactionId: string;
-  account: Account;
+  account: IAccountSummary;
   amount: number;
   transactionType: keyof TransactionTypes;
-  contacts: IContactSummary[];
+  contacts?: IContactSummary[];
 };
 
 export default class JournalEntry {
@@ -65,15 +67,8 @@ export default class JournalEntry {
   }
 
   async setEntry(entryParams: entryFnParams, entryType: 'credit' | 'debit') {
-    const {
-      account,
-      transactionId,
-      amount,
-      transactionType,
-      contacts: rawContacts,
-    } = entryParams;
-    const contacts = rawContacts || {};
-    const contactsArray = Object.values(contacts);
+    const { account, transactionId, amount, transactionType, contacts } =
+      entryParams;
 
     const { orgId, userId, session } = this;
     //
@@ -89,7 +84,7 @@ export default class JournalEntry {
           entryType,
           account,
           transactionId,
-          contacts: contactsArray,
+          contacts: contacts || [],
           transactionType,
           metaData: {
             status: 0,
@@ -110,7 +105,7 @@ export default class JournalEntry {
   //------------------------------------------------------------
   createEntry(
     transactionId: string,
-    account: Account,
+    account: IAccountSummary,
     amount: number,
     transactionType: keyof TransactionTypes,
     contacts: IContactSummary[]
@@ -142,15 +137,13 @@ export default class JournalEntry {
   updateEntry(
     transactionId: string,
     transactionType: keyof TransactionTypes,
-    account: Account,
+    account: IAccountSummary,
     amount: number,
-    contactsObject?: IContactSummary[]
+    contacts?: IContactSummary[]
   ) {
     const { accountType, accountId } = account;
     const { userId } = this;
 
-    const contacts = contactsObject || {};
-    const contactsArray = Object.values(contacts);
     /**
      * determine whether value is a debit or a credit
      */
@@ -309,7 +302,7 @@ export default class JournalEntry {
     return main === LIABILITY || main === EQUITY || main === INCOME;
   }
 
-  static createDebitAndCredit(accountType: AccountType, amount: number) {
+  static createDebitAndCredit(accountType: IAccountType, amount: number) {
     const { main } = accountType;
     const { isCreditOnIncrease, isDebitOnIncrease } = JournalEntry;
 
@@ -347,7 +340,7 @@ export default class JournalEntry {
     return { credit, debit };
   }
 
-  static createCredit(accountType: AccountType, amount: number) {
+  static createCredit(accountType: IAccountType, amount: number) {
     const { main } = accountType;
     const { isCreditOnIncrease, isDebitOnIncrease } = JournalEntry;
 
@@ -372,7 +365,7 @@ export default class JournalEntry {
     return credit;
   }
 
-  static createDebit(accountType: AccountType, amount: number) {
+  static createDebit(accountType: IAccountType, amount: number) {
     const { main } = accountType;
     const { isCreditOnIncrease, isDebitOnIncrease } = JournalEntry;
 
@@ -406,7 +399,7 @@ export default class JournalEntry {
   }
 
   static getRawAmount(
-    accountType: AccountType,
+    accountType: IAccountType,
     data: { credit: number; debit: number }
   ) {
     const { main } = accountType;

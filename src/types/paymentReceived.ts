@@ -1,10 +1,10 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import {
   IContactSummary,
-  Account,
+  IAccountSummary,
   PaymentMode,
   TransactionTypes,
-  Invoice,
+  IInvoice,
   IBooking,
 } from '.';
 
@@ -21,7 +21,7 @@ interface Meta {
 }
 
 export interface PaymentReceivedForm {
-  account: Account;
+  account: IAccountSummary;
   amount: number;
   customer: IContactSummary;
   paymentDate: Date;
@@ -56,7 +56,7 @@ export interface IBookingsPayments {
 }
 
 export interface PaymentWithInvoices extends PaymentReceived {
-  invoices: Invoice[];
+  invoices: IInvoice[];
 }
 
 export interface IPaymentWithBookings extends PaymentReceived {

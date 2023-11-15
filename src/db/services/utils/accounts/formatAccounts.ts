@@ -1,20 +1,18 @@
-import { Account, AccountFromDb } from "../../types";
+import { IAccount, IAccountSummary } from '../../../../types';
 //----------------------------------------------------------------
-export default function formatAccounts(accountsData: {
-  [key: string]: AccountFromDb;
-}) {
-  const accounts: Record<string, Account> = {};
+export default function formatAccounts(accountsData: IAccount[]) {
+  const accounts: Record<string, IAccountSummary> = {};
 
-  Object.values(accountsData).forEach((accountFromDB) => {
-    const { accountId, accountType, name } = accountFromDB;
+  accountsData.forEach(accountFromDB => {
+    const { _id, accountType, name } = accountFromDB;
 
-    const account: Account = {
-      accountId,
+    const account: IAccountSummary = {
+      accountId: _id,
       accountType,
       name,
     };
 
-    accounts[accountId] = account;
+    accounts[_id] = account;
   });
 
   return accounts;
