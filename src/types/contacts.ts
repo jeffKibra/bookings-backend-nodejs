@@ -37,14 +37,13 @@ interface IMeta {
   modifiedBy: string;
 }
 
-export interface IContactFromDb
-  extends Omit<IContactForm, 'openingBalance'>,
-    IMeta {
+export interface IContactFromDb extends Omit<IContactForm, 'openingBalance'> {
   openingBalance: {
     amount: number;
     transactionId: string;
   };
   contactType: 'customer' | 'vendor';
+  metaData: IMeta;
 }
 
 export interface IContact extends IContactFromDb {

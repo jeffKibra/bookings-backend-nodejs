@@ -15,7 +15,8 @@ const mutationResolvers = {
 
     console.log('booking form Data', formData);
 
-    await services.bookings.create(userUID, orgId, formData);
+    // await services.bookings.create(userUID, orgId, formData);
+    await services.sales.bookings.create(userUID, orgId, formData);
   },
 
   async updateBooking(

@@ -1,17 +1,17 @@
 import { ObjectId } from 'mongodb';
 import { startSession } from 'mongoose';
 //
-import { Bookings, updateBookingDates } from './utils';
+import { Bookings } from './utils';
 import { Invoice } from '../invoices/utils';
 //
 import { BookingModel } from '../../../models';
 //
-import { IBookingForm } from '../../../../types';
+import { IBookingForm, IInvoice } from '../../../../types';
 //
 import { getById } from './getOne';
 import { handleDBError } from '../../utils';
 
-export default async function updatedBooking(
+export default async function updateBooking(
   userUID: string,
   orgId: string,
   bookingId: string,
@@ -27,7 +27,7 @@ export default async function updatedBooking(
 
   session.startTransaction();
 
-  let updatedBooking = null;
+  let updatedBooking: IInvoice | null = null;
 
   try {
     // const { currentBooking, incomingBooking } = await Bookings.validateUpdate(
@@ -45,7 +45,7 @@ export default async function updatedBooking(
       saleType: 'car_booking',
     });
 
-    const updatedInvoice = await invoiceInstance.update(invoiceForm);
+    updatedBooking = await invoiceInstance.update(invoiceForm);
     //fetch current saved data
 
     // const {

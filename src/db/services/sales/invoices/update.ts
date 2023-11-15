@@ -1,47 +1,42 @@
+import { startSession } from 'mongoose';
+//
 import { Invoice } from './utils';
 import { getAllAccounts } from '../../utils/accounts';
 
-import { InvoiceFormData } from '../../../types';
+import { IInvoiceForm } from '../../../../types';
 
 //------------------------------------------------------------
 
-export default async function update(payload: {
-  orgId: string;
-  invoiceId: string;
-  formData: InvoiceFormData;
-}) {
-  const { auth } = context;
-
-  if (!auth) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'Action not allowed!'
-    );
-  }
-  const userId = auth.uid;
+export default async function update(
+  orgId: string,
+  userUID: string,
+  invoiceId: string,
+  formData: IInvoiceForm
+) {
+  const session = await startSession();
+  session.startTransaction();
 
   try {
-    const { orgId, invoiceId } = payload;
-    const accounts = await getAllAccounts(orgId);
+    const formattedData = Invoice.reformatDates(formData);
 
-    const formData = reformatDates(payload.formData);
-
-    await db.runTransaction(async transaction => {
-      const invoices = new Invoice(transaction, {
-        accounts,
-        invoiceId,
-        orgId,
-        userId,
-      });
-
-      const currentInvoice = await invoices.getCurrentInvoice();
-
-      await invoices.update(formData, currentInvoice);
+    const invoices = new Invoice(session, {
+      invoiceId,
+      orgId,
+      userId: userUID,
+      saleType: 'normal',
     });
+
+    await invoices.update(formattedData);
+
+    await session.commitTransaction();
   } catch (err) {
+    await session.abortTransaction();
+
     const error = err as Error;
     console.log(error);
 
-    throw new functions.https.HttpsError('internal', error.message);
+    throw err;
+  } finally {
+    await session.endSession();
   }
 }

@@ -2,14 +2,18 @@ import { model } from 'mongoose';
 
 //
 import {
+  ContactSchema,
   BookingSchema,
   VehicleSchema,
   ItemYearlyBookingsSchema,
   JournalEntrySchema,
   InvoiceSchema,
   AccountSchema,
+  PaymentReceivedSchema,
 } from './schemas';
 //
+
+export const ContactModel = model('Contact', ContactSchema);
 
 export const VehicleModel = model('Vehicle', VehicleSchema);
 //Run per model to init indexes for unique fields-run only once
@@ -19,6 +23,11 @@ export const BookingModel = model('Booking', BookingSchema);
 export const JournalEntryModel = model('Journal_Entry', JournalEntrySchema);
 
 export const InvoiceModel = model('Invoice', InvoiceSchema);
+
+export const PaymentReceivedModel = model(
+  'Payments_Received',
+  PaymentReceivedSchema
+);
 
 export const AccountModel = model('Accounts', AccountSchema);
 

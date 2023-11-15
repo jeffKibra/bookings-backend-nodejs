@@ -1,86 +1,65 @@
-import * as functions from "firebase-functions";
-import { getFirestore } from "firebase-admin/firestore";
-import regionalFunctions from "../../regionalFunctions";
+import { ObjectId, ClientSession } from 'mongodb';
+import { startSession } from 'mongoose';
 
-import { isAuthenticated } from "../../utils/auth";
-import { ContactSummary } from "../../utils/summaries";
-import { IContactForm } from "../../types";
+import { IContactForm } from '../../../../types';
 
-import { Customer, OpeningBalance } from "./utils";
+import { Customer, OpeningBalance } from './utils';
 
-import { getAllAccounts } from "../../utils/accounts";
+import { getAllAccounts } from '../../utils/accounts';
 
 //------------------------------------------------------------
-const db = getFirestore();
 
-const create = regionalFunctions.https.onCall(
-  async (payload: { orgId: string; formData: IContactForm }, context) => {
-    const auth = isAuthenticated(context);
-
-    const openingBalance = payload?.formData?.openingBalance;
-    if (openingBalance < 0) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "Customer Opening Balance cannot be a negative number"
-      );
-    }
-
-    try {
-      const userId = auth.uid;
-      const { orgId, formData } = payload;
-
-      const accounts = await getAllAccounts(orgId);
-
-      const customerId = db
-        .collection("organizations")
-        .doc(orgId)
-        .collection("customers")
-        .doc().id;
-
-      await ContactSummary.create(orgId, customerId);
-
-      await db.runTransaction(async (transaction) => {
-        const customer = new Customer(
-          transaction,
-          orgId,
-          userId,
-          accounts,
-          customerId
-        );
-
-        let invoiceId = "";
-        //create opening balance if any.
-        if (openingBalance > 0) {
-          invoiceId = await OpeningBalance.createInvoiceId(orgId);
-          const ob = new OpeningBalance(transaction, {
-            accounts,
-            orgId,
-            userId,
-            invoiceId,
-          });
-
-          const customerDataSummary = Customer.createDataSummary(
-            customerId,
-            formData
-          );
-
-          const obInvoice = ob.generateInvoice(
-            openingBalance,
-            customerDataSummary
-          );
-          //create opening balance
-          await ob.create(obInvoice);
-        }
-
-        //create customer
-        customer.create(formData, invoiceId);
-      });
-    } catch (err) {
-      const error = err as Error;
-      console.log(error);
-      throw new functions.https.HttpsError("internal", error.message);
-    }
+async function create(userUID: string, orgId: string, formData: IContactForm) {
+  const openingBalance = formData?.openingBalance;
+  if (openingBalance < 0) {
+    throw new Error('Customer Opening Balance cannot be a negative number');
   }
-);
+
+  const session = await startSession();
+  session.startTransaction();
+
+  try {
+    const customerId = new ObjectId().toString();
+
+    const customer = new Customer(session, orgId, userUID, customerId);
+
+    let invoiceId = '';
+    //create opening balance if any.
+    if (openingBalance > 0) {
+      invoiceId = new ObjectId().toString();
+
+      const ob = new OpeningBalance(session, {
+        orgId,
+        userId: userUID,
+        invoiceId,
+      });
+
+      const customerDataSummary = Customer.createCustomerSummary(
+        customerId,
+        formData
+      );
+
+      const obInvoice = await ob.generateInvoice(
+        openingBalance,
+        customerDataSummary
+      );
+      //create opening balance
+      await ob.create(obInvoice);
+    }
+
+    //create customer
+    customer.create(formData, invoiceId);
+
+    await session.commitTransaction();
+  } catch (err) {
+    await session.abortTransaction();
+
+    const error = err as Error;
+    console.log(error);
+    throw new Error(error.message);
+  } finally {
+    await session.endSession();
+  }
+}
 
 export default create;

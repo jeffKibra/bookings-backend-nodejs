@@ -1,4 +1,4 @@
-import { filters } from '../../../../utils';
+import { filters } from '../../../../../utils';
 //
 
 const { generateQueryStringFilter, generateRangeFilter } = filters;

@@ -100,7 +100,9 @@ export default class Invoice extends InvoiceSale {
     return updatedInvoice;
   }
 
-  async delete(currentInvoice: InvoiceData) {
+  async delete() {
+    const currentInvoice = await this.getCurrentInvoice();
+
     InvoiceSale.validateDelete(currentInvoice);
 
     const { creditAccountsMapping, debitAccountsMapping } =

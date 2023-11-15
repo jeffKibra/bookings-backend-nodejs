@@ -1,57 +1,53 @@
-import {
-  WriteBatch,
-  FieldValue,
-  Timestamp,
-  DocumentReference,
-} from "firebase-admin/firestore";
-import BigNumber from "bignumber.js";
+import BigNumber from 'bignumber.js';
+//
+import {} from '../../../../models';
 
-import Journal from "../../../utils/journal";
-import { dbCollections } from "../../../utils/firebase";
+import { JournalEntry } from '../../../journal';
 
-import PaymentSummary from "./paymentSummary";
+import PaymentSummary from './paymentSummary';
 
 import {
-  Account,
+  IAccountSummary,
   PaymentReceivedForm,
   PaymentReceivedFromDb,
   TransactionTypes,
   PaymentReceived as PaymentReceivedData,
-} from "../../../types";
+} from '../../../../../types';
+import { ClientSession } from 'mongoose';
 
 interface PaymentData {
-  accounts: Record<string, Account>;
   orgId: string;
   userId: string;
   paymentId: string;
 }
 
 //-------------------------------------------------------------
-const { serverTimestamp } = FieldValue;
 
 export default class PaymentReceived extends PaymentSummary {
-  transactionType: keyof Pick<TransactionTypes, "customer_payment">;
-  paymentRef: DocumentReference<PaymentReceivedFromDb>;
+  transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
 
-  constructor(batch: WriteBatch, paymentData: PaymentData) {
-    const { accounts, orgId, userId, paymentId } = paymentData;
+  constructor(session: ClientSession, paymentData: PaymentData) {
+    const { orgId, userId, paymentId } = paymentData;
 
-    super(batch, { accounts, orgId, userId, paymentId });
+    super(session, { orgId, userId, paymentId });
 
-    this.transactionType = "customer_payment";
-
-    const paymentsReceivedCollection = dbCollections(orgId).paymentsReceived;
-    this.paymentRef = paymentsReceivedCollection.doc(paymentId);
+    this.transactionType = 'customer_payment';
   }
 
-  fetchCurrentPayment() {
+  async fetchCurrentPayment() {
     const { orgId, paymentId } = this;
 
-    return PaymentReceived.fetchPaymentData(orgId, paymentId);
+    const payment = await PaymentReceived.fetchPaymentData(orgId, paymentId);
+
+    if (!payment) {
+      throw new Error('Payment not found!');
+    }
+
+    return payment;
   }
 
   create(formData: PaymentReceivedForm) {
-    const { batch, orgId, userId, transactionType } = this;
+    const { session, orgId, userId, transactionType } = this;
     console.log({ formData });
 
     // console.log({ data, orgId, userProfile });
@@ -80,11 +76,11 @@ export default class PaymentReceived extends PaymentSummary {
     /**
      * update org summary
      */
-    this.updateOrgSummary(formData);
+    // this.updateOrgSummary(formData);
     /**
      * update customer summary
      */
-    this.updateCustomerSummary(formData);
+    // this.updateCustomerSummary(formData);
     /**
      * create overpayment
      */
@@ -230,7 +226,7 @@ export default class PaymentReceived extends PaymentSummary {
       journalInstance.deleteEntry(paymentDocPath, unearnedRevenue.accountId);
     } else {
       if (!formData) {
-        throw new Error("Payment form data is required!");
+        throw new Error('Payment form data is required!');
       }
 
       const contacts = PaymentSummary.createContactsFromCustomer(

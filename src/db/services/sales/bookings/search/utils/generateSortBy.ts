@@ -1,4 +1,8 @@
-import { ISortBy, IUserSortBy, ISortByDirection } from '../../../../../types';
+import {
+  ISortBy,
+  IUserSortBy,
+  ISortByDirection,
+} from '../../../../../../types';
 
 export default function generateSortBy(
   query: string | number,

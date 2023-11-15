@@ -1,54 +1,44 @@
-import * as functions from "firebase-functions";
-import { getFirestore } from "firebase-admin/firestore";
-import regionalFunctions from "../../regionalFunctions";
+import { startSession } from 'mongoose';
+//
+import { PaymentReceived } from './utils';
 
-import { isAuthenticated } from "../../utils/auth";
-import { getAllAccounts } from "../../utils/accounts";
-
-import { PaymentReceived } from "./utils";
-
-import { PaymentReceivedForm } from "../../types";
+import { PaymentReceivedForm } from '../../../../types';
 
 //------------------------------------------------------------
-const db = getFirestore();
 
-const create = regionalFunctions.https.onCall(
-  async (
-    payload: { orgId: string; formData: PaymentReceivedForm },
-    context
-  ) => {
-    const auth = isAuthenticated(context);
+async function create(
+  orgId: string,
+  userUID: string,
+  formData: PaymentReceivedForm
+) {
+  const session = await startSession();
+  session.startTransaction();
 
-    try {
-      const userId = auth.uid;
-      const { orgId } = payload;
-      const formData = PaymentReceived.reformatDates(payload.formData);
-      const accounts = await getAllAccounts(orgId);
+  try {
+    const formattedData = PaymentReceived.reformatDates(formData);
 
-      const batch = db.batch();
+    const paymentId = await PaymentReceived.createPaymentId(orgId);
 
-      const paymentId = await PaymentReceived.createPaymentId(orgId);
+    const paymentInstance = new PaymentReceived(batch, {
+      accounts,
+      orgId,
+      paymentId,
+      userId,
+    });
 
-      const paymentInstance = new PaymentReceived(batch, {
-        accounts,
-        orgId,
-        paymentId,
-        userId,
-      });
+    paymentInstance.create(formData);
 
-      paymentInstance.create(formData);
+    await session.commitTransaction();
+  } catch (err) {
+    await session.abortTransaction();
 
-      await batch.commit();
-    } catch (err) {
-      const error = err as Error;
-      console.log(error);
+    const error = err as Error;
+    console.log(error);
 
-      throw new functions.https.HttpsError(
-        "unknown",
-        error.message || "unknown error"
-      );
-    }
+    throw new Error(error.message || 'unknown error');
+  } finally {
+    await session.endSession();
   }
-);
+}
 
 export default create;

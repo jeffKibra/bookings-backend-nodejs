@@ -1,7 +1,7 @@
-import { AccountType } from "../types";
+import { IAccountType } from '../types';
 
 type TypeDetails = {
-  main: AccountType["main"];
+  main: IAccountType['main'];
   name: string;
 };
 
@@ -33,92 +33,92 @@ type TypesOfAccounts = {
 
 const accountTypes: TypesOfAccounts = {
   other_asset: {
-    main: "asset",
-    name: "Other Asset",
+    main: 'asset',
+    name: 'Other Asset',
   },
   other_current_asset: {
-    main: "asset",
-    name: "Other Current Asset",
+    main: 'asset',
+    name: 'Other Current Asset',
   },
   cash: {
-    main: "asset",
-    name: "Cash",
+    main: 'asset',
+    name: 'Cash',
   },
   bank: {
-    main: "asset",
-    name: "Bank",
+    main: 'asset',
+    name: 'Bank',
   },
   fixed_asset: {
-    main: "asset",
-    name: "Fixed Asset",
+    main: 'asset',
+    name: 'Fixed Asset',
   },
   stock: {
-    main: "asset",
-    name: "Stock",
+    main: 'asset',
+    name: 'Stock',
   },
   accounts_receivable: {
-    main: "asset",
-    name: "Accounts Receivable",
+    main: 'asset',
+    name: 'Accounts Receivable',
   },
   payment_clearing: {
-    main: "asset",
-    name: "Payment Clearing",
+    main: 'asset',
+    name: 'Payment Clearing',
   },
   input_tax: {
-    main: "asset",
-    name: "Input Tax",
+    main: 'asset',
+    name: 'Input Tax',
   },
   other_current_liability: {
-    main: "liability",
-    name: "Other Current Liability",
+    main: 'liability',
+    name: 'Other Current Liability',
   },
   credit_card: {
-    main: "liability",
-    name: "Credit Card",
+    main: 'liability',
+    name: 'Credit Card',
   },
   accounts_payable: {
-    main: "liability",
-    name: "Accounts Payable",
+    main: 'liability',
+    name: 'Accounts Payable',
   },
   long_term_liability: {
-    main: "liability",
-    name: "Long Term Liability",
+    main: 'liability',
+    name: 'Long Term Liability',
   },
   other_liability: {
-    main: "liability",
-    name: "Other Liability",
+    main: 'liability',
+    name: 'Other Liability',
   },
   overseas_tax_payable: {
-    main: "liability",
-    name: "Overseas Tax Payable",
+    main: 'liability',
+    name: 'Overseas Tax Payable',
   },
   output_tax: {
-    main: "liability",
-    name: "Output Tax",
+    main: 'liability',
+    name: 'Output Tax',
   },
   equity: {
-    main: "equity",
-    name: "Equity",
+    main: 'equity',
+    name: 'Equity',
   },
   income: {
-    main: "income",
-    name: "Income",
+    main: 'income',
+    name: 'Income',
   },
   other_income: {
-    main: "income",
-    name: "Other Income",
+    main: 'income',
+    name: 'Other Income',
   },
   expense: {
-    main: "expense",
-    name: "Expense",
+    main: 'expense',
+    name: 'Expense',
   },
   cost_of_goods_sold: {
-    main: "expense",
-    name: "Cost of Goods Sold",
+    main: 'expense',
+    name: 'Cost of Goods Sold',
   },
   other_expense: {
-    main: "expense",
-    name: "Other Expense",
+    main: 'expense',
+    name: 'Other Expense',
   },
 };
 

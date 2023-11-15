@@ -1,6 +1,6 @@
 // import { ObjectId } from 'mongodb';
 
-import { IBookingForm } from '../../../../types';
+import { IBookingForm } from '../../../../../types';
 
 export default function formatBookingFormData(currentValues: IBookingForm) {
   const { customer, vehicle, startDate, endDate } = currentValues;

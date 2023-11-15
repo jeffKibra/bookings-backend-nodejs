@@ -6,7 +6,7 @@ import { generateFilters } from '../utils/filters';
 import {
   ISearchVehiclesPagination,
   IPaginationLastDoc,
-} from '../../../../../types';
+} from '../../../../../../types';
 
 export default function generateSearchStages(
   orgId: string,

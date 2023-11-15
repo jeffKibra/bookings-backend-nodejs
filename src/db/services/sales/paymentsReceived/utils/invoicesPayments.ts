@@ -1,65 +1,60 @@
-import { getFirestore, FieldValue, WriteBatch } from 'firebase-admin/firestore';
+import { ClientSession } from 'mongoose';
+
 import BigNumber from 'bignumber.js';
 
-import { dbCollections } from '../../../utils/firebase';
-import Journal from '../../../utils/journal';
+import { JournalEntry } from '../../../journal';
+import { Accounts } from '../../../accounts';
 import { getAccountData } from '../../../utils/accounts';
 
 import {
-  Account,
+  IAccountSummary,
   PaymentReceivedForm,
   TransactionTypes,
   PaymentReceived,
   IContactSummary,
   IInvoicePaymentMapping,
-} from '../../../types';
+} from '../../../../../types';
 
 interface PaymentData {
-  accounts: Record<string, Account>;
   orgId: string;
   userId: string;
   paymentId: string;
 }
 
 //-------------------------------------------------------------
-const db = getFirestore();
-const { serverTimestamp, increment, arrayUnion, arrayRemove } = FieldValue;
 
-export default class BookingsPayments {
-  batch: WriteBatch;
-  accounts: Record<string, Account>;
+const URAccountId = 'unearned_revenue';
+const ARAccountId = 'accounts_receivable';
+
+export default class InvoicesPayments extends Accounts {
+  session: ClientSession;
   orgId: string;
   userId: string;
   paymentId: string;
   transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
 
-  unearnedRevenue: Account;
-  accountsReceivable: Account;
+  constructor(session: ClientSession, paymentData: PaymentData) {
+    const { orgId, userId, paymentId } = paymentData;
 
-  constructor(batch: WriteBatch, paymentData: PaymentData) {
-    const { accounts, orgId, userId, paymentId } = paymentData;
+    super(session);
 
-    this.batch = batch;
+    this.session = session;
 
-    this.accounts = accounts;
     this.orgId = orgId;
     this.userId = userId;
     this.paymentId = paymentId;
 
     this.transactionType = 'customer_payment';
-
-    this.unearnedRevenue = getAccountData('unearned_revenue', accounts);
-    this.accountsReceivable = getAccountData('accounts_receivable', accounts);
   }
 
   makePayments(
     incomingPayment: PaymentReceivedForm | null,
     currentPayment?: PaymentReceived
   ) {
-    const incomingCustomerId = incomingPayment?.customer?.id;
+    const incomingCustomerId = incomingPayment?.customer?._id;
     const incomingAccountId = incomingPayment?.account?.accountId;
 
-    const currentCustomerId = currentPayment?.customer?.id;
+    const currentCustomerId = currentPayment?.customer?._id;
     const currentAccount = currentPayment?.account;
     const currentAccountId = currentAccount?.accountId;
 
@@ -78,7 +73,7 @@ export default class BookingsPayments {
       paymentsToUpdate,
       paymentsToCreate,
       paymentsToDelete,
-    } = BookingsPayments.getPaymentsMapping(
+    } = InvoicesPayments.getPaymentsMapping(
       currentPayment?.payments || {},
       incomingPayment?.payments || {}
     );
@@ -103,12 +98,12 @@ export default class BookingsPayments {
 
     if (paymentsToCreate.length > 0 && incomingPayment) {
       console.log('creating payments');
-      this.payBookings(incomingPayment, paymentsToCreate);
+      this.payInvoices(incomingPayment, paymentsToCreate);
     }
 
     if (updatedPayments.length > 0 && incomingPayment && currentAccountId) {
       console.log('updating payments');
-      this.updateBookingsPayments(
+      this.updateInvoicesPayments(
         incomingPayment,
         currentAccountId,
         updatedPayments
@@ -117,118 +112,107 @@ export default class BookingsPayments {
 
     if (paymentsToDelete.length > 0 && currentAccount) {
       console.log('deleting payments');
-      this.deleteBookingsPayments(currentAccount, paymentsToDelete);
+      this.deleteInvoicesPayments(currentAccount, paymentsToDelete);
     }
   }
 
-  private payBookings(
+  private async payInvoices(
     formData: PaymentReceivedForm,
     paymentsToCreate: IInvoicePaymentMapping[]
   ) {
-    const { orgId, userId, paymentId, batch, accountsReceivable } = this;
+    const { orgId, userId, paymentId, session } = this;
     // console.log({ account });
     const paymentAccount = formData.account;
 
-    const contacts = BookingsPayments.createContactsFromCustomer(
-      formData.customer
-    );
+    const contacts = [formData.customer];
 
-    const journalInstance = new Journal(batch, userId, orgId);
+    const ARAccount = await this.getAccountData(ARAccountId);
+    //
+    const journalInstance = new JournalEntry(session, userId, orgId);
     /**
      * update bookings with the current payment
      */
     paymentsToCreate.forEach(payment => {
-      const { bookingId, incoming } = payment;
-      console.log({ bookingId, incoming, paymentId });
+      const { _id: invoiceId, incoming } = payment;
+      console.log({ invoiceId, incoming, paymentId });
 
       if (incoming > 0) {
         //update booking
-        const bookingRef = db.doc(
-          `organizations/${orgId}/bookings/${bookingId}`
-        );
 
-        const paidBookingsCollection =
-          BookingsPayments.getPaidBookingsCollection(orgId, paymentId);
         /**
          * credit accounts_receivable
          */
         journalInstance.creditAccount({
-          transactionCollection: paidBookingsCollection,
-          account: accountsReceivable,
+          account: ARAccount,
           amount: incoming,
-          transactionId: bookingId,
-          transactionType: 'booking_payment',
+          transactionId: invoiceId,
+          transactionType: 'invoice_payment',
           contacts,
+          details: { invoiceId },
         });
         /**
          * debit payment account-
          */
         journalInstance.debitAccount({
-          transactionCollection: paidBookingsCollection,
           account: paymentAccount,
           amount: incoming,
-          transactionId: bookingId,
-          transactionType: 'booking_payment',
+          transactionId: invoiceId,
+          transactionType: 'invoice_payment',
           contacts,
+          details: { invoiceId },
         });
 
-        const adjustment = new BigNumber(0 - incoming).dp(2).toNumber();
+        // const adjustment = new BigNumber(0 - incoming).dp(2).toNumber();
 
-        batch.update(bookingRef, {
-          balance: increment(adjustment),
-          paymentsCount: increment(1),
-          paymentsIds: arrayUnion(paymentId),
-          [`paymentsReceived.${paymentId}`]: incoming,
-          modifiedBy: userId,
-          modifiedAt: serverTimestamp(),
-        });
+        // batch.update(bookingRef, {
+        //   balance: increment(adjustment),
+        //   paymentsCount: increment(1),
+        //   paymentsIds: arrayUnion(paymentId),
+        //   [`paymentsReceived.${paymentId}`]: incoming,
+        //   modifiedBy: userId,
+        //   modifiedAt: serverTimestamp(),
+        // });
       }
     });
   }
 
   //----------------------------------------------------------------
-  private updateBookingsPayments(
+  private async updateInvoicesPayments(
     formData: PaymentReceivedForm,
     currentAccountId: string,
     paymentsToUpdate: IInvoicePaymentMapping[]
   ) {
-    const { orgId, userId, paymentId, batch, accountsReceivable } = this;
+    const { orgId, userId, paymentId, session } = this;
     // console.log({ account });
     const { account: incomingAccount } = formData;
     const { accountId: incomingAccountId } = incomingAccount;
 
-    const contacts = BookingsPayments.createContactsFromCustomer(
-      formData.customer
-    );
+    const contacts = [formData.customer];
 
-    const journalInstance = new Journal(batch, userId, orgId);
+    const ARAccount = await this.getAccountData(ARAccountId);
+    //
+    const journalInstance = new JournalEntry(session, userId, orgId);
 
     /**
      * update bookings with the current payment
      */
     paymentsToUpdate.forEach(payment => {
-      const { bookingId, incoming, current } = payment;
-      console.log({ bookingId, incoming, paymentId });
+      const { _id: invoiceId, incoming, current } = payment;
+      console.log({ invoiceId, incoming, paymentId });
 
       if (incoming > 0) {
         //update booking
-        const bookingRef = db.doc(
-          `organizations/${orgId}/bookings/${bookingId}`
-        );
 
-        const paidBookingsCollection =
-          BookingsPayments.getPaidBookingsCollection(orgId, paymentId);
-        const paidBookingPath = `${paidBookingsCollection}/${bookingId}`;
         /**
          * accounts receivable account should be credited
          */
         journalInstance.creditAccount({
-          transactionCollection: paidBookingsCollection,
-          account: accountsReceivable,
+          account: ARAccount,
           amount: incoming,
-          transactionId: bookingId,
-          transactionType: 'booking_payment',
+          transactionId: invoiceId,
+          transactionType: 'invoice_payment',
           contacts,
+          details: { invoiceId },
         });
         /**
          * deposit accounts
@@ -236,67 +220,63 @@ export default class BookingsPayments {
         const paymentAccountHasChanged = incomingAccountId !== currentAccountId;
         if (paymentAccountHasChanged) {
           //delete previous account entry
-          journalInstance.deleteEntry(paidBookingPath, currentAccountId);
+          journalInstance.deleteEntry(paymentId, currentAccountId, {
+            invoiceId,
+          });
         }
         //debit incoming account
         journalInstance.debitAccount({
-          transactionCollection: paidBookingsCollection,
-          transactionId: bookingId,
+          transactionId: invoiceId,
           account: incomingAccount,
           amount: incoming,
-          transactionType: 'booking_payment',
+          transactionType: 'invoice_payment',
           contacts,
+          details: { invoiceId },
         });
 
-        const adjustment = new BigNumber(current - incoming).dp(2).toNumber();
+        // const adjustment = new BigNumber(current - incoming).dp(2).toNumber();
 
-        batch.update(bookingRef, {
-          balance: increment(adjustment),
-          [`paymentsReceived.${paymentId}`]: incoming,
-          modifiedBy: userId,
-          modifiedAt: serverTimestamp(),
-        });
+        // batch.update(bookingRef, {
+        //   balance: increment(adjustment),
+        //   [`paymentsReceived.${paymentId}`]: incoming,
+        //   modifiedBy: userId,
+        //   modifiedAt: serverTimestamp(),
+        // });
       }
     });
   }
 
   //---------------------------------------------------------------------
 
-  private deleteBookingsPayments(
-    paymentAccount: Account,
+  private async deleteInvoicesPayments(
+    paymentAccount: IAccountSummary,
     paymentsToDelete: IInvoicePaymentMapping[]
   ) {
-    const { batch, userId, orgId, paymentId, accounts } = this;
+    const { session, userId, orgId, paymentId, accounts } = this;
 
-    const accountsReceivable = getAccountData('accounts_receivable', accounts);
+    const ARAccount = await this.getAccountData(ARAccountId);
 
-    const journalInstance = new Journal(batch, userId, orgId);
+    const journalInstance = new JournalEntry(session, userId, orgId);
 
     paymentsToDelete.forEach(payment => {
-      const { current, bookingId } = payment;
-      const paidBookingPath = BookingsPayments.getPaidBookingPath(
-        orgId,
-        paymentId,
-        bookingId
-      );
-      dbCollections(orgId).paymentsReceived.path;
-      //delete accounts_receivable entry
-      journalInstance.deleteEntry(
-        paidBookingPath,
-        accountsReceivable.accountId
-      );
-      //delete paymentAccount entries
-      journalInstance.deleteEntry(paidBookingPath, paymentAccount.accountId);
+      const { _id: invoiceId } = payment;
 
-      const bookingRef = db.doc(`organizations/${orgId}/bookings/${bookingId}`);
-      batch.update(bookingRef, {
-        balance: increment(current),
-        paymentsCount: increment(-1),
-        paymentsIds: arrayRemove(paymentId),
-        [`paymentsReceived.${paymentId}`]: FieldValue.delete(),
-        modifiedBy: userId,
-        modifiedAt: serverTimestamp(),
+      //delete accounts_receivable entry
+      journalInstance.deleteEntry(paymentId, ARAccountId, { invoiceId });
+      //delete paymentAccount entries
+      journalInstance.deleteEntry(paymentId, paymentAccount.accountId, {
+        invoiceId,
       });
+
+      // const bookingRef = db.doc(`organizations/${orgId}/bookings/${invoiceId}`);
+      // batch.update(bookingRef, {
+      //   balance: increment(current),
+      //   paymentsCount: increment(-1),
+      //   paymentsIds: arrayRemove(paymentId),
+      //   [`paymentsReceived.${paymentId}`]: FieldValue.delete(),
+      //   modifiedBy: userId,
+      //   modifiedAt: serverTimestamp(),
+      // });
     });
   }
 
@@ -319,24 +299,9 @@ export default class BookingsPayments {
   }
 
   //----------------------------------------------------------------
-  static getPaidBookingsCollection(orgId: string, paymentId: string) {
-    const paymentsReceivedCollection =
-      dbCollections(orgId).paymentsReceived.path;
-    //delete accounts_receivable entry
-    return `${paymentsReceivedCollection}/${paymentId}/paidBookings`;
-  }
+
   //------------------------------------------------------------
-  static getPaidBookingPath(
-    orgId: string,
-    paymentId: string,
-    bookingId: string
-  ) {
-    const collection = BookingsPayments.getPaidBookingsCollection(
-      orgId,
-      paymentId
-    );
-    return `${collection}/${bookingId}`;
-  }
+
   //----------------------------------------------------------------
   static getPaymentsMapping(
     currentPayments: { [key: string]: number },
@@ -357,21 +322,21 @@ export default class BookingsPayments {
      * traverse incomingIds and add incoming payments to unique payments object
      * keep track of current and incoming amounts in the uniquePayments array
      */
-    const currentbookingIds = Object.keys(currentPayments);
-    const incomingBookingIds = Object.keys(incomingPayments);
+    const currentinvoiceIds = Object.keys(currentPayments);
+    const incominginvoiceIds = Object.keys(incomingPayments);
 
-    currentbookingIds.forEach(bookingId => {
-      const current = currentPayments[bookingId];
-      const incoming = incomingPayments[bookingId] || 0;
+    currentinvoiceIds.forEach(invoiceId => {
+      const current = currentPayments[invoiceId];
+      const incoming = incomingPayments[invoiceId] || 0;
       const dataMapping = {
         current,
         incoming,
-        bookingId,
+        _id: invoiceId,
       };
       /**
        * get index of booking Id for incoming ids to remove it
        */
-      const index = incomingBookingIds.findIndex(id => id === bookingId);
+      const index = incominginvoiceIds.findIndex(id => id === invoiceId);
       if (index > -1) {
         /**
          * similar booking has been found-check if tha amounts are equal
@@ -383,7 +348,7 @@ export default class BookingsPayments {
           paymentsToUpdate.push(dataMapping);
         }
         //use splice function to remove booking from incomingIds array.
-        incomingBookingIds.splice(index, 1);
+        incominginvoiceIds.splice(index, 1);
       } else {
         /**
          * booking not in incoming payments
@@ -396,12 +361,12 @@ export default class BookingsPayments {
      * check if there are payments remaining in incomingIds array
      * this is a completely new payment- add then to paymentsToCreate array
      */
-    if (incomingBookingIds.length > 0) {
-      incomingBookingIds.forEach(bookingId => {
+    if (incominginvoiceIds.length > 0) {
+      incominginvoiceIds.forEach(invoiceId => {
         const dataMapping = {
           current: 0,
-          incoming: incomingPayments[bookingId],
-          bookingId,
+          incoming: incomingPayments[invoiceId],
+          _id: invoiceId,
         };
 
         paymentsToCreate.push(dataMapping);
@@ -429,7 +394,7 @@ export default class BookingsPayments {
     paymentTotal: number,
     payments: { [key: string]: number }
   ) {
-    const bookingPaymentsTotal = BookingsPayments.getPaymentsTotal(payments);
+    const bookingPaymentsTotal = InvoicesPayments.getPaymentsTotal(payments);
     if (bookingPaymentsTotal > paymentTotal) {
       throw new Error(
         'bookings payments cannot be more than customer payment!'
@@ -439,16 +404,16 @@ export default class BookingsPayments {
     return bookingPaymentsTotal;
   }
   //------------------------------------------------------------
-  static createContactsFromCustomer(customer: IContactSummary) {
-    const { id, ...contactDetails } = customer;
+  // static createContactsFromCustomer(customer: IContactSummary) {
+  //   const { id, ...contactDetails } = customer;
 
-    const contacts: Record<string, IContactSummary> = {
-      [id]: {
-        ...contactDetails,
-        id,
-      },
-    };
+  //   const contacts: Record<string, IContactSummary> = {
+  //     [id]: {
+  //       ...contactDetails,
+  //       id,
+  //     },
+  //   };
 
-    return contacts;
-  }
+  //   return contacts;
+  // }
 }

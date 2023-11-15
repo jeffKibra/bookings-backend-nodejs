@@ -1,14 +1,14 @@
 import { PipelineStage } from 'mongoose';
-import { BookingModel } from '../../../models';
+import { BookingModel } from '../../../../models';
 //
 import { generateSearchStages } from './subPipelines';
-import { pagination, sort } from '../../utils';
+import { pagination, sort } from '../../../utils';
 //
 import {
   IBooking,
   IBookingSearchAggregationMeta,
   ISearchBookingsQueryOptions,
-} from '../../../../types';
+} from '../../../../../types';
 //
 
 // type FacetPipelineStage = PipelineStage.FacetPipelineStage;

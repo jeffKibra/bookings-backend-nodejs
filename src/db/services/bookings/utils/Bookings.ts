@@ -16,7 +16,7 @@ import { formatBookingFormData } from '.';
 
 //
 import {
-  Account,
+  IAccountSummary,
   IBookingForm,
   IBookingFromDb,
   IBooking,

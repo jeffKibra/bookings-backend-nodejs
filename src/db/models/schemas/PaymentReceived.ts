@@ -6,7 +6,7 @@ import {
   paymentModeSchema,
   paymentTermSchema,
 } from './Generals';
-import { customerSummarySchema } from './Customer';
+import { ContactSummarySchema } from './Contact';
 import { VehicleSchemaForBookingForm } from './Vehicle';
 //
 import { initSchema } from './utils';
@@ -29,7 +29,7 @@ const paymentsSchema = new Schema({
   amounts: { type: Object },
 });
 
-const PaidBookingSchema = new Schema({
+const PaidInvoiceSchema = new Schema({
   _id: { type: String, required: true },
   amount: { type: Number },
 });
@@ -37,9 +37,9 @@ const PaidBookingSchema = new Schema({
 const schema = new Schema({
   //formdata
   vehicle: { type: VehicleSchemaForBookingForm, required: true },
-  customer: { type: customerSummarySchema, required: true },
+  customer: { type: ContactSummarySchema, required: true },
   amount: { type: Number, required: true },
-  paidBookings: { type: [PaidBookingSchema], required: true },
+  paidInvoices: { type: [PaidInvoiceSchema], required: true },
   excess: { type: Number, required: true },
   paymentDate: { type: Date, required: true },
   paymentMode: { type: paymentModeSchema, required: true },

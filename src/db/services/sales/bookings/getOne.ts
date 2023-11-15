@@ -1,8 +1,8 @@
 import { ObjectId } from 'mongodb';
 import { ClientSession } from 'mongoose';
 //
-import { BookingModel } from '../../models';
-import { IBooking } from '../../../types';
+import { BookingModel } from '../../../models';
+import { IBooking } from '../../../../types';
 //
 
 export async function getById(

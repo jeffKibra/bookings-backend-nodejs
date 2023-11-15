@@ -6,18 +6,20 @@ import {
   paymentModeSchema,
   paymentTermSchema,
 } from './Generals';
-import { customerSummarySchema } from './Customer';
+import { ContactSummarySchema } from './Contact';
 import { SaleItemSchema } from './SaleItem';
 //
 import { initSchema } from './utils';
 //\
 
-const InvoiceMetaDataSchema = metaDataSchema.discriminator("InvoiceMetaData", new Schema({
-  ...metaDataSchema.obj,
-  transactionType: { type: String },
-  saleType: { type: String, required: true },
-}));
-
+const InvoiceMetaDataSchema = metaDataSchema.discriminator(
+  'InvoiceMetaData',
+  new Schema({
+    ...metaDataSchema.obj,
+    transactionType: { type: String },
+    saleType: { type: String, required: true },
+  })
+);
 
 const downPaymentSchema = new Schema({
   amount: { type: Schema.Types.Decimal128, required: true },
@@ -27,7 +29,7 @@ const downPaymentSchema = new Schema({
 
 const schema = new Schema({
   //formdata
-  customer: { type: customerSummarySchema, required: true },
+  customer: { type: ContactSummarySchema, required: true },
   items: { type: [SaleItemSchema], required: true },
   saleDate: { type: Date, required: true },
   dueDate: { type: Date, required: true },

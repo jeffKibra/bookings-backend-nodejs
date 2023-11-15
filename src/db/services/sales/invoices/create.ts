@@ -6,8 +6,8 @@ import { IBookingForm } from '../../../../types';
 //
 
 export default async function create(
-  userUID: string,
   orgId: string,
+  userUID: string,
   formData: IBookingForm
 ) {
   if (!userUID || !orgId || !formData) {

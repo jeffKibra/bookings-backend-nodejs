@@ -80,7 +80,13 @@ export default class InvoiceSale extends Sale {
   async getCurrentInvoice() {
     const { orgId, transactionId, session } = this;
 
-    return InvoiceSale.getInvoice(transactionId, session);
+    const invoice = await InvoiceSale.getInvoice(transactionId, session);
+
+    if (!invoice) {
+      throw new Error('Invoice not found!');
+    }
+
+    return invoice;
   }
 
   async createInvoice(

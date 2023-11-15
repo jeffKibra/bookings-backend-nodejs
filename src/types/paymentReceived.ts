@@ -36,22 +36,17 @@ export interface PaymentReceived extends PaymentReceivedFromDb {
   paymentId: string;
 }
 
-export interface InvoicePaymentMapping {
+export interface IInvoicePaymentMapping {
   incoming: number;
   current: number;
-  invoiceId: string;
+  _id: string;
 }
 
-export interface IBookingPaymentMapping {
-  incoming: number;
-  current: number;
-  bookingId: string;
-}
 export interface InvoicesPayments {
   [key: string]: number;
 }
 
-export interface IBookingsPayments {
+export interface IInvoicesPayments {
   [key: string]: number;
 }
 
@@ -59,6 +54,6 @@ export interface PaymentWithInvoices extends PaymentReceived {
   invoices: IInvoice[];
 }
 
-export interface IPaymentWithBookings extends PaymentReceived {
-  bookings: IBooking[];
-}
+// export interface IPaymentWithBookings extends PaymentReceived {
+//   bookings: IBooking[];
+// }

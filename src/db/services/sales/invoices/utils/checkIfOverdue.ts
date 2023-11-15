@@ -1,4 +1,4 @@
-import { checkIfIsSameDay } from "../../../utils/dates";
+import { checkIfIsSameDay } from '../../../utils/dates';
 
 export default function checkIfOverdue(dateToCheck: Date, refDate: Date) {
   const isSameDay = checkIfIsSameDay(dateToCheck, refDate);

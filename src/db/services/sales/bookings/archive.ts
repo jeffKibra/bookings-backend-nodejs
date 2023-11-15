@@ -1,11 +1,10 @@
 import { ObjectId } from 'mongodb';
 import { startSession } from 'mongoose';
 //
-import { BookingModel } from '../../models';
-import { handleDBError } from '../utils';
-import { updateItemBookings } from '../itemMonthlyBookings/utils';
+import { BookingModel } from '../../../models';
+import { handleDBError } from '../../utils';
+import { Invoice } from '../invoices/utils';
 //
-import { getById } from './getOne';
 //
 
 export default async function archiveBooking(
@@ -18,36 +17,21 @@ export default async function archiveBooking(
       'Missing Params: Either userUID or orgId or bookingId is missing!'
     );
   }
-  //confirm registration is unique
-
-  const bookingData = await getById(orgId, bookingId);
-  if (!bookingData) {
-    throw new Error('Booking not found!');
-  }
-
-  const {
-    vehicle: { _id: vehicleId },
-    selectedDates,
-  } = bookingData;
 
   const session = await startSession();
   session.startTransaction();
 
   try {
-    const writeResult = await BookingModel.updateOne(
-      { _id: new ObjectId(bookingId) },
-      {
-        $set: {
-          'metaData.status': -1,
-          'metaData.modifiedAt': new Date(),
-          'metaData.modifiedBy': userUID,
-        },
-      },
-      { session }
-    );
-    console.log('delete booking result', writeResult);
+    const instance = new Invoice(session, {
+      invoiceId: bookingId,
+      orgId,
+      userId: userUID,
+      saleType: 'car_booking',
+    });
 
-    await updateItemBookings(session, orgId, vehicleId, [], selectedDates);
+    const writeResult = await instance.delete();
+
+    console.log('delete booking result', writeResult);
 
     await session.commitTransaction();
   } catch (error) {

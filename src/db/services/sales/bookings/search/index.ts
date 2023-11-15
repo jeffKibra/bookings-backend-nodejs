@@ -6,7 +6,7 @@ import {
   ICountFacet,
   IVehicleMakeFacet,
   IBookingAggregationFacets,
-} from '../../../../types';
+} from '../../../../../types';
 //
 
 interface INumRange {

@@ -44,10 +44,10 @@ export type {
   PaymentReceivedFromDb,
   PaymentReceivedForm,
   InvoicesPayments,
-  InvoicePaymentMapping,
+  IInvoicePaymentMapping,
   PaymentWithInvoices,
-  IBookingPaymentMapping,
-  IBookingsPayments,
+  IInvoicePaymentMapping,
+  IInvoicesPayments,
   IPaymentWithBookings,
 } from './paymentReceived';
 export type { DailySummary } from './dailySummary';

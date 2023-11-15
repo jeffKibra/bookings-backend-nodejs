@@ -32,6 +32,7 @@ type entryFnParams = {
   amount: number;
   transactionType: keyof TransactionTypes;
   contacts?: IContactSummary[];
+  details?: Record<string, unknown>;
 };
 
 export default class JournalEntry {
@@ -60,21 +61,48 @@ export default class JournalEntry {
     return this.setEntry(entryParams, 'credit');
   }
 
-  generateFindFilters(transactionId: string, accountId: string) {
+  generateFindFilters(
+    transactionId: string,
+    accountId: string,
+    details?: Record<string, unknown>
+  ) {
     const { orgId } = this;
 
-    return { 'metaData.orgId': orgId, transactionId };
+    const detailsFilters: Record<string, unknown> = {};
+
+    if (details && typeof details === 'object') {
+      Object.keys(details).forEach(detailKey => {
+        detailsFilters[`details.${detailKey}`] = details[detailKey];
+      });
+    }
+
+    return {
+      'metaData.orgId': orgId,
+      transactionId,
+      'account._id': accountId,
+      ...detailsFilters,
+    };
   }
 
   async setEntry(entryParams: entryFnParams, entryType: 'credit' | 'debit') {
-    const { account, transactionId, amount, transactionType, contacts } =
-      entryParams;
+    const {
+      account,
+      transactionId,
+      amount,
+      transactionType,
+      contacts,
+      details,
+    } = entryParams;
 
     const { orgId, userId, session } = this;
     //
     const { accountId } = account;
 
-    const findFilters = this.generateFindFilters(transactionId, accountId);
+    const findFilters = this.generateFindFilters(
+      transactionId,
+      accountId,
+      details
+    );
 
     const updatedEntry = await JournalEntryModel.findOneAndUpdate(
       { ...findFilters },
@@ -86,6 +114,7 @@ export default class JournalEntry {
           transactionId,
           contacts: contacts || [],
           transactionType,
+          ...(details ? { details } : {}),
           metaData: {
             status: 0,
             orgId,
@@ -108,7 +137,8 @@ export default class JournalEntry {
     account: IAccountSummary,
     amount: number,
     transactionType: keyof TransactionTypes,
-    contacts: IContactSummary[]
+    contacts: IContactSummary[],
+    details?: Record<string, unknown>
   ) {
     const { accountType } = account;
     /**
@@ -129,6 +159,7 @@ export default class JournalEntry {
         amount: entryAmount,
         transactionType,
         contacts,
+        details,
       },
       entryType
     );
@@ -139,7 +170,8 @@ export default class JournalEntry {
     transactionType: keyof TransactionTypes,
     account: IAccountSummary,
     amount: number,
-    contacts?: IContactSummary[]
+    contacts?: IContactSummary[],
+    details?: Record<string, unknown>
   ) {
     const { accountType, accountId } = account;
     const { userId } = this;
@@ -166,6 +198,7 @@ export default class JournalEntry {
         contacts,
         transactionId,
         transactionType,
+        details,
       },
       entryType
     );
@@ -174,11 +207,16 @@ export default class JournalEntry {
   async deleteEntry(
     transactionId: string,
     accountId: string,
+    details?: Record<string, unknown>,
     deletionType: 'delete' | 'mark' = 'mark'
   ) {
     const { userId, session } = this;
 
-    const findFilters = this.generateFindFilters(transactionId, accountId);
+    const findFilters = this.generateFindFilters(
+      transactionId,
+      accountId,
+      details
+    );
 
     if (deletionType === 'delete') {
       await JournalEntryModel.findOneAndDelete({
