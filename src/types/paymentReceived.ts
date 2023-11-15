@@ -8,7 +8,7 @@ import {
   IBooking,
 } from '.';
 
-interface Meta {
+interface IMeta {
   createdAt: Date | Timestamp;
   createdBy: string;
   modifiedAt: Date | Timestamp;
@@ -16,11 +16,10 @@ interface Meta {
   status: number;
   orgId: string;
   transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
-  paidInvoicesIds: string[];
-  excess: number;
+  // paidInvoicesIds: string[];
 }
 
-export interface PaymentReceivedForm {
+export interface IPaymentReceivedForm {
   account: IAccountSummary;
   amount: number;
   customer: IContactSummary;
@@ -30,9 +29,12 @@ export interface PaymentReceivedForm {
   payments: { [key: string]: number };
 }
 
-export interface PaymentReceivedFromDb extends PaymentReceivedForm, Meta {}
+export interface IPaymentReceivedFromDb extends IPaymentReceivedForm {
+  excess: number;
+  metaData: IMeta;
+}
 
-export interface PaymentReceived extends PaymentReceivedFromDb {
+export interface IPaymentReceived extends IPaymentReceivedFromDb {
   paymentId: string;
 }
 
@@ -42,15 +44,15 @@ export interface IInvoicePaymentMapping {
   _id: string;
 }
 
-export interface InvoicesPayments {
-  [key: string]: number;
-}
+// export interface InvoicesPayments {
+//   [key: string]: number;
+// }
 
 export interface IInvoicesPayments {
   [key: string]: number;
 }
 
-export interface PaymentWithInvoices extends PaymentReceived {
+export interface PaymentWithInvoices extends IPaymentReceived {
   invoices: IInvoice[];
 }
 

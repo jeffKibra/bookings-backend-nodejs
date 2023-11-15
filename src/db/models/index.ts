@@ -10,8 +10,11 @@ import {
   InvoiceSchema,
   AccountSchema,
   PaymentReceivedSchema,
+  OrgSchema,
 } from './schemas';
 //
+
+export const OrgModel = model('Organization', OrgSchema);
 
 export const ContactModel = model('Contact', ContactSchema);
 

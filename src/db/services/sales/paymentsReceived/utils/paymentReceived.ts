@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 //
-import {} from '../../../../models';
+import { PaymentReceivedModel } from '../../../../models';
 
 import { JournalEntry } from '../../../journal';
 
@@ -8,10 +8,10 @@ import PaymentSummary from './paymentSummary';
 
 import {
   IAccountSummary,
-  PaymentReceivedForm,
-  PaymentReceivedFromDb,
+  IPaymentReceivedForm,
+  IPaymentReceivedFromDb,
   TransactionTypes,
-  PaymentReceived as PaymentReceivedData,
+  IPaymentReceived as IPaymentReceived,
 } from '../../../../../types';
 import { ClientSession } from 'mongoose';
 
@@ -35,9 +35,9 @@ export default class PaymentReceived extends PaymentSummary {
   }
 
   async fetchCurrentPayment() {
-    const { orgId, paymentId } = this;
+    const { paymentId } = this;
 
-    const payment = await PaymentReceived.fetchPaymentData(orgId, paymentId);
+    const payment = await PaymentReceived.fetchPaymentData(paymentId);
 
     if (!payment) {
       throw new Error('Payment not found!');
@@ -46,7 +46,7 @@ export default class PaymentReceived extends PaymentSummary {
     return payment;
   }
 
-  create(formData: PaymentReceivedForm) {
+  async create(formData: IPaymentReceivedForm) {
     const { session, orgId, userId, transactionType } = this;
     console.log({ formData });
 
@@ -73,14 +73,7 @@ export default class PaymentReceived extends PaymentSummary {
      * make the needed invoice payments
      */
     this.makePayments(formData);
-    /**
-     * update org summary
-     */
-    // this.updateOrgSummary(formData);
-    /**
-     * update customer summary
-     */
-    // this.updateCustomerSummary(formData);
+
     /**
      * create overpayment
      */
@@ -91,27 +84,31 @@ export default class PaymentReceived extends PaymentSummary {
     /**
      * create new payment
      */
-    batch.create(this.paymentRef, {
+
+    const instance = new PaymentReceivedModel({
       ...formData,
       excess,
-      paidInvoicesIds: Object.keys(payments),
-      transactionType,
-      status: 0,
-      orgId,
-      createdBy: userId,
-      createdAt: serverTimestamp() as Timestamp,
-      modifiedBy: userId,
-      modifiedAt: serverTimestamp() as Timestamp,
+      metaData: {
+        status: 0,
+        orgId,
+        createdBy: userId,
+        createdAt: new Date().toISOString(),
+        modifiedBy: userId,
+        modifiedAt: new Date().toISOString(),
+        transactionType,
+      },
     });
+
+    await instance.save({ session });
   }
 
   //------------------------------------------------------------
-  update(
-    incomingPayment: PaymentReceivedForm,
-    currentPayment: PaymentReceivedData
+  async update(
+    incomingPayment: IPaymentReceivedForm,
+    currentPayment: IPaymentReceived
   ) {
     console.log({ incomingPayment, currentPayment });
-    const { batch, userId, paymentRef } = this;
+    const { session, userId, paymentId } = this;
     const { payments: incomingPayments, amount: incomingAmount } =
       incomingPayment;
 
@@ -130,14 +127,7 @@ export default class PaymentReceived extends PaymentSummary {
      * update invoice payments
      */
     this.makePayments(incomingPayment, currentPayment);
-    /**
-     * update org summary
-     */
-    this.updateOrgSummary(incomingPayment, currentPayment);
-    /**
-     * update customers summaries
-     */
-    this.updateCustomerSummary(incomingPayment, currentPayment);
+
     /**
      * excess amount - credit account with the excess amount
      */
@@ -153,37 +143,51 @@ export default class PaymentReceived extends PaymentSummary {
     /**
      * update payment
      */
-    // console.log({ transactionDetails });
-    const newDetails = {
+    const updatedPayment = await this._update({
       ...incomingPayment,
-      paidInvoicesIds: Object.keys(incomingPayments),
       excess: incomingExcess,
-      modifiedBy: userId,
-      modifiedAt: serverTimestamp(),
-    };
-    console.log({ newDetails });
+    });
 
-    batch.update(paymentRef, { ...newDetails });
+    // console.log({ transactionDetails });
+
+    return updatedPayment;
+  }
+
+  protected async _update(
+    data: IPaymentReceivedForm | Partial<IPaymentReceivedFromDb>
+  ) {
+    const { session, paymentId, userId } = this;
+
+    const result = await PaymentReceivedModel.findByIdAndUpdate(
+      paymentId,
+      {
+        $set: {
+          ...data,
+          'metaData.modifiedBy': userId,
+          'metaData.modifiedAt': new Date().toISOString(),
+        },
+      },
+      {
+        new: true,
+        session,
+      }
+    ).exec();
+    // console.log({ transactionDetails });
+
+    const updatedPayment = result as unknown as PaymentReceived;
+
+    return updatedPayment;
   }
 
   //------------------------------------------------------------
-  delete(paymentData: PaymentReceivedData) {
-    const { userId, batch, paymentRef } = this;
-
+  async delete(paymentData: IPaymentReceived) {
     const { payments, amount } = paymentData;
     const paymentsTotal = PaymentReceived.getPaymentsTotal(payments);
     /**
      * update invoice payments
      */
     this.makePayments(null, paymentData);
-    /**
-     * update org summary
-     */
-    this.updateOrgSummary(null, paymentData);
-    /**
-     * update customer summary
-     */
-    this.updateCustomerSummary(null, paymentData);
+
     /**
      * excess
      */
@@ -194,28 +198,36 @@ export default class PaymentReceived extends PaymentSummary {
     /**
      * mark payment as deleted
      */
-    batch.update(paymentRef, {
-      status: -1,
-      modifiedAt: serverTimestamp(),
-      modifiedBy: userId,
-    });
+    const { session, paymentId, userId } = this;
+
+    const result = await PaymentReceivedModel.findByIdAndUpdate(
+      paymentId,
+      {
+        $set: {
+          'metaData.status': -1,
+          'metaData.modifiedBy': userId,
+          'metaData.modifiedAt': new Date().toISOString(),
+        },
+      },
+      {
+        session,
+      }
+    ).exec();
+
+    return result;
   }
 
   //----------------------------------------------------------------
-  overpay(incoming: number, current: number, formData?: PaymentReceivedForm) {
-    const {
-      batch,
-      orgId,
-      userId,
-      paymentId,
-      transactionType,
-      unearnedRevenue,
-    } = this;
+  async overpay(
+    incoming: number,
+    current: number,
+    formData?: IPaymentReceivedForm
+  ) {
+    const { session, orgId, userId, paymentId, transactionType } = this;
 
-    const journalInstance = new Journal(batch, userId, orgId);
-    const paymentsCollection = dbCollections(orgId).paymentsReceived.path;
+    const URAccount = await this.getAccountData(this.ARAccountId);
 
-    const paymentDocPath = `${paymentsCollection}/${paymentId}`;
+    const journalInstance = new JournalEntry(session, userId, orgId);
 
     const isDelete = current > 0 && incoming === 0;
     const isEqual = current === 0 && incoming === 0;
@@ -223,20 +235,17 @@ export default class PaymentReceived extends PaymentSummary {
     if (isEqual) {
       return;
     } else if (isDelete) {
-      journalInstance.deleteEntry(paymentDocPath, unearnedRevenue.accountId);
+      journalInstance.deleteEntry(paymentId, URAccount.accountId);
     } else {
       if (!formData) {
         throw new Error('Payment form data is required!');
       }
 
-      const contacts = PaymentSummary.createContactsFromCustomer(
-        formData.customer
-      );
+      const contacts = [formData.customer];
 
       journalInstance.creditAccount({
-        transactionCollection: paymentsCollection,
         transactionId: paymentId,
-        account: unearnedRevenue,
+        account: URAccount,
         amount: incoming,
         transactionType,
         contacts,
@@ -247,30 +256,21 @@ export default class PaymentReceived extends PaymentSummary {
   //----------------------------------------------------------------
   //static functions
   //----------------------------------------------------------------
-  static async createPaymentId(orgId: string) {
-    return dbCollections(orgId).paymentsReceived.doc().id;
-  }
 
   //------------------------------------------------------------
-  static async fetchPaymentData(orgId: string, paymentId: string) {
-    const paymentsCollection = dbCollections(orgId).paymentsReceived;
-    const paymentRef = paymentsCollection.doc(paymentId);
-    const snap = await paymentRef.get();
-    const data = snap.data();
+  static async fetchPaymentData(paymentId: string) {
+    const result = await PaymentReceivedModel.findById(paymentId).exec();
 
-    if (!snap.exists || !data || data?.status === -1) {
-      throw new Error(`Payment data with id ${paymentId} not found!`);
+    if (!result) {
+      return null;
     }
 
-    const paymentData: PaymentReceivedData = {
-      ...data,
-      paymentId,
-    };
+    const paymentData = result as unknown as IPaymentReceived;
 
     return paymentData;
   }
   //----------------------------------------------------------------
-  static reformatDates(data: PaymentReceivedForm): PaymentReceivedForm {
+  static reformatDates(data: IPaymentReceivedForm): IPaymentReceivedForm {
     const { paymentDate } = data;
     const formData = {
       ...data,

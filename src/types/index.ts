@@ -15,10 +15,12 @@ export * from './pagination';
 
 export * from './sale';
 export * from './invoice';
+export * from './paymentReceived';
 export * from './contacts';
 export * from './accounts';
+export * from './address';
+export * from './org';
 //
-export type { OrgSummary, Org, OrgFormData, OrgFromDb } from './org';
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
 // export type {} from
 // Customer,
@@ -39,17 +41,6 @@ export type { ExpenseItem } from './expenseItem';
 export type { PaymentMode } from './paymentMode';
 export type { PaymentTerm } from './paymentTerm';
 
-export type {
-  PaymentReceived,
-  PaymentReceivedFromDb,
-  PaymentReceivedForm,
-  InvoicesPayments,
-  IInvoicePaymentMapping,
-  PaymentWithInvoices,
-  IInvoicePaymentMapping,
-  IInvoicesPayments,
-  IPaymentWithBookings,
-} from './paymentReceived';
 export type { DailySummary } from './dailySummary';
 export type {
   Expense,

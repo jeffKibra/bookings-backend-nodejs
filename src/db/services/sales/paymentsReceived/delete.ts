@@ -1,53 +1,38 @@
-import * as functions from "firebase-functions";
-import { getFirestore } from "firebase-admin/firestore";
-import regionalFunctions from "../../regionalFunctions";
-
-import { isAuthenticated } from "../../utils/auth";
-import { getAllAccounts } from "../../utils/accounts";
-
-import { PaymentReceived } from "./utils";
+import { startSession } from 'mongoose';
+//
+import { PaymentReceived } from './utils';
 
 //------------------------------------------------------------
-const db = getFirestore();
 
-const deletePayment = regionalFunctions.https.onCall(
-  async (
-    payload: {
-      orgId: string;
-      paymentId: string;
-    },
-    context
-  ) => {
-    const auth = isAuthenticated(context);
+async function deletePayment(
+  orgId: string,
+  userUID: string,
+  paymentId: string
+) {
+  const session = await startSession();
+  session.startTransaction();
 
-    try {
-      const userId = auth.uid;
-      const { orgId, paymentId } = payload;
-      const accounts = await getAllAccounts(orgId);
+  try {
+    const paymentInstance = new PaymentReceived(session, {
+      orgId,
+      paymentId,
+      userId: userUID,
+    });
+    const currentPayment = await paymentInstance.fetchCurrentPayment();
 
-      const batch = db.batch();
+    await paymentInstance.delete(currentPayment);
 
-      const paymentInstance = new PaymentReceived(batch, {
-        accounts,
-        orgId,
-        paymentId,
-        userId,
-      });
-      const currentPayment = await paymentInstance.fetchCurrentPayment();
+    await session.commitTransaction();
+  } catch (err) {
+    await session.abortTransaction();
 
-      paymentInstance.delete(currentPayment);
+    const error = err as Error;
+    console.log(error);
 
-      await batch.commit();
-    } catch (err) {
-      const error = err as Error;
-      console.log(error);
-
-      throw new functions.https.HttpsError(
-        "unknown",
-        error.message || "unknown error"
-      );
-    }
+    throw err;
+  } finally {
+    await session.endSession();
   }
-);
+}
 
 export default deletePayment;

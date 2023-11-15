@@ -1,15 +1,16 @@
 import { startSession } from 'mongoose';
+import { ObjectId } from 'mongodb';
 //
 import { PaymentReceived } from './utils';
 
-import { PaymentReceivedForm } from '../../../../types';
+import { IPaymentReceivedForm } from '../../../../types';
 
 //------------------------------------------------------------
 
 async function create(
   orgId: string,
   userUID: string,
-  formData: PaymentReceivedForm
+  formData: IPaymentReceivedForm
 ) {
   const session = await startSession();
   session.startTransaction();
@@ -17,16 +18,15 @@ async function create(
   try {
     const formattedData = PaymentReceived.reformatDates(formData);
 
-    const paymentId = await PaymentReceived.createPaymentId(orgId);
+    const paymentId = new ObjectId().toString();
 
-    const paymentInstance = new PaymentReceived(batch, {
-      accounts,
+    const paymentInstance = new PaymentReceived(session, {
       orgId,
       paymentId,
-      userId,
+      userId: userUID,
     });
 
-    paymentInstance.create(formData);
+    await paymentInstance.create(formattedData);
 
     await session.commitTransaction();
   } catch (err) {

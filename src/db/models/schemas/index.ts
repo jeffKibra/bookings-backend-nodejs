@@ -6,3 +6,4 @@ export { default as InvoiceSchema } from './Invoice';
 export { default as AccountSchema } from './Account';
 export { default as ContactSchema } from './Contact';
 export { default as PaymentReceivedSchema } from './PaymentReceived';
+export { default as OrgSchema } from './Org';

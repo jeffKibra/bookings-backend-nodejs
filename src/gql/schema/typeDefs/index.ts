@@ -1,7 +1,7 @@
 import vehiclesTypeDefs from './vehicles';
 import bookingsTypeDefs from './bookings';
 
-import { SearchMetaCommonFields } from './templates';
+import { SearchMetaCommonFields, AddressFields } from './templates';
 
 const mainTypeDefs = `#graphql
     input SortByInput{
@@ -23,6 +23,24 @@ const mainTypeDefs = `#graphql
     type RangeFacet {
         min:Int
         max:Int
+    }
+
+    type Address {
+${AddressFields}
+    }
+    
+    input AddressInput {
+${AddressFields}
+    }
+
+    type BusinessType {
+    name: string;
+    value: string;
+    }
+
+    input BusinessTypeInput {
+    name: string;
+    value: string;
     }
 
 

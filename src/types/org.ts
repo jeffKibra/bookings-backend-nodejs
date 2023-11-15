@@ -1,6 +1,5 @@
-import { Timestamp } from "firebase-admin/firestore";
-
-export interface OrgSummary {
+import { IAddress } from './address';
+export interface IOrgSummary {
   orgId?: string;
   name?: string;
   businessType?: {
@@ -9,32 +8,27 @@ export interface OrgSummary {
   };
 }
 
-interface Meta {
-  createdAt: Timestamp | Date;
+interface IOrgMeta {
+  createdAt: Date | string;
   createdBy: string;
   modifiedBy: string;
-  modifiedAt: Timestamp | Date;
+  modifiedAt: Date | string;
   status: number;
 }
 
-export interface OrgFormData {
+export interface IOrgForm {
   name: string;
   businessType: {
     name: string;
     value: string;
   };
-  city: string;
-  country: string;
+  address: IAddress;
   industry: string;
   phone: string;
-  postalCode: string;
-  state: string;
-  street: string;
   website: string;
 }
 
-export interface OrgFromDb extends OrgFormData, Meta {}
-
-export interface Org extends OrgFromDb {
-  orgId: string;
+export interface IOrg extends IOrgForm {
+  _id: string;
+  metaData: IOrgMeta;
 }

@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 //
-import { paymentTermSchema, metaDataSchema } from './Generals';
+import { paymentTermSchema, metaDataSchema, AddressSchema } from './Generals';
 
 //
 const ContactMetaData = metaDataSchema.discriminator(
@@ -16,14 +16,6 @@ export const ContactSummarySchema = new Schema({
   displayName: { type: String, required: true },
 });
 
-export const ContactAddress = new Schema({
-  city: String,
-  country: String,
-  postalCode: String,
-  state: String,
-  street: String,
-});
-
 const schema = new Schema({
   salutation: String,
   firstName: String,
@@ -33,8 +25,8 @@ const schema = new Schema({
   email: String,
   mobile: String,
   phone: String,
-  billingAddress: ContactAddress,
-  shippingAddress: ContactAddress,
+  billingAddress: AddressSchema,
+  shippingAddress: AddressSchema,
   website: String,
   remarks: String,
   // type: 'individual' | 'company',

@@ -1,57 +1,43 @@
-import * as functions from "firebase-functions";
-import { getFirestore } from "firebase-admin/firestore";
-import regionalFunctions from "../../regionalFunctions";
+import { startSession } from 'mongoose';
 
-import { isAuthenticated } from "../../utils/auth";
-import { getAllAccounts } from "../../utils/accounts";
+import { PaymentReceived } from './utils';
 
-import { PaymentReceived } from "./utils";
-
-import { PaymentReceivedForm } from "../../types";
+import { IPaymentReceivedForm } from '../../../../types';
 
 //------------------------------------------------------------
-const db = getFirestore();
 
-const update = regionalFunctions.https.onCall(
-  async (
-    payload: {
-      orgId: string;
-      paymentId: string;
-      formData: PaymentReceivedForm;
-    },
-    context
-  ) => {
-    const auth = isAuthenticated(context);
+async function update(
+  orgId: string,
+  userUID: string,
+  paymentId: string,
+  formData: IPaymentReceivedForm
+) {
+  const session = await startSession();
+  session.startTransaction();
 
-    try {
-      const userId = auth.uid;
-      const { orgId, paymentId } = payload;
-      const formData = PaymentReceived.reformatDates(payload.formData);
-      const accounts = await getAllAccounts(orgId);
+  try {
+    const formattedData = PaymentReceived.reformatDates(formData);
 
-      const batch = db.batch();
+    const paymentInstance = new PaymentReceived(session, {
+      orgId,
+      paymentId,
+      userId: userUID,
+    });
+    const currentPayment = await paymentInstance.fetchCurrentPayment();
 
-      const paymentInstance = new PaymentReceived(batch, {
-        accounts,
-        orgId,
-        paymentId,
-        userId,
-      });
-      const currentPayment = await paymentInstance.fetchCurrentPayment();
+    await paymentInstance.update(formattedData, currentPayment);
 
-      paymentInstance.update(formData, currentPayment);
+    await session.commitTransaction();
+  } catch (err) {
+    await session.abortTransaction();
 
-      await batch.commit();
-    } catch (err) {
-      const error = err as Error;
-      console.log(error);
+    const error = err as Error;
+    console.log(error);
 
-      throw new functions.https.HttpsError(
-        "unknown",
-        error.message || "unknown error"
-      );
-    }
+    throw err;
+  } finally {
+    await session.endSession();
   }
-);
+}
 
 export default update;

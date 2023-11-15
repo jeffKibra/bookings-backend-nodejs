@@ -8,9 +8,9 @@ import { getAccountData } from '../../../utils/accounts';
 
 import {
   IAccountSummary,
-  PaymentReceivedForm,
+  IPaymentReceivedForm,
   TransactionTypes,
-  PaymentReceived,
+  IPaymentReceived,
   IContactSummary,
   IInvoicePaymentMapping,
 } from '../../../../../types';
@@ -27,6 +27,9 @@ const URAccountId = 'unearned_revenue';
 const ARAccountId = 'accounts_receivable';
 
 export default class InvoicesPayments extends Accounts {
+  URAccountId = 'unearned_revenue';
+  ARAccountId = 'accounts_receivable';
+  //
   session: ClientSession;
   orgId: string;
   userId: string;
@@ -48,8 +51,8 @@ export default class InvoicesPayments extends Accounts {
   }
 
   makePayments(
-    incomingPayment: PaymentReceivedForm | null,
-    currentPayment?: PaymentReceived
+    incomingPayment: IPaymentReceivedForm | null,
+    currentPayment?: IPaymentReceived
   ) {
     const incomingCustomerId = incomingPayment?.customer?._id;
     const incomingAccountId = incomingPayment?.account?.accountId;
@@ -117,7 +120,7 @@ export default class InvoicesPayments extends Accounts {
   }
 
   private async payInvoices(
-    formData: PaymentReceivedForm,
+    formData: IPaymentReceivedForm,
     paymentsToCreate: IInvoicePaymentMapping[]
   ) {
     const { orgId, userId, paymentId, session } = this;
@@ -178,7 +181,7 @@ export default class InvoicesPayments extends Accounts {
 
   //----------------------------------------------------------------
   private async updateInvoicesPayments(
-    formData: PaymentReceivedForm,
+    formData: IPaymentReceivedForm,
     currentAccountId: string,
     paymentsToUpdate: IInvoicePaymentMapping[]
   ) {

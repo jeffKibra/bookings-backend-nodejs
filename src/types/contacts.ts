@@ -1,13 +1,5 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { PaymentTerm } from '.';
-
-export interface IAddress {
-  city: string;
-  country: string;
-  postalCode: string;
-  state: string;
-  street: string;
-}
+import { PaymentTerm, IAddress } from '.';
 
 export interface IContactForm {
   contactType: 'customer' | 'vendor';
