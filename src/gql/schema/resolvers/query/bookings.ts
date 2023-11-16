@@ -12,7 +12,7 @@ const queryResolvers = {
     //
     const bookingId = args?.id;
 
-    const vehicle = await services.bookings.getById(orgId, bookingId);
+    const vehicle = await services.sales.bookings.getById(orgId, bookingId);
     // console.log({ vehicle });
 
     return vehicle;
@@ -24,7 +24,7 @@ const queryResolvers = {
   ) => {
     const orgId = context.orgId;
 
-    const bookings = await services.bookings.getList(orgId);
+    const bookings = await services.sales.bookings.getList(orgId);
 
     // console.log('bookings: ', bookings);
 
@@ -44,7 +44,7 @@ const queryResolvers = {
     const options = args?.queryOptions;
     console.log('search vehicles options', options);
 
-    return services.bookings.search(orgId, query, options);
+    return services.sales.bookings.search(orgId, query, options);
   },
 
   async findBookingWithAtleastOneOfTheSelectedDates(

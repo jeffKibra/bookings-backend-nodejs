@@ -30,7 +30,7 @@ const mutationResolvers = {
     const bookingId = args?.id;
     const formData = args?.formData;
 
-    const updatedBooking = await services.bookings.update(
+    const updatedBooking = await services.sales.bookings.update(
       userUID,
       orgId,
       bookingId,
@@ -49,7 +49,7 @@ const mutationResolvers = {
     //
     const bookingId = args?.id;
 
-    await services.bookings.archive(userUID, orgId, bookingId);
+    await services.sales.bookings.archive(userUID, orgId, bookingId);
   },
 };
 

@@ -1,5 +1,5 @@
 import { PipelineStage } from 'mongoose';
-import { BookingModel } from '../../../../models';
+import { BookingModel, InvoiceModel } from '../../../../models';
 //
 import { generateSearchStages } from './subPipelines';
 import { pagination, sort } from '../../../utils';
@@ -44,7 +44,7 @@ export default async function getResult(
   console.log({ offset, limit, page });
 
   // aggregation to fetch items not booked.
-  return BookingModel.aggregate<{
+  return InvoiceModel.aggregate<{
     bookings: IBooking[];
     meta: IBookingSearchAggregationMeta;
   }>([
