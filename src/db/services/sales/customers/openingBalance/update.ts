@@ -3,9 +3,6 @@ import { startSession } from 'mongoose';
 //
 import { Customer, OpeningBalance } from '../utils';
 
-import { getAllAccounts } from '../../../utils/accounts';
-import { isAuthenticated } from '../../../utils/auth';
-
 import { IContactFromDb, IContact } from '../../../../../types';
 
 //------------------------------------------------------------
@@ -36,8 +33,6 @@ async function update(
   let updatedCustomer: IContact | null = null;
 
   try {
-    const accounts = await getAllAccounts(orgId);
-
     const customerInstance = new Customer(session, orgId, userUID, customerId);
     const [customer] = await Promise.all([
       customerInstance.fetchCurrentCustomer(),

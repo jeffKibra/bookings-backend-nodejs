@@ -5,8 +5,6 @@ import { IContactForm } from '../../../../types';
 
 import { Customer, OpeningBalance } from './utils';
 
-import { getAllAccounts } from '../../utils/accounts';
-
 //------------------------------------------------------------
 
 async function create(userUID: string, orgId: string, formData: IContactForm) {

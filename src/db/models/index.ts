@@ -28,7 +28,7 @@ export const JournalEntryModel = model('Journal_Entry', JournalEntrySchema);
 export const InvoiceModel = model('Invoice', InvoiceSchema);
 
 export const PaymentReceivedModel = model(
-  'Payments_Received',
+  'Received_Payment',
   PaymentReceivedSchema
 );
 

@@ -2,7 +2,7 @@ import { Schema } from 'mongoose';
 //
 
 import {
-  metaDataSchema,
+  metaDataFields,
   paymentModeSchema,
   paymentTermSchema,
 } from './Generals';
@@ -12,9 +12,9 @@ import { VehicleSchemaForBookingForm } from './Vehicle';
 import { initSchema } from './utils';
 //\
 
-const bookingMetaDataSchema = new Schema({
-  ...metaDataSchema.obj,
-  transactionType: { type: String },
+const BookingMetaDataSchema = new Schema({
+  ...metaDataFields,
+  transactionType: { type: String, required: true },
 });
 
 const downPaymentSchema = new Schema({
@@ -46,7 +46,7 @@ const schema = new Schema({
   //extras
   balance: { type: Number, required: true },
   payments: { type: paymentsSchema },
-  metaData: { type: bookingMetaDataSchema },
+  metaData: BookingMetaDataSchema,
 });
 
 // schema.pre('find', function () {

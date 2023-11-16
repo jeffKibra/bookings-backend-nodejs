@@ -224,6 +224,10 @@ export default class Accounts {
   async getAllAccounts(orgId: string) {
     const accountsData = await this.getAllAccountsRaw(orgId);
 
+    if (!accountsData) {
+      return null;
+    }
+
     const accounts = this.formatAccounts(accountsData);
 
     console.log('accounts from db', accounts);
@@ -232,24 +236,28 @@ export default class Accounts {
   }
 
   async getAllAccountsRaw(orgId: string) {
-    const rawAccounts = await AccountModel.find({
+    const result = await AccountModel.find({
       $or: [{ 'metaData.orgId': orgId }, { 'metaData.orgId': 'all' }],
     }).exec();
 
-    const accounts: IAccount[] = [];
+    if (!result) {
+      return null;
+    }
 
-    rawAccounts.forEach(account => {
-      const { accountType, name, description, tags, _id, metaData } = account;
+    const accounts = result as unknown as IAccount[];
 
-      accounts.push({
-        _id: _id.toString(),
-        name,
-        accountType: accountType as IAccountType,
-        description,
-        tags,
-        metaData: metaData,
-      });
-    });
+    // rawAccounts.forEach(account => {
+    //   const { accountType, name, description, tags, _id, metaData } = account;
+
+    //   accounts.push({
+    //     _id: _id.toString(),
+    //     name,
+    //     accountType: accountType as IAccountType,
+    //     description,
+    //     tags,
+    //     metaData: metaData,
+    //   });
+    // });
 
     console.log('accounts', accounts);
 

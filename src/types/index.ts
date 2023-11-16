@@ -20,6 +20,7 @@ export * from './contacts';
 export * from './accounts';
 export * from './address';
 export * from './org';
+export * from './tax';
 //
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
 // export type {} from
@@ -35,7 +36,6 @@ export type {
   MappedEntry,
   InvoicePaymentEntry,
 } from './entries';
-export type { Tax, TaxForm, TaxFromDb, TaxSummary } from './tax';
 
 export type { ExpenseItem } from './expenseItem';
 export type { PaymentMode } from './paymentMode';

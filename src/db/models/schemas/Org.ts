@@ -1,11 +1,16 @@
 import { Schema } from 'mongoose';
 //
 
-import { AddressSchema, OrgMetaDataSchema } from './Generals';
+import { AddressSchema, orgMetaDataFields } from './Generals';
+import TaxSchema from './Tax';
 
 //
 import { initSchema } from './utils';
-//\
+//
+
+const OrgMetaDataSchema = new Schema({
+  ...orgMetaDataFields,
+});
 
 const BusinessTypeSchema = new Schema({
   name: { type: String, required: true },
@@ -19,20 +24,12 @@ const schema = new Schema({
   industry: { type: String, required: true },
   phone: { type: String, required: true },
   website: { type: String, required: true },
-  metaData: { type: OrgMetaDataSchema, required: true },
-
   //
+  taxes: { type: TaxSchema },
+  //
+  metaData: { type: OrgMetaDataSchema, required: true },
 });
 
-// schema.pre('find', function () {
-//   this.where({ 'metaData.status': 0 });
-// });
-// schema.pre('findOne', function () {
-//   this.where({ 'metaData.status': 0 });
-// });
-// schema.pre('findOneAndUpdate', function () {
-//   this.where({ 'metaData.status': 0 });
-// });
 initSchema(schema);
 
 export default schema;

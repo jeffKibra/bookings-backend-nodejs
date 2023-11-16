@@ -6,9 +6,9 @@ import { OrgMetaDataFields } from './templates';
 const OrgSharedFields = `
     name:String!
     businessType: BusinessType!
-  industry: String
-  phone: String
-  website: String
+    industry: String
+    phone: String
+    website: String
 `;
 
 const typeDefs = `#graphql

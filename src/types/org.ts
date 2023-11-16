@@ -1,4 +1,5 @@
 import { IAddress } from './address';
+import { ITax } from './tax';
 export interface IOrgSummary {
   orgId?: string;
   name?: string;
@@ -30,5 +31,6 @@ export interface IOrgForm {
 
 export interface IOrg extends IOrgForm {
   _id: string;
+  taxes?: ITax[];
   metaData: IOrgMeta;
 }

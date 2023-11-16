@@ -1,14 +1,12 @@
 import { Schema } from 'mongoose';
 //
-import { paymentTermSchema, metaDataSchema, AddressSchema } from './Generals';
+import { paymentTermSchema, metaDataFields, AddressSchema } from './Generals';
 
 //
-const ContactMetaData = metaDataSchema.discriminator(
-  'ContactMetaData',
-  new Schema({
-    contactType: { type: String, required: true },
-  })
-);
+const ContactMetaDataSchema = new Schema({
+  ...metaDataFields,
+  contactType: { type: String, required: true },
+});
 
 export const ContactSummarySchema = new Schema({
   // _id is automatically added to the schema
@@ -35,7 +33,7 @@ const schema = new Schema({
   paymentTerm: paymentTermSchema,
   openingBalance: Schema.Types.Decimal128,
   //
-  metaData: { type: ContactMetaData, required: true },
+  metaData: ContactMetaDataSchema,
 });
 
 export default schema;

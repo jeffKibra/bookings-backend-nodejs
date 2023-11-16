@@ -1,7 +1,6 @@
 import { startSession } from 'mongoose';
 //
 import { Invoice } from './utils';
-import { getAllAccounts } from '../../utils/accounts';
 
 import { IInvoiceForm } from '../../../../types';
 

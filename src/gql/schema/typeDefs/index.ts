@@ -26,21 +26,21 @@ const mainTypeDefs = `#graphql
     }
 
     type Address {
-${AddressFields}
+        ${AddressFields}
     }
     
     input AddressInput {
-${AddressFields}
+        ${AddressFields}
     }
 
     type BusinessType {
-    name: string;
-    value: string;
+        name: String
+        value: String
     }
 
     input BusinessTypeInput {
-    name: string;
-    value: string;
+        name: String
+        value: String
     }
 
 

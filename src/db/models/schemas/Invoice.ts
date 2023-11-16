@@ -2,7 +2,7 @@ import { Schema } from 'mongoose';
 //
 
 import {
-  metaDataSchema,
+  metaDataFields,
   paymentModeSchema,
   paymentTermSchema,
 } from './Generals';
@@ -12,14 +12,11 @@ import { SaleItemSchema } from './SaleItem';
 import { initSchema } from './utils';
 //\
 
-const InvoiceMetaDataSchema = metaDataSchema.discriminator(
-  'InvoiceMetaData',
-  new Schema({
-    ...metaDataSchema.obj,
-    transactionType: { type: String },
-    saleType: { type: String, required: true },
-  })
-);
+const InvoiceMetaData = new Schema({
+  ...metaDataFields,
+  transactionType: { type: String, required: true },
+  saleType: { type: String, required: true },
+});
 
 const downPaymentSchema = new Schema({
   amount: { type: Schema.Types.Decimal128, required: true },
@@ -47,7 +44,7 @@ const schema = new Schema({
   //extras
   // balance: { type: Schema.Types.Decimal128, required: true },
   // payments: { type: paymentsSchema },
-  metaData: { type: InvoiceMetaDataSchema },
+  metaData: { type: InvoiceMetaData, required: true },
   //
 });
 

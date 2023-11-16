@@ -3,7 +3,9 @@ import { Schema } from 'mongoose';
 //
 import { initSchema } from './utils';
 //
-import { metaDataSchema } from './Generals';
+import { metaDataFields } from './Generals';
+
+const VehicleMetaDataSchema = new Schema({ ...metaDataFields });
 
 const VehicleModelSchema = new Schema({
   model: { type: String, required: true },
@@ -33,7 +35,7 @@ const schema = new Schema({
   ...VehicleSchemaSharedFields,
   registration: { type: String, required: true, unique: true },
   sku: { type: String, required: true, unique: true },
-  metaData: metaDataSchema,
+  metaData: { type: VehicleMetaDataSchema, required: true },
 });
 
 initSchema(schema);

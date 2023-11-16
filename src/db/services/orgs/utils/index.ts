@@ -1,59 +1,45 @@
-import { getFirestore } from "firebase-admin/firestore";
+import { OrgModel } from '../../../models';
 
-import { Org } from "../../types";
+import { IOrg } from '../../../../types';
 //----------------------------------------------------------------
-const db = getFirestore();
 
-export function getOrg(userId: string) {
+export async function getOrgForUser(userId: string) {
   // console.log("getting org", userId);
 
-  return db
-    .collection("organizations")
-    .where("createdBy", "==", userId)
-    .where("status", "in", [0, 1])
-    .limit(1)
-    .get()
-    .then((snap) => {
-      if (snap.empty) {
-        return null;
-      }
+  const result = await OrgModel.findOne({
+    'metaData.createdBy': userId,
+    'metaData.status': 0,
+  }).exec();
 
-      const orgDoc = snap.docs[0];
-
-      return {
-        ...orgDoc.data(),
-        orgId: orgDoc.id,
-      };
-    });
-}
-
-export async function fetchOrgData(orgId: string) {
-  const orgRef = db.collection("organizations").doc(orgId);
-
-  const snap = await orgRef.get();
-
-  if (!snap.exists) {
-    throw new Error(`Data for organization with id ${orgId} not found!`);
+  if (!result) {
+    return null;
   }
 
-  const dbData = snap.data() as Omit<Org, "orgId">;
+  const org = result as unknown as IOrg;
 
-  const orgData: Org = {
-    ...dbData,
-    orgId,
-  };
+  return org;
+}
 
-  return orgData;
+export async function getOrgData(orgId: string) {
+  const result = await OrgModel.findById(orgId).exec();
+
+  if (!result) {
+    return null;
+  }
+
+  const org = result as unknown as IOrg;
+
+  return org;
 }
 
 export async function userHasOrg(userId: string) {
   if (userId) {
-    const org = await getOrg(userId);
+    const org = await getOrgForUser(userId);
     if (org) {
-      throw new Error("You have an Organization already registered!");
+      throw new Error('You have an Organization already registered!');
     }
   } else {
-    throw new Error("Unknow error");
+    throw new Error('Unknow error');
   }
 }
 

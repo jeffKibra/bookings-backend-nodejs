@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 //
-import { metaDataSchema } from './Generals';
+import { metaDataFields } from './Generals';
 
 export const AccountTypeSchema = {
   name: { type: String, required: true },
@@ -14,10 +14,7 @@ export const AccountSummarySchema = {
   accountType: { type: AccountTypeSchema, required: true },
 };
 
-export const AccountMetaDataSchema = metaDataSchema.discriminator(
-  'AccountMetaData',
-  new Schema({}, { discriminatorKey: 'type' })
-);
+export const AccountMetaDataSchema = new Schema({ ...metaDataFields });
 
 const schema = new Schema({
   ...AccountSummarySchema,
