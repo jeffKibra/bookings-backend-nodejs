@@ -1,21 +1,9 @@
-import { MetaDataSharedFields, SearchMetaCommonFields } from './templates';
+import { MetaDataSharedFields, SearchMetaCommonFields } from '../templates';
 
 //
-import { VehicleInputFields } from './vehicles';
+import { VehicleInputFields } from '../vehicles';
 
 //
-const CustomerSummaryFields = `
-    _id: ID!
-    displayName:String!
-`;
-const PaymentModeFields = `
-    name:String!
-    value:String!
-`;
-const DownPaymentSharedFields = `
-    amount:Int!
-    reference:String
-`;
 const BookingSharedFields = `
     startDate:String!
     endDate:String!
@@ -30,28 +18,7 @@ const BookingSharedFields = `
 
 const typeDefs = `#graphql
 
-    input CustomerSummaryInput {
-        ${CustomerSummaryFields}
-    }
-    type CustomerSummary {
-        ${CustomerSummaryFields}
-    }
-
-    input PaymentModeInput {
-        ${PaymentModeFields}
-    }
-    type PaymentMode {
-        ${PaymentModeFields}
-    }
-
-    input DownPaymentInput {
-        ${DownPaymentSharedFields}
-        paymentMode:PaymentModeInput!
-    }
-    type DownPayment {
-        ${DownPaymentSharedFields}
-        paymentMode:PaymentMode!
-    }
+    
 
     type BookingPayments {
         count:Int!
@@ -71,14 +38,14 @@ const typeDefs = `#graphql
     }
 
     input BookingInput {
-        customer:CustomerSummaryInput!
+        customer:ContactSummaryInput!
         vehicle: BookingVehicleInput
         ${BookingSharedFields}
         downPayment:DownPaymentInput!
     }
 
     type Booking {
-        customer:CustomerSummary!
+        customer:ContactSummary!
         vehicle:Vehicle!
         ${BookingSharedFields}
         balance:Int!

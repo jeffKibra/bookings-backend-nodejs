@@ -1,9 +1,9 @@
-import bookingsResolvers from './bookings';
+import salesResolvers from './sales';
 import vehiclesResolvers from './vehicles';
 
 const queryResolvers = {
   ...vehiclesResolvers,
-  ...bookingsResolvers,
+  ...salesResolvers,
 };
 
 export default queryResolvers;

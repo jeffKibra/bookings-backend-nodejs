@@ -2,13 +2,13 @@ import BigNumber from 'bignumber.js';
 import { ObjectId } from 'mongodb';
 
 //
-import { IBookingForm } from '../../../../types';
+import { IInvoiceForm } from '../../../../types';
 //
 
 export default async function create(
   orgId: string,
   userUID: string,
-  formData: IBookingForm
+  formData: IInvoiceForm
 ) {
   if (!userUID || !orgId || !formData) {
     throw new Error(
@@ -17,25 +17,25 @@ export default async function create(
   }
 
   const {
-    downPayment: { amount: downPayment },
+    // downPayment: { amount: downPayment },
     total,
   } = formData;
 
-  if (downPayment > total) {
-    throw new Error(
-      `Failed to create Booking! Imprest given: ${Number(
-        downPayment
-      ).toLocaleString()} is more than the booking total amount: ${Number(
-        total
-      ).toLocaleString()}.`
-    );
-  }
+  // if (downPayment > total) {
+  //   throw new Error(
+  //     `Failed to create Booking! Imprest given: ${Number(
+  //       downPayment
+  //     ).toLocaleString()} is more than the booking total amount: ${Number(
+  //       total
+  //     ).toLocaleString()}.`
+  //   );
+  // }
 
-  const balance = new BigNumber(total).minus(downPayment).dp(2).toNumber();
+  // const balance = new BigNumber(total).minus(downPayment).dp(2).toNumber();
 
-  const {
-    vehicle: { _id: vehicleId },
-  } = formData;
+  // const {
+  //   // vehicle: { _id: vehicleId },
+  // } = formData;
 
   const bookingObjectId = new ObjectId();
   const bookingId = bookingObjectId.toString();

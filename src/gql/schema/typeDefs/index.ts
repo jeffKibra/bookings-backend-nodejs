@@ -1,5 +1,5 @@
 import vehiclesTypeDefs from './vehicles';
-import bookingsTypeDefs from './bookings';
+import salesTypeDefs from './sales';
 
 import { SearchMetaCommonFields, AddressFields } from './templates';
 
@@ -65,7 +65,7 @@ const mainTypeDefs = `#graphql
     }
 `;
 
-const typeDefs = [mainTypeDefs, vehiclesTypeDefs, bookingsTypeDefs];
+const typeDefs = [mainTypeDefs, vehiclesTypeDefs, ...salesTypeDefs];
 
 // const typeDefs = vehiclesTypeDefs;
 

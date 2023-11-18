@@ -71,6 +71,8 @@ export default class Bookings {
       selectedDates,
       subTotal,
       total,
+      // downPayment,
+      startDate,
     } = bookingForm;
 
     const bookedDaysCount = selectedDates?.length || 0;
@@ -101,8 +103,13 @@ export default class Bookings {
         total: bookingTotal,
         description: `${color} ${make} ${model}`,
         salesAccountId: vehicleBookingsAccountId,
-        vehicle,
-        details: { taxType: 'inclusive' },
+        details: {
+          item: vehicle,
+          selectedDates,
+          startDate,
+          endDate,
+          taxType: 'inclusive',
+        },
       },
       {
         itemId: 'transfer_fee',

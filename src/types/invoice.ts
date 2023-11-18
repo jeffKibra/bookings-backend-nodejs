@@ -7,6 +7,7 @@ import {
   ISaleItem,
   ISaleForm,
   ISaleMeta,
+  ISearchQueryOptions,
 } from '.';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -54,17 +55,19 @@ export interface IInvoiceFromDb extends IInvoiceForm {
   metaData: IMeta;
 }
 
-interface IInvoiceId {
-  id: string;
+export interface IInvoice extends IInvoiceFromDb {
+  _id: string;
 }
-export interface IInvoice extends IInvoiceFromDb, IInvoiceId {}
 
-export interface IInvoiceSummary extends IInvoiceId {
+export interface IInvoiceSummary
+  extends Pick<IInvoice, '_id' | 'total' | 'dueDate'> {
   // balance: IInvoice['balance'];
-  dueDate: IInvoice['dueDate'];
+  // dueDate: IInvoice['dueDate'];
   // saleDate: IInvoice['saleDate'];
   // status: IInvoice['status'];
   // transactionType: IInvoice['transactionType'];
   // bookingTotal: IInvoice['bookingTotal'];
-  total: IInvoice['total'];
+  // total: IInvoice['total'];
 }
+
+export interface IInvoicesQueryOptions extends ISearchQueryOptions {}

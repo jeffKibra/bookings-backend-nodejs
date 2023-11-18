@@ -1,6 +1,6 @@
-import { services } from '../../../../db';
+import { services } from '../../../../../db';
 //
-import { IGQLContext, IBookingForm } from '../../../../types';
+import { IGQLContext, IBookingForm } from '../../../../../types';
 
 const mutationResolvers = {
   async createBooking(

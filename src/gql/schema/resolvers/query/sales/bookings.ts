@@ -1,6 +1,6 @@
-import { services } from '../../../../db';
+import { services } from '../../../../../db';
 //
-import { IGQLContext, ISearchBookingsQueryOptions } from '../../../../types';
+import { IGQLContext, ISearchBookingsQueryOptions } from '../../../../../types';
 
 const queryResolvers = {
   booking: async (

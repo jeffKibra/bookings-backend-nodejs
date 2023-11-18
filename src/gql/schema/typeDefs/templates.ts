@@ -7,13 +7,17 @@ export const OrgMetaDataFields = `
 `;
 
 export const MetaDataSharedFields = `
-${OrgMetaDataFields}
+    ${OrgMetaDataFields}
     orgId: String!
 `;
 
-export const SearchMetaCommonFields = `
+export const ListMetaCommonFields = `
     count:Int
     page:Int
+`;
+
+export const SearchMetaCommonFields = `
+    ${ListMetaCommonFields}
 `;
 
 export const AddressFields = `

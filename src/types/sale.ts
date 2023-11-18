@@ -24,6 +24,10 @@ export interface ISaleSummary {
 interface ISaleItemDetails {
   [x: string]: unknown;
   taxType: 'inclusive' | 'exclusive';
+  item?: IVehicleForBooking;
+  selectedDates?: string[];
+  startDate?: Date | string;
+  endDate?: Date | string;
 }
 export interface ISaleItem {
   itemId: string;
@@ -38,7 +42,7 @@ export interface ISaleItem {
   // salesAccount: IAccountSummary;
   salesAccountId: string;
   details?: ISaleItemDetails;
-  vehicle?: IVehicleForBooking;
+  // vehicle?: IVehicleForBooking;
 }
 
 export interface ISaleMeta {

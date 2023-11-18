@@ -1,10 +1,10 @@
 //
 import vehiclesResolvers from './vehicles';
-import bookingsResolvers from './bookings';
+import salesResolvers from './sales';
 
 const mutationResolvers = {
   ...vehiclesResolvers,
-  ...bookingsResolvers,
+  ...salesResolvers,
 };
 
 export default mutationResolvers;

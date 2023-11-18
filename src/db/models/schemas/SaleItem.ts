@@ -2,7 +2,7 @@ import { Schema } from 'mongoose';
 
 //
 import { AccountSummarySchema } from './Account';
-import { VehicleModelSchema, VehicleSchemaForBookingForm } from './Vehicle';
+import { VehicleSchemaForBookingForm } from './Vehicle';
 //
 
 const SaleItemDetailsSchema = new Schema({
@@ -10,6 +10,10 @@ const SaleItemDetailsSchema = new Schema({
   //   salesAccount: { type: AccountSummarySchema, required: true },
   units: String,
   taxType: String,
+  item: VehicleSchemaForBookingForm,
+  selectedDates: [String],
+  startDate: Date,
+  endDate: Date,
 });
 //
 export const SaleItemSchema = new Schema({
@@ -23,5 +27,5 @@ export const SaleItemSchema = new Schema({
   salesAccountId: { type: String, required: true },
   // details: { type: SaleItemDetailsSchema, required: true },
   details: SaleItemDetailsSchema,
-  vehicle: VehicleSchemaForBookingForm,
+  // vehicle: VehicleSchemaForBookingForm,
 });

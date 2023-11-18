@@ -4,7 +4,7 @@ import { Invoice } from './utils';
 
 //------------------------------------------------------------
 
-export default async function deleteInvoice(
+export default async function archive(
   orgId: string,
   userUID: string,
   invoiceId: string
