@@ -70,7 +70,9 @@ export default class InvoiceSale extends Sale {
     }
 
     const accountId = 'accounts_receivable';
+    // console.log({ accountId });
     const account = await this.getAccountData(accountId);
+    // console.log({ account });
 
     this.ARAccount = account;
 
@@ -95,14 +97,6 @@ export default class InvoiceSale extends Sale {
     debitAccountsMapping: IAccountsMapping
   ) {
     const { session, userId, orgId, transactionType, saleType } = this;
-    /**
-     * create sale
-     */
-    await this.createSale(
-      incomingInvoice,
-      creditAccountsMapping,
-      debitAccountsMapping
-    );
 
     // create invoice
     // console.log({ incomingInvoice });
@@ -125,7 +119,14 @@ export default class InvoiceSale extends Sale {
       },
     });
 
-    await instance.save({ session });
+    await Promise.all([
+      this.createSale(
+        incomingInvoice,
+        creditAccountsMapping,
+        debitAccountsMapping
+      ),
+      instance.save({ session }),
+    ]);
 
     // transaction.create(invoiceRef, {
     //   ...incomingInvoice,
@@ -150,16 +151,6 @@ export default class InvoiceSale extends Sale {
     const { total } = incomingInvoice;
 
     /**
-     * update sale
-     */
-    await this.updateSale(
-      incomingInvoice,
-      currentInvoice,
-      creditAccountsMapping,
-      debitAccountsMapping
-    );
-
-    /**
      * calculate balance adjustment
      */
     const balanceAdjustment = new BigNumber(total - currentTotal)
@@ -169,20 +160,29 @@ export default class InvoiceSale extends Sale {
     /**
      * update invoice
      */
-    const result = await InvoiceModel.findOneAndUpdate(
-      { _id: new ObjectId(invoiceId), 'metaData.orgId': orgId },
-      {
-        $set: {
-          ...incomingInvoice,
-          'metaData.modifiedAt': new Date(),
-          'metaData.modifiedBy': userId,
-          // balance: increment(balanceAdjustment) as unknown as number
+
+    const [result] = await Promise.all([
+      InvoiceModel.findByIdAndUpdate(
+        invoiceId,
+        {
+          $set: {
+            ...incomingInvoice,
+            'metaData.modifiedAt': new Date(),
+            'metaData.modifiedBy': userId,
+            // balance: increment(balanceAdjustment) as unknown as number
+          },
         },
-      },
-      {
-        session,
-      }
-    );
+        {
+          session,
+        }
+      ),
+      this.updateSale(
+        incomingInvoice,
+        currentInvoice,
+        creditAccountsMapping,
+        debitAccountsMapping
+      ),
+    ]);
 
     const updatedInvoice = result as unknown as IInvoice;
 
@@ -197,29 +197,30 @@ export default class InvoiceSale extends Sale {
     const { session, userId, invoiceId, orgId } = this;
 
     // console.log("deleted accounts", deletedAccounts);
+
     /**
-     * delete sale
-     */
-    await this.deleteSale(
-      currentInvoice,
-      deletedCreditAccounts,
-      deletedDebitAccounts
-    );
-    /**
-     * mark invoice as deleted
+     *
      */
 
-    await InvoiceModel.findOneAndUpdate(
-      { _id: new ObjectId(invoiceId), 'metaData.orgId': orgId },
-      {
-        'metaData.status': -1,
-        'metaData.modifiedAt': new Date(),
-        'metaData.modifiedBy': userId,
-      },
-      {
-        session,
-      }
-    );
+    await Promise.all([
+      this.deleteSale(
+        currentInvoice,
+        deletedCreditAccounts,
+        deletedDebitAccounts
+      ),
+      // mark invoice as deleted
+      InvoiceModel.findByIdAndUpdate(
+        invoiceId,
+        {
+          'metaData.status': -1,
+          'metaData.modifiedAt': new Date(),
+          'metaData.modifiedBy': userId,
+        },
+        {
+          session,
+        }
+      ),
+    ]);
   }
 
   // ----------------------------------------------------------------

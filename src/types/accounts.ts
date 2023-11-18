@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+
 //
 interface IAccountMetaData {
   orgId: string;
@@ -21,13 +23,11 @@ export interface IAccountFormData {
   description?: string;
 }
 
-export interface IAccountFromDb extends IAccountFormData {
+export interface IAccount extends IAccountFormData {
+  _id?: string;
+  accountId: string;
   tags: string[];
   metaData: IAccountMetaData;
-}
-
-export interface IAccount extends IAccountFromDb {
-  _id: string;
 }
 
 export interface IAccountSummary

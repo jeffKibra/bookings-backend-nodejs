@@ -2,6 +2,8 @@ import { ClientSession } from 'mongodb';
 //
 import { AccountModel } from '../../models';
 //
+import { generateAccounts } from '../../../constants';
+//
 import {
   IAccount,
   IAccountSummary,
@@ -18,34 +20,35 @@ interface IMapAccount {
 //----------------------------------------------------------------
 
 export default class Accounts {
+  //common accounts
+  static URAccountId = 'unearned_revenue';
+  static ARAccountId = 'accounts_receivable';
+
   accounts: Record<string, IAccountSummary>;
   //
   protected session: ClientSession;
 
-  constructor(session: ClientSession) {
+  orgId: string;
+
+  constructor(session: ClientSession, orgId: string) {
     this.session = session;
     this.accounts = {};
+    this.orgId = orgId;
   }
 
   async getAccountData(accountId: string) {
     const currentAccounts = this.accounts;
+    // console.log({ currentAccounts });
+
+    const { orgId } = this;
 
     let account: IAccountSummary = currentAccounts[accountId];
 
     if (!account) {
-      const rawAccount = await AccountModel.findById(accountId).exec();
-
-      if (!rawAccount) {
-        throw new Error(`Account data with id ${accountId} not found!`);
-      }
-
-      const { accountType, name } = rawAccount;
-
-      account = {
-        name,
-        accountId,
-        accountType: accountType as IAccountType,
-      };
+      const rawAccount = await Accounts.getAccount(accountId, orgId);
+      // console.log('getAccountData rawAccount', rawAccount);
+      account = Accounts.formatAccount(rawAccount);
+      // console.log('getAccountData account', account);
 
       this.accounts = {
         ...currentAccounts,
@@ -56,25 +59,57 @@ export default class Accounts {
     return account;
   }
 
-  formatAccounts(accountsData: IAccount[]) {
+  //----------------------------------------------------------------
+  //static methods
+  //----------------------------------------------------------------
+
+  static async getAccount(accountId: string, orgId: string) {
+    const result = await AccountModel.findOne({
+      accountId,
+      $or: [{ 'metaData.orgId': 'all' }, { 'metaData.orgId': orgId }],
+    });
+    // console.log({ result });
+
+    if (!result) {
+      throw new Error(`Account data with id ${accountId} not found!`);
+    }
+
+    const account = result?.toJSON() as unknown as IAccount;
+
+    // console.log('static async getAccount account', account);
+
+    return account;
+  }
+
+  static formatAccount(account: IAccount) {
+    const { accountType, name, accountId } = account;
+
+    const summary: IAccountSummary = {
+      accountId,
+      accountType,
+      name,
+    };
+
+    // console.log({ summary });
+
+    return summary;
+  }
+
+  static formatAccounts(accountsData: IAccount[]) {
     const accounts: Record<string, IAccountSummary> = {};
 
     accountsData.forEach(accountFromDB => {
-      const { _id, accountType, name } = accountFromDB;
+      const { accountId } = accountFromDB;
 
-      const account: IAccountSummary = {
-        accountId: _id,
-        accountType,
-        name,
-      };
+      const account = this.formatAccount(accountFromDB);
 
-      accounts[_id] = account;
+      accounts[accountId] = account;
     });
 
     return accounts;
   }
 
-  getAccountsMapping(
+  static getAccountsMapping(
     currentItems: IMapAccount[],
     incomingItems: IMapAccount[]
   ) {
@@ -87,7 +122,7 @@ export default class Accounts {
     return this.mapAccounts(currentAccounts, incomingAccounts);
   }
 
-  summarizeItemsIntoAccounts(
+  static summarizeItemsIntoAccounts(
     items: {
       accountId: string;
       amount: number;
@@ -115,7 +150,10 @@ export default class Accounts {
     });
   }
 
-  mapAccounts(currentAccounts: IMapAccount[], incomingAccounts: IMapAccount[]) {
+  static mapAccounts(
+    currentAccounts: IMapAccount[],
+    incomingAccounts: IMapAccount[]
+  ) {
     console.log('currentAccounts', currentAccounts);
     console.log('incomingAccounts', incomingAccounts);
     const similarAccounts: IAccountMapping[] = [];
@@ -221,7 +259,7 @@ export default class Accounts {
     };
   }
 
-  async getAllAccounts(orgId: string) {
+  static async getAllAccounts(orgId: string) {
     const accountsData = await this.getAllAccountsRaw(orgId);
 
     if (!accountsData) {
@@ -235,7 +273,7 @@ export default class Accounts {
     return accounts;
   }
 
-  async getAllAccountsRaw(orgId: string) {
+  static async getAllAccountsRaw(orgId: string) {
     const result = await AccountModel.find({
       $or: [{ 'metaData.orgId': orgId }, { 'metaData.orgId': 'all' }],
     }).exec();
@@ -262,5 +300,16 @@ export default class Accounts {
     console.log('accounts', accounts);
 
     return accounts;
+  }
+
+  static async populateDB() {
+    const systemAccounts = generateAccounts();
+    console.log({ systemAccounts });
+    //log list to see
+    const result = await AccountModel.insertMany(systemAccounts);
+
+    console.log({ result });
+
+    return result;
   }
 }

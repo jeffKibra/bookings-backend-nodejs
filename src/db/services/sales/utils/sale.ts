@@ -2,7 +2,7 @@ import { ClientSession } from 'mongodb';
 //
 import { Accounts } from '../../accounts';
 //
-import { getAccountsMapping, getAccountData } from '../../utils/accounts';
+import { getAccountsMapping } from '../../utils/accounts';
 import { JournalEntry } from '../../journal';
 // import BigNumber from 'bignumber.js';
 
@@ -16,6 +16,7 @@ import {
   ISaleForm,
   ISaleItem,
   ISaleType,
+  IJournalEntry,
 } from '../../../../types';
 
 type TransactionType = keyof SaleTransactionTypes;
@@ -66,7 +67,7 @@ export default class Sale extends Accounts {
     const { orgId, userId, transactionId, transactionType, saleType } =
       saleDetails;
 
-    super(session);
+    super(session, orgId);
 
     this.session = session;
 
@@ -84,7 +85,7 @@ export default class Sale extends Accounts {
 
   //writing methods
 
-  createJournalEntries(
+  async createJournalEntries(
     newAccounts: IAccountMapping[],
     incomingSale: ISaleForm,
     entriesType: 'debit' | 'credit'
@@ -96,12 +97,16 @@ export default class Sale extends Accounts {
     const journal = new JournalEntry(session, userId, orgId);
     const contacts = Sale.createContactsFromCustomer(incomingSale.customer);
 
-    newAccounts.forEach(mappedAccount => {
-      this.setJournalEntry(mappedAccount, contacts, journal, entriesType);
-    });
+    const result = await Promise.all(
+      newAccounts.map(mappedAccount =>
+        this.setJournalEntry(mappedAccount, contacts, journal, entriesType)
+      )
+    );
+
+    return result;
   }
 
-  updateJournalEntries(
+  async updateJournalEntries(
     accountsMapping: IAccountsMapping,
     incomingSale: ISaleForm,
     entriesType: 'debit' | 'credit'
@@ -115,9 +120,13 @@ export default class Sale extends Accounts {
 
     const journal = new JournalEntry(session, userId, orgId);
 
-    accountsToUpdate.forEach(data => {
-      this.setJournalEntry(data, contacts, journal, entriesType);
-    });
+    const result = await Promise.all(
+      accountsToUpdate.map(data =>
+        this.setJournalEntry(data, contacts, journal, entriesType)
+      )
+    );
+
+    return result;
   }
 
   //----------------------------------------------------------------
@@ -131,10 +140,13 @@ export default class Sale extends Accounts {
 
     const { accountId, incoming } = accountToSet;
 
-    const account = await getAccountData(accountId);
+    const account = await this.getAccountData(accountId);
+    console.log('setting journal entry,', { accountId, account });
+
+    let result: IJournalEntry;
 
     if (entriesType === 'credit') {
-      journalInstance.creditAccount({
+      result = await journalInstance.creditAccount({
         account,
         amount: incoming,
         transactionId,
@@ -142,7 +154,7 @@ export default class Sale extends Accounts {
         contacts,
       });
     } else if (entriesType === 'debit') {
-      journalInstance.debitAccount({
+      result = await journalInstance.debitAccount({
         account,
         amount: incoming,
         transactionId,
@@ -154,15 +166,21 @@ export default class Sale extends Accounts {
         `Invalid entries type: ${entriesType} for account: ${accountId} `
       );
     }
+
+    return result;
   }
 
-  deleteJournalEntries(deletedAccounts: IAccountMapping[]) {
+  async deleteJournalEntries(deletedAccounts: IAccountMapping[]) {
     const { session, userId, orgId, transactionId } = this;
 
     const journal = new JournalEntry(session, userId, orgId);
-    deletedAccounts.forEach(({ accountId }) => {
-      journal.deleteEntry(transactionId, accountId);
-    });
+    const result = await Promise.all(
+      deletedAccounts.map(({ accountId }) =>
+        journal.deleteEntry(transactionId, accountId)
+      )
+    );
+
+    return result;
   }
 
   protected initCreateSale(incomingSale: ISaleForm) {
@@ -193,17 +211,18 @@ export default class Sale extends Accounts {
     creditAccountsMapping: IAccountsMapping,
     debitAccountsMapping: IAccountsMapping
   ) {
-    this.createJournalEntries(
-      creditAccountsMapping.newAccounts,
-      incomingSale,
-      'credit'
-    );
-
-    this.createJournalEntries(
-      debitAccountsMapping.newAccounts,
-      incomingSale,
-      'debit'
-    );
+    await Promise.all([
+      this.createJournalEntries(
+        creditAccountsMapping.newAccounts,
+        incomingSale,
+        'credit'
+      ),
+      this.createJournalEntries(
+        debitAccountsMapping.newAccounts,
+        incomingSale,
+        'debit'
+      ),
+    ]);
   }
 
   protected async updateSale(
@@ -212,23 +231,26 @@ export default class Sale extends Accounts {
     creditAccountsMapping: IAccountsMapping,
     debitAccountsMapping: IAccountsMapping
   ) {
-    //create journal entries
-    this.createJournalEntries(
-      creditAccountsMapping.newAccounts,
-      incomingSale,
-      'credit'
-    );
-    this.createJournalEntries(
-      debitAccountsMapping.newAccounts,
-      incomingSale,
-      'debit'
-    );
-    //update journal entries
-    this.updateJournalEntries(creditAccountsMapping, incomingSale, 'credit');
-    this.updateJournalEntries(debitAccountsMapping, incomingSale, 'debit');
-    //delete journal entries
-    this.deleteJournalEntries(creditAccountsMapping.deletedAccounts);
-    this.deleteJournalEntries(debitAccountsMapping.deletedAccounts);
+    await Promise.all([
+      //create journal entries
+
+      this.createJournalEntries(
+        creditAccountsMapping.newAccounts,
+        incomingSale,
+        'credit'
+      ),
+      this.createJournalEntries(
+        debitAccountsMapping.newAccounts,
+        incomingSale,
+        'debit'
+      ),
+      //update journal entries
+      this.updateJournalEntries(creditAccountsMapping, incomingSale, 'credit'),
+      this.updateJournalEntries(debitAccountsMapping, incomingSale, 'debit'),
+      //delete journal entries
+      this.deleteJournalEntries(creditAccountsMapping.deletedAccounts),
+      this.deleteJournalEntries(debitAccountsMapping.deletedAccounts),
+    ]);
   }
 
   protected async deleteSale(
@@ -236,8 +258,10 @@ export default class Sale extends Accounts {
     creditDeletedAccounts: IAccountMapping[],
     debitDeletedAccounts: IAccountMapping[]
   ) {
-    this.deleteJournalEntries(creditDeletedAccounts);
-    this.deleteJournalEntries(debitDeletedAccounts);
+    await Promise.all([
+      this.deleteJournalEntries(creditDeletedAccounts),
+      this.deleteJournalEntries(debitDeletedAccounts),
+    ]);
   }
 
   //----------------------------------------------------------------

@@ -58,84 +58,84 @@ export default async function getResult(
     {
       $skip: offset,
     },
-    {
-      $facet: {
-        bookings: [
-          {
-            //limit items returned
-            $limit: limit,
-          },
-        ],
-        // makes: [
-        //   {
-        //     $group: {
-        //       _id: '$make',
-        //       count: { $sum: 1 },
-        //       models: {
-        //         $addToSet: '$model.model',
-        //       },
-        //       years: {
-        //         $addToSet: '$year',
-        //       },
-        //     },
-        //   },
-        // ],
-        // ratesRange: [
-        //   {
-        //     $group: {
-        //       _id: null,
-        //       max: { $max: '$rate' },
-        //       min: { $min: '$rate' },
-        //     },
-        //   },
-        // ],
-        meta: [
-          {
-            //must be used before a lookup
-            $replaceWith: {
-              $mergeObjects: '$$SEARCH_META',
-            },
-          },
-          {
-            $limit: 1,
-          },
-        ],
-      },
-    },
-    {
-      //change meta field from array to object
-      $set: {
-        meta: { $arrayElemAt: ['$meta', 0] },
-      },
-    },
-    {
-      //format metadata
-      $project: {
-        bookings: 1,
-        meta: {
-          count: '$meta.count.lowerBound',
-          // facets: {
-          //   $mergeObjects: [
-          //     {
-          //       makes: [],
-          //       models: [],
-          //       types: [],
-          //       colors: [],
-          //       ratesRange: {},
-          //     },
-          //     {
-          //       makes: '$makes',
-          //       models: '$meta.facet.modelsFacet.buckets',
-          //       types: '$meta.facet.typesFacet.buckets',
-          //       colors: '$meta.facet.colorsFacet.buckets',
-          //       ratesRange: {
-          //         $arrayElemAt: ['$ratesRange', 0],
-          //       },
-          //     },
-          //   ],
-          // },
-        },
-      },
-    },
+    // {
+    //   $facet: {
+    //     bookings: [
+    //       {
+    //         //limit items returned
+    //         $limit: limit,
+    //       },
+    //     ],
+    //     // makes: [
+    //     //   {
+    //     //     $group: {
+    //     //       _id: '$make',
+    //     //       count: { $sum: 1 },
+    //     //       models: {
+    //     //         $addToSet: '$model.model',
+    //     //       },
+    //     //       years: {
+    //     //         $addToSet: '$year',
+    //     //       },
+    //     //     },
+    //     //   },
+    //     // ],
+    //     // ratesRange: [
+    //     //   {
+    //     //     $group: {
+    //     //       _id: null,
+    //     //       max: { $max: '$rate' },
+    //     //       min: { $min: '$rate' },
+    //     //     },
+    //     //   },
+    //     // ],
+    //     meta: [
+    //       {
+    //         //must be used before a lookup
+    //         $replaceWith: {
+    //           $mergeObjects: '$$SEARCH_META',
+    //         },
+    //       },
+    //       {
+    //         $limit: 1,
+    //       },
+    //     ],
+    //   },
+    // },
+    // {
+    //   //change meta field from array to object
+    //   $set: {
+    //     meta: { $arrayElemAt: ['$meta', 0] },
+    //   },
+    // },
+    // {
+    //   //format metadata
+    //   $project: {
+    //     bookings: 1,
+    //     meta: {
+    //       count: '$meta.count.lowerBound',
+    //       // facets: {
+    //       //   $mergeObjects: [
+    //       //     {
+    //       //       makes: [],
+    //       //       models: [],
+    //       //       types: [],
+    //       //       colors: [],
+    //       //       ratesRange: {},
+    //       //     },
+    //       //     {
+    //       //       makes: '$makes',
+    //       //       models: '$meta.facet.modelsFacet.buckets',
+    //       //       types: '$meta.facet.typesFacet.buckets',
+    //       //       colors: '$meta.facet.colorsFacet.buckets',
+    //       //       ratesRange: {
+    //       //         $arrayElemAt: ['$ratesRange', 0],
+    //       //       },
+    //       //     },
+    //       //   ],
+    //       // },
+    //     },
+    //   },
+    // },
   ]);
 }

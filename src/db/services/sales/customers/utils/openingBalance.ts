@@ -203,7 +203,7 @@ export default class OpeningBalance extends InvoiceSale {
       paymentTerm: { days: 0, name: 'Due on Receipt', value: 'on_receipt' },
       items: [
         {
-          // itemId: 'customer_opening_balance',
+          itemId: 'customer_opening_balance',
           name: 'customer opening balance',
           description: displayName,
           rate: openingBalance,

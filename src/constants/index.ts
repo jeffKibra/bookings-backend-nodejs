@@ -6,7 +6,7 @@ export const BAR_HEIGHT = 64;
 
 export { default as carModels } from './carModels';
 export { default as accountTypes } from './accountTypes';
-export { default as accounts } from './accounts';
+// export { default as accounts } from './accounts';
 export { generateAccounts } from './accounts';
 export { default as paymentModes } from './paymentModes';
 export { default as paymentTerms } from './paymentTerms';

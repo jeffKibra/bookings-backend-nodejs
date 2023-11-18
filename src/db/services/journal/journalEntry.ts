@@ -7,11 +7,11 @@ import { JournalEntryModel } from '../../models';
 
 import {
   IAccountType,
-  Entry,
+  IJournalEntry,
   TransactionTypes,
-  MappedEntry,
+  IMappedEntry,
   IAccountMapping,
-  GroupedEntries,
+  IGroupedEntries,
   IAccountSummary,
   IContactSummary,
 } from '../../../types';
@@ -77,9 +77,9 @@ export default class JournalEntry {
     }
 
     return {
+      'account.accountId': accountId,
       'metaData.orgId': orgId,
       transactionId,
-      'account._id': accountId,
       ...detailsFilters,
     };
   }
@@ -94,6 +94,8 @@ export default class JournalEntry {
       details,
     } = entryParams;
 
+    console.log('set entry account', account);
+
     const { orgId, userId, session } = this;
     //
     const { accountId } = account;
@@ -104,7 +106,7 @@ export default class JournalEntry {
       details
     );
 
-    const updatedEntry = await JournalEntryModel.findOneAndUpdate(
+    const result = await JournalEntryModel.findOneAndUpdate(
       { ...findFilters },
       {
         $set: {
@@ -113,9 +115,10 @@ export default class JournalEntry {
           account,
           transactionId,
           contacts: contacts || [],
-          transactionType,
+          // transactionType,
           ...(details ? { details } : {}),
           metaData: {
+            transactionType,
             status: 0,
             orgId,
             createdAt: new Date(),
@@ -127,6 +130,8 @@ export default class JournalEntry {
       },
       { new: true, session, upsert: true }
     );
+
+    const updatedEntry = result as unknown as IJournalEntry;
 
     return updatedEntry;
   }
@@ -316,8 +321,8 @@ export default class JournalEntry {
   //   return entries;
   // }
 
-  groupEntriesBasedOnAccounts(entries: Entry[]) {
-    return entries.reduce<GroupedEntries>((groupedEntries, entry) => {
+  groupEntriesBasedOnAccounts(entries: IJournalEntry[]) {
+    return entries.reduce<IGroupedEntries>((groupedEntries, entry) => {
       console.log({ groupedEntries });
       const {
         account: { accountId },
@@ -476,7 +481,7 @@ export default class JournalEntry {
   }
 
   //------------------------------------------------------------
-  static verifyEntryData(data: Entry) {
+  static verifyEntryData(data: IJournalEntry) {
     const {
       entryType,
       amount,

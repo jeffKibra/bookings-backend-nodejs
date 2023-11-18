@@ -7,13 +7,13 @@ import { metaDataFields } from './Generals';
 
 const VehicleMetaDataSchema = new Schema({ ...metaDataFields });
 
-const VehicleModelSchema = new Schema({
+export const VehicleModelSchema = new Schema({
   model: { type: String, required: true },
   type: { type: String, required: true },
   make: { type: String, required: true },
 });
 
-const VehicleSchemaSharedFields = {
+export const VehicleSchemaSharedFields = {
   color: { type: String, required: true },
   description: { type: String },
   make: { type: String, required: true },

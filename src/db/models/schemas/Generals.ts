@@ -20,7 +20,7 @@ export const MetaDataSchema = new Schema({
 export const paymentTermSchema = new Schema({
   days: { type: Number, required: true },
   name: { type: String, required: true },
-  value: { type: Number, required: true },
+  value: { type: String, required: true },
 });
 
 export const paymentModeSchema = new Schema({

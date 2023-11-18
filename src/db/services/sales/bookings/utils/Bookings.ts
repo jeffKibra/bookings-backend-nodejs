@@ -9,8 +9,6 @@ import { paymentTerms } from '../../../../../constants';
 import { getById } from '../getOne';
 import { formatBookingFormData } from '.';
 
-import { getAccountData } from '../../../utils/accounts';
-
 //
 import {
   IAccount,
@@ -66,7 +64,7 @@ export default class Bookings {
       customerNotes,
       vehicle,
       transferFee,
-      saleDate,
+      // startDate,
       endDate,
       bookingRate,
       bookingTotal,
@@ -89,10 +87,12 @@ export default class Bookings {
     const {
       model: { make, model },
       color,
+      _id: vehicleId,
     } = vehicle;
 
     const items: ISaleItem[] = [
       {
+        itemId: vehicleId,
         name: vehicle.registration,
         qty: bookedDaysCount,
         rate: bookingRate,
@@ -101,9 +101,11 @@ export default class Bookings {
         total: bookingTotal,
         description: `${color} ${make} ${model}`,
         salesAccountId: vehicleBookingsAccountId,
-        details: { ...vehicle, taxType: 'inclusive' },
+        vehicle,
+        details: { taxType: 'inclusive' },
       },
       {
+        itemId: 'transfer_fee',
         name: 'Transfer Fee',
         rate: transferFee,
         qty: 1,
@@ -120,7 +122,7 @@ export default class Bookings {
       customer,
       customerNotes,
       items,
-      saleDate,
+      saleDate: new Date().toISOString(),
       dueDate: endDate,
       //
       // taxes:[],

@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 
 import { JournalEntry } from '../../../journal';
 import { Accounts } from '../../../accounts';
-import { getAccountData } from '../../../utils/accounts';
 
 import {
   IAccountSummary,
@@ -23,12 +22,9 @@ interface PaymentData {
 
 //-------------------------------------------------------------
 
-const URAccountId = 'unearned_revenue';
-const ARAccountId = 'accounts_receivable';
+const { ARAccountId, URAccountId } = Accounts;
 
 export default class InvoicesPayments extends Accounts {
-  URAccountId = 'unearned_revenue';
-  ARAccountId = 'accounts_receivable';
   //
   session: ClientSession;
   orgId: string;
@@ -39,7 +35,7 @@ export default class InvoicesPayments extends Accounts {
   constructor(session: ClientSession, paymentData: PaymentData) {
     const { orgId, userId, paymentId } = paymentData;
 
-    super(session);
+    super(session, orgId);
 
     this.session = session;
 
@@ -256,8 +252,6 @@ export default class InvoicesPayments extends Accounts {
     paymentsToDelete: IInvoicePaymentMapping[]
   ) {
     const { session, userId, orgId, paymentId, accounts } = this;
-
-    const ARAccount = await this.getAccountData(ARAccountId);
 
     const journalInstance = new JournalEntry(session, userId, orgId);
 

@@ -8,16 +8,20 @@ export const AccountTypeSchema = {
   main: { type: String, required: true },
 };
 
-export const AccountSummarySchema = {
+const accountSummaryFields = {
   name: { type: String, required: true },
   accountId: { type: String, required: true },
   accountType: { type: AccountTypeSchema, required: true },
 };
 
+export const AccountSummarySchema = new Schema({
+  ...accountSummaryFields,
+});
+
 export const AccountMetaDataSchema = new Schema({ ...metaDataFields });
 
 const schema = new Schema({
-  ...AccountSummarySchema,
+  ...accountSummaryFields,
   description: String,
   tags: { type: [String], required: true },
   metaData: { type: AccountMetaDataSchema, required: true },

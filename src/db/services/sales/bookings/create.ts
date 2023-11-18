@@ -47,19 +47,17 @@ export default async function createBooking(
     vehicle: { _id: vehicleId },
   } = formData;
 
-  const bookingObjectId = new ObjectId();
-  const bookingId = bookingObjectId.toString();
-  console.log({ bookingId });
-
   const session = await startSession();
   session.startTransaction();
 
   const invoiceId = new ObjectId().toString();
+  console.log({ invoiceId });
 
   try {
     await Bookings.validateFormData(orgId, formattedFormData, session);
 
     const invoiceForm = Bookings.createInvoiceFormFromBooking(formData);
+    console.log({ invoiceForm });
 
     const invoiceInstance = new Invoice(session, {
       invoiceId,

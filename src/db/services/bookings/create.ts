@@ -67,6 +67,7 @@ export default async function createBooking(
   });
 
   const selectedDates = formattedFormData.selectedDates;
+  console.log({ selectedDates });
 
   const session = await startSession();
   session.startTransaction();

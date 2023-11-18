@@ -25,8 +25,8 @@ export default function generateSearchStages(
             {
               text: {
                 path: [
-                  'vehicle.registration',
-                  'vehicle.make',
+                  'items.name',
+                  // 'items.details.make',
                   // 'model.model',
                   // 'color',
                   // 'description',
@@ -59,11 +59,11 @@ export default function generateSearchStages(
                   // },
                   modelsFacet: {
                     type: 'string',
-                    path: 'vehicle.model.model',
+                    path: 'items.vehicle.model.model',
                   },
                   typesFacet: {
                     type: 'string',
-                    path: 'vehicle.model.type',
+                    path: 'items.vehicle.model.type',
                   },
                   // colorsFacet: {
                   //   type: 'string',

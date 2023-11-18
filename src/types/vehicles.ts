@@ -44,6 +44,12 @@ export interface IVehicle extends IVehicleFromDb {
   _id: string;
 }
 
+export interface IVehicleForBooking
+  extends Pick<
+    IVehicle,
+    '_id' | 'registration' | 'rate' | 'color' | 'make' | 'model' | 'year'
+  > {}
+
 export interface IPaginationLastDoc {
   _id: string;
   searchScore: number;

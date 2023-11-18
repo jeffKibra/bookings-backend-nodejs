@@ -4,7 +4,8 @@ import { PaymentReceivedModel } from '../../../../models';
 
 import { JournalEntry } from '../../../journal';
 
-import PaymentSummary from './paymentSummary';
+import InvoicesPayments from './invoicesPayments';
+import { Accounts } from '../../../accounts';
 
 import {
   IAccountSummary,
@@ -23,7 +24,7 @@ interface PaymentData {
 
 //-------------------------------------------------------------
 
-export default class PaymentReceived extends PaymentSummary {
+export default class PaymentReceived extends InvoicesPayments {
   transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
 
   constructor(session: ClientSession, paymentData: PaymentData) {
@@ -225,7 +226,7 @@ export default class PaymentReceived extends PaymentSummary {
   ) {
     const { session, orgId, userId, paymentId, transactionType } = this;
 
-    const URAccount = await this.getAccountData(this.ARAccountId);
+    const URAccount = await this.getAccountData(Accounts.URAccountId);
 
     const journalInstance = new JournalEntry(session, userId, orgId);
 

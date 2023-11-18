@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+//
 import accountTypes from './accountTypes';
 
 import { IAccount } from '../types';
@@ -381,39 +383,39 @@ const allAccounts: AccountsType = {
 };
 
 export function generateAccounts() {
-  const accounts = Object.entries(allAccounts).reduce(
-    (accountsObj: { [key: string]: IAccount }, [accountId, accountData]) => {
-      const { accountType, ...rest } = accountData;
-      // console.log({ key, accountType });
+  const accounts: IAccount[] = [];
 
-      const account: IAccount = {
-        ...rest,
-        _id: accountId,
-        accountType: {
-          id: accountType,
-          ...accountTypes[accountType],
-        },
-        metaData: {
-          status: 0,
-          createdAt: new Date().toISOString(),
-          modifiedAt: new Date().toISOString(),
-          createdBy: 'system',
-          modifiedBy: 'system',
-          orgId: 'all',
-        },
-      };
+  Object.entries(allAccounts).forEach(([accountId, accountData]) => {
+    const { accountType, ...rest } = accountData;
+    // console.log({ key, accountType });
 
-      return {
-        ...accountsObj,
-        [accountId]: account,
-      };
-    },
-    {}
-  );
+    const account: IAccount = {
+      ...rest,
+      accountId,
+      accountType: {
+        id: accountType,
+        ...accountTypes[accountType],
+      },
+      metaData: {
+        status: 0,
+        createdAt: new Date().toISOString(),
+        modifiedAt: new Date().toISOString(),
+        createdBy: 'system',
+        modifiedBy: 'system',
+        orgId: 'all',
+      },
+    };
+
+    accounts.push({
+      ...account,
+    });
+  });
 
   return accounts;
 }
 
-const accounts = generateAccounts();
+// const accounts = generateAccounts();
 
-export default accounts;
+// console.log({ accounts });
+
+// export default accounts;

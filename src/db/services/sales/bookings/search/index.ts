@@ -30,7 +30,7 @@ export default async function search(
 
   // aggregation to fetch items not booked.
   const result = await getResult(orgId, query, options, retrieveFacets);
-  // console.log('result', result);
+  console.log('result', result);
 
   const { bookings, meta: resultMeta } = result[0];
   const meta = resultMeta || { facets: {} };

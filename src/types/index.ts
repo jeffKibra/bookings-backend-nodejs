@@ -21,6 +21,7 @@ export * from './accounts';
 export * from './address';
 export * from './org';
 export * from './tax';
+export * from './entries';
 //
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
 // export type {} from
@@ -30,12 +31,6 @@ export * from './tax';
 // CustomerFormData,
 // './customer';
 
-export type {
-  Entry,
-  GroupedEntries,
-  MappedEntry,
-  InvoicePaymentEntry,
-} from './entries';
 
 export type { ExpenseItem } from './expenseItem';
 export type { PaymentMode } from './paymentMode';

@@ -1,14 +1,15 @@
 import {
-  Tax,
+  ITax,
   InvoiceTransactionTypes,
   SaleTransactionTypes,
   IContactSummary,
   PaymentTerm,
   IAccountSummary,
+  IVehicleForBooking,
   // ItemFormData,
 } from '.';
 
-export interface ISaleTax extends Tax {
+export interface ISaleTax extends ITax {
   totalTax: number;
 }
 
@@ -25,6 +26,7 @@ interface ISaleItemDetails {
   taxType: 'inclusive' | 'exclusive';
 }
 export interface ISaleItem {
+  itemId: string;
   name: string;
   description: string;
   rate: number;
@@ -35,7 +37,8 @@ export interface ISaleItem {
   //
   // salesAccount: IAccountSummary;
   salesAccountId: string;
-  details: ISaleItemDetails;
+  details?: ISaleItemDetails;
+  vehicle?: IVehicleForBooking;
 }
 
 export interface ISaleMeta {

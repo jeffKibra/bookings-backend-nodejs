@@ -1,39 +1,42 @@
-import { Timestamp } from 'firebase-admin/firestore';
 import {
-  Account,
+  IAccountSummary,
   // DateDetails,
-  AccountMapping,
+  IAccountMapping,
   TransactionTypes,
   IContactSummary,
 } from '.';
 
-export interface GroupedEntries {
-  [key: string]: Entry[];
+export interface IGroupedEntries {
+  [key: string]: IJournalEntry[];
 }
 
-export interface MappedEntry extends Entry, AccountMapping {}
-
-export interface Entry {
-  amount: number;
-  entryType: 'credit' | 'debit';
-  account: Account;
-  createdAt: Date | Timestamp;
+interface IJournalEntryMetaData {
+  createdAt: Date | string;
   createdBy: string;
-  // date: DateDetails;
-  date: Record<string, unknown>;
-  modifiedAt: Date | Timestamp;
+  modifiedAt: Date | string;
   modifiedBy: string;
   status: number;
   orgId: string;
-  transactionId: string;
-  contacts: IContactSummary[];
-  contactsIds: string[];
   transactionType: keyof TransactionTypes;
 }
 
-export interface InvoicePaymentEntry {
+export interface IMappedEntry extends IJournalEntry, IAccountMapping {}
+
+export interface IJournalEntry {
+  amount: number;
+  entryType: 'credit' | 'debit';
+  account: IAccountSummary;
+  // date: DateDetails;
+  date: Record<string, unknown>;
+  transactionId: string;
+  contacts: IContactSummary[];
+  // contactsIds: string[];
+  metaData: IJournalEntryMetaData;
+}
+
+export interface IInvoicePaymentEntry {
   current: number;
   incoming: number;
   invoiceId: string;
-  entry: Entry;
+  entry: IJournalEntry;
 }

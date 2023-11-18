@@ -4,7 +4,6 @@ import { ClientSession } from 'mongodb';
 
 //Sale class
 import { SaleDataAndAccount } from '../../utils/sale';
-import { getAccountData } from '../../../utils/accounts';
 
 import InvoiceSale, { InvoiceDetails } from './invoiceSale';
 
