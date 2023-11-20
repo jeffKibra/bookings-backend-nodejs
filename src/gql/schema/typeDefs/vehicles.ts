@@ -65,7 +65,7 @@ const typeDefs = `#graphql
     }
 
     type VehiclesSearchResult {
-        vehicles: [Vehicle]!
+        list: [Vehicle]!
         meta:SearchVehicleMetaData
     }
 

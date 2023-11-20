@@ -82,7 +82,7 @@ export default async function search(
   const page = pagination?.page || 0;
 
   return {
-    list: vehicles,
+    vehicles,
     meta: {
       ...moreMetaOptions,
       page,
