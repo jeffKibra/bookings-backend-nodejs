@@ -21,8 +21,18 @@ interface IMapAccount {
 
 export default class Accounts {
   //common accounts
-  static URAccountId = 'unearned_revenue';
-  static ARAccountId = 'accounts_receivable';
+  static commonIds = {
+    UR: 'unearned_revenue',
+    AR: 'accounts_receivable',
+    AP: 'accounts_payable',
+    UF: 'undeposited_funds',
+    PC: 'petty_cash',
+    sales: 'sales',
+    VB: 'vehicle_bookings',
+    TC: 'transfer_charge',
+    OBA: 'opening_balance_adjustments',
+    OBO: 'opening_balance_offset',
+  };
 
   accounts: Record<string, IAccountSummary>;
   //

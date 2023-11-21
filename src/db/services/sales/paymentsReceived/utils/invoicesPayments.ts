@@ -2,6 +2,8 @@ import { ClientSession } from 'mongoose';
 
 import BigNumber from 'bignumber.js';
 
+import { InvoiceModel, PaymentReceivedModel } from '../../../../models';
+
 import { JournalEntry } from '../../../journal';
 import { Accounts } from '../../../accounts';
 
@@ -12,6 +14,7 @@ import {
   IPaymentReceived,
   IContactSummary,
   IInvoicePaymentMapping,
+  IInvoicePayment,
 } from '../../../../../types';
 
 interface PaymentData {
@@ -22,7 +25,9 @@ interface PaymentData {
 
 //-------------------------------------------------------------
 
-const { ARAccountId, URAccountId } = Accounts;
+const {
+  commonIds: { AR: ARAccountId, UR: URAccountId },
+} = Accounts;
 
 export default class InvoicesPayments extends Accounts {
   //
@@ -46,7 +51,7 @@ export default class InvoicesPayments extends Accounts {
     this.transactionType = 'customer_payment';
   }
 
-  makePayments(
+  async makePayments(
     incomingPayment: IPaymentReceivedForm | null,
     currentPayment?: IPaymentReceived
   ) {
@@ -73,8 +78,8 @@ export default class InvoicesPayments extends Accounts {
       paymentsToCreate,
       paymentsToDelete,
     } = InvoicesPayments.getPaymentsMapping(
-      currentPayment?.payments || {},
-      incomingPayment?.payments || {}
+      currentPayment?.paidInvoices || [],
+      incomingPayment?.paidInvoices || []
     );
     console.log({
       similarPayments,
@@ -95,30 +100,75 @@ export default class InvoicesPayments extends Accounts {
         ? [...paymentsToUpdate, ...similarPayments]
         : paymentsToUpdate;
 
-    if (paymentsToCreate.length > 0 && incomingPayment) {
-      console.log('creating payments');
-      this.payInvoices(incomingPayment, paymentsToCreate);
-    }
-
-    if (updatedPayments.length > 0 && incomingPayment && currentAccountId) {
-      console.log('updating payments');
+    await Promise.all([
+      this.payInvoices(paymentsToCreate, incomingPayment),
       this.updateInvoicesPayments(
+        updatedPayments,
         incomingPayment,
-        currentAccountId,
-        updatedPayments
-      );
-    }
+        currentAccountId
+      ),
+      this.deleteInvoicesPayments(paymentsToDelete, currentAccount?.accountId),
+    ]);
+  }
 
-    if (paymentsToDelete.length > 0 && currentAccount) {
-      console.log('deleting payments');
-      this.deleteInvoicesPayments(currentAccount, paymentsToDelete);
-    }
+  async getInvoicePaymentsTotal(invoiceId: string) {
+    const { session, orgId } = this;
+
+    const result = await PaymentReceivedModel.aggregate([
+      {
+        $match: {
+          'metaData.orgId': orgId,
+          'metaData.status': 0,
+        },
+      },
+      {
+        $unwind: '$paidInvoices',
+      },
+      {
+        $match: {
+          'paidInvoices.invoiceId': invoiceId,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: '$paidInvoices.amount',
+          },
+        },
+      },
+    ]).session(session);
+
+    console.log({ result });
+  }
+
+  private async validateInvoicePayment(invoiceId: string, amount: number) {
+    const { session, orgId } = this;
+
+    const invoice = await InvoiceModel.findById(invoiceId, 'total', {
+      session,
+    }).exec();
+
+    await this.getInvoicePaymentsTotal(invoiceId);
+    console.log({ invoice });
   }
 
   private async payInvoices(
-    formData: IPaymentReceivedForm,
-    paymentsToCreate: IInvoicePaymentMapping[]
+    paymentsToCreate: IInvoicePaymentMapping[],
+    formData?: IPaymentReceivedForm | null
   ) {
+    const paramsAreValid =
+      Array.isArray(paymentsToCreate) &&
+      paymentsToCreate.length > 0 &&
+      formData &&
+      typeof formData === 'object';
+
+    if (!paramsAreValid) {
+      return;
+    }
+
+    console.log('creating payments');
+
     const { orgId, userId, paymentId, session } = this;
     // console.log({ account });
     const paymentAccount = formData.account;
@@ -131,56 +181,125 @@ export default class InvoicesPayments extends Accounts {
     /**
      * update bookings with the current payment
      */
-    paymentsToCreate.forEach(payment => {
-      const { _id: invoiceId, incoming } = payment;
-      console.log({ invoiceId, incoming, paymentId });
+    await Promise.all(
+      paymentsToCreate.map(async payment => {
+        const { invoiceId, incoming } = payment;
+        console.log({ invoiceId, incoming, paymentId });
 
-      if (incoming > 0) {
-        //update booking
+        this.validateInvoicePayment(invoiceId, incoming);
 
-        /**
-         * credit accounts_receivable
-         */
-        journalInstance.creditAccount({
-          account: ARAccount,
-          amount: incoming,
-          transactionId: invoiceId,
-          transactionType: 'invoice_payment',
-          contacts,
-          details: { invoiceId },
-        });
-        /**
-         * debit payment account-
-         */
-        journalInstance.debitAccount({
-          account: paymentAccount,
-          amount: incoming,
-          transactionId: invoiceId,
-          transactionType: 'invoice_payment',
-          contacts,
-          details: { invoiceId },
-        });
+        const transactionId = `${paymentId}_${invoiceId}`;
 
-        // const adjustment = new BigNumber(0 - incoming).dp(2).toNumber();
+        if (incoming > 0) {
+          //update booking
+          await Promise.all([
+            /**
+             * credit accounts_receivable
+             */
+            journalInstance.creditAccount({
+              account: ARAccount,
+              amount: incoming,
+              transactionId,
+              transactionType: 'invoice_payment',
+              contacts,
+              // details: { invoiceId },
+            }),
+            /**
+             * debit payment account-
+             */
+            journalInstance.debitAccount({
+              account: paymentAccount,
+              amount: incoming,
+              transactionId,
+              transactionType: 'invoice_payment',
+              contacts,
+              // details: { invoiceId },
+            }),
+          ]);
 
-        // batch.update(bookingRef, {
-        //   balance: increment(adjustment),
-        //   paymentsCount: increment(1),
-        //   paymentsIds: arrayUnion(paymentId),
-        //   [`paymentsReceived.${paymentId}`]: incoming,
-        //   modifiedBy: userId,
-        //   modifiedAt: serverTimestamp(),
-        // });
-      }
-    });
+          // const adjustment = new BigNumber(0 - incoming).dp(2).toNumber();
+
+          // batch.update(bookingRef, {
+          //   balance: increment(adjustment),
+          //   paymentsCount: increment(1),
+          //   paymentsIds: arrayUnion(paymentId),
+          //   [`paymentsReceived.${paymentId}`]: incoming,
+          //   modifiedBy: userId,
+          //   modifiedAt: serverTimestamp(),
+          // });
+        }
+      })
+    );
   }
 
   //----------------------------------------------------------------
-  private async updateInvoicesPayments(
-    formData: IPaymentReceivedForm,
-    currentAccountId: string,
-    paymentsToUpdate: IInvoicePaymentMapping[]
+  private updateInvoicePaymentDepositAccount(
+    journalInstance: JournalEntry,
+    data: {
+      invoiceId: string;
+      contacts: IContactSummary[];
+      incomingAmount: number;
+      incomingAccount: IAccountSummary;
+      currentAccountId: string;
+    }
   ) {
+    /**
+     * deposit accounts
+     */
+    const { paymentId } = this;
+
+    const {
+      invoiceId,
+      contacts,
+      incomingAmount,
+      incomingAccount,
+      currentAccountId,
+    } = data;
+    const { accountId: incomingAccountId } = incomingAccount;
+
+    const transactionId = `${paymentId}_${invoiceId}`;
+
+    async function deletePrevAccountEntry() {
+      const paymentAccountHasChanged = incomingAccountId !== currentAccountId;
+      if (paymentAccountHasChanged) {
+        //delete previous account entry
+        await journalInstance.deleteEntry(transactionId, currentAccountId);
+      }
+    }
+
+    return Promise.all([
+      //debit incoming account
+      journalInstance.debitAccount({
+        transactionId,
+        account: incomingAccount,
+        amount: incomingAmount,
+        transactionType: 'invoice_payment',
+        contacts,
+        details: { invoiceId },
+      }),
+      deletePrevAccountEntry(),
+    ]);
+  }
+  //----------------------------------------------------------------
+
+  private async updateInvoicesPayments(
+    paymentsToUpdate: IInvoicePaymentMapping[],
+    formData?: IPaymentReceivedForm | null,
+    currentAccountId?: string
+  ) {
+    const paramsAreValid =
+      Array.isArray(paymentsToUpdate) &&
+      paymentsToUpdate.length > 0 &&
+      formData &&
+      typeof formData === 'object' &&
+      currentAccountId;
+
+    if (!paramsAreValid) {
+      return;
+    }
+
+    console.log('updating payments');
+
     const { orgId, userId, paymentId, session } = this;
     // console.log({ account });
     const { account: incomingAccount } = formData;
@@ -195,86 +314,95 @@ export default class InvoicesPayments extends Accounts {
     /**
      * update bookings with the current payment
      */
-    paymentsToUpdate.forEach(payment => {
-      const { _id: invoiceId, incoming, current } = payment;
-      console.log({ invoiceId, incoming, paymentId });
+    await Promise.all(
+      paymentsToUpdate.map(async payment => {
+        const { invoiceId, incoming, current } = payment;
+        console.log({ invoiceId, incoming, paymentId });
 
-      if (incoming > 0) {
-        //update booking
+        const transactionId = `${paymentId}_${invoiceId}`;
 
-        /**
-         * accounts receivable account should be credited
-         */
-        journalInstance.creditAccount({
-          account: ARAccount,
-          amount: incoming,
-          transactionId: invoiceId,
-          transactionType: 'invoice_payment',
-          contacts,
-          details: { invoiceId },
-        });
-        /**
-         * deposit accounts
-         */
-        const paymentAccountHasChanged = incomingAccountId !== currentAccountId;
-        if (paymentAccountHasChanged) {
-          //delete previous account entry
-          journalInstance.deleteEntry(paymentId, currentAccountId, {
-            invoiceId,
-          });
+        if (incoming > 0) {
+          //update booking
+
+          await Promise.all([
+            /**
+             * accounts receivable account should be credited
+             */
+            journalInstance.creditAccount({
+              account: ARAccount,
+              amount: incoming,
+              transactionId,
+              transactionType: 'invoice_payment',
+              contacts,
+              details: { invoiceId },
+            }),
+            this.updateInvoicePaymentDepositAccount(journalInstance, {
+              contacts,
+              currentAccountId,
+              incomingAccount,
+              invoiceId,
+              incomingAmount: incoming,
+            }),
+          ]);
+
+          // const adjustment = new BigNumber(current - incoming).dp(2).toNumber();
+
+          // batch.update(bookingRef, {
+          //   balance: increment(adjustment),
+          //   [`paymentsReceived.${paymentId}`]: incoming,
+          //   modifiedBy: userId,
+          //   modifiedAt: serverTimestamp(),
+          // });
         }
-        //debit incoming account
-        journalInstance.debitAccount({
-          transactionId: invoiceId,
-          account: incomingAccount,
-          amount: incoming,
-          transactionType: 'invoice_payment',
-          contacts,
-          details: { invoiceId },
-        });
-
-        // const adjustment = new BigNumber(current - incoming).dp(2).toNumber();
-
-        // batch.update(bookingRef, {
-        //   balance: increment(adjustment),
-        //   [`paymentsReceived.${paymentId}`]: incoming,
-        //   modifiedBy: userId,
-        //   modifiedAt: serverTimestamp(),
-        // });
-      }
-    });
+      })
+    );
   }
 
   //---------------------------------------------------------------------
 
   private async deleteInvoicesPayments(
-    paymentAccount: IAccountSummary,
-    paymentsToDelete: IInvoicePaymentMapping[]
+    paymentsToDelete: IInvoicePaymentMapping[],
+    paymentAccountId?: string
   ) {
-    const { session, userId, orgId, paymentId, accounts } = this;
+    const paramsAreValid =
+      Array.isArray(paymentsToDelete) &&
+      paymentsToDelete.length > 0 &&
+      paymentAccountId;
+
+    if (!paramsAreValid) {
+      return;
+    }
+
+    console.log('deleting payments');
+
+    const { session, userId, orgId, paymentId } = this;
 
     const journalInstance = new JournalEntry(session, userId, orgId);
 
-    paymentsToDelete.forEach(payment => {
-      const { _id: invoiceId } = payment;
+    await Promise.all(
+      paymentsToDelete.map(async payment => {
+        const { invoiceId } = payment;
 
-      //delete accounts_receivable entry
-      journalInstance.deleteEntry(paymentId, ARAccountId, { invoiceId });
-      //delete paymentAccount entries
-      journalInstance.deleteEntry(paymentId, paymentAccount.accountId, {
-        invoiceId,
-      });
+        const transactionId = `${paymentId}_${invoiceId}`;
 
-      // const bookingRef = db.doc(`organizations/${orgId}/bookings/${invoiceId}`);
-      // batch.update(bookingRef, {
-      //   balance: increment(current),
-      //   paymentsCount: increment(-1),
-      //   paymentsIds: arrayRemove(paymentId),
-      //   [`paymentsReceived.${paymentId}`]: FieldValue.delete(),
-      //   modifiedBy: userId,
-      //   modifiedAt: serverTimestamp(),
-      // });
-    });
+        await Promise.all([
+          //delete accounts_receivable entry
+          journalInstance.deleteEntry(transactionId, ARAccountId),
+          //delete paymentAccount entries
+          journalInstance.deleteEntry(transactionId, paymentAccountId),
+        ]);
+
+        // const bookingRef = db.doc(`organizations/${orgId}/bookings/${invoiceId}`);
+        // batch.update(bookingRef, {
+        //   balance: increment(current),
+        //   paymentsCount: increment(-1),
+        //   paymentsIds: arrayRemove(paymentId),
+        //   [`paymentsReceived.${paymentId}`]: FieldValue.delete(),
+        //   modifiedBy: userId,
+        //   modifiedAt: serverTimestamp(),
+        // });
+      })
+    );
   }
 
   //----------------------------------------------------------------
@@ -282,13 +410,14 @@ export default class InvoicesPayments extends Accounts {
   //----------------------------------------------------------------
   //static functions
   //----------------------------------------------------------------
-  static getPaymentsTotal(payments: { [key: string]: number }) {
-    if (!payments) return 0;
+  static getPaymentsTotal(
+    paidInvoices: { invoiceId: string; amount: number }[]
+  ) {
+    if (!paidInvoices) return 0;
 
-    const amounts = Object.values(payments);
-    if (amounts.length === 0) return 0;
+    const paymentsTotal = paidInvoices.reduce((sum, paidInvoice) => {
+      const { amount } = paidInvoice;
 
-    const paymentsTotal = amounts.reduce((sum, amount) => {
       return sum + +amount;
     }, 0);
 
@@ -301,8 +430,8 @@ export default class InvoicesPayments extends Accounts {
 
   //----------------------------------------------------------------
   static getPaymentsMapping(
-    currentPayments: { [key: string]: number },
-    incomingPayments: { [key: string]: number }
+    currentPayments: { invoiceId: string; amount: number }[],
+    incomingPayments: { invoiceId: string; amount: number }[]
   ) {
     /**
      * new array to hold all the different values
@@ -319,22 +448,44 @@ export default class InvoicesPayments extends Accounts {
      * traverse incomingIds and add incoming payments to unique payments object
      * keep track of current and incoming amounts in the uniquePayments array
      */
+
+    const incomingPaymentsObject: Record<string, number> = {};
+    incomingPayments.forEach(payment => {
+      const { invoiceId, amount } = payment;
+
+      if (amount < 0) {
+        //cant have negative values
+        throw new Error('Only positive numbers for payments allowed!');
+      }
+
+      incomingPaymentsObject[invoiceId] = amount;
+    });
+
     const currentinvoiceIds = Object.keys(currentPayments);
     const incominginvoiceIds = Object.keys(incomingPayments);
 
-    currentinvoiceIds.forEach(invoiceId => {
-      const current = currentPayments[invoiceId];
-      const incoming = incomingPayments[invoiceId] || 0;
+    currentPayments.forEach(payment => {
+      const { invoiceId, amount: current } = payment;
+      const incoming = incomingPaymentsObject[invoiceId] || 0;
+
+      if (current < 0 || incoming < 0) {
+        //cant have negative values
+        throw new Error('Only positive numbers for payments allowed!');
+      }
+
       const dataMapping = {
         current,
         incoming,
-        _id: invoiceId,
+        invoiceId,
       };
-      /**
-       * get index of booking Id for incoming ids to remove it
-       */
-      const index = incominginvoiceIds.findIndex(id => id === invoiceId);
-      if (index > -1) {
+
+      if (incoming === 0) {
+        /**
+         * booking not in incoming payments
+         * add it to paymentsToDelete
+         */
+        paymentsToDelete.push(dataMapping);
+      } else {
         /**
          * similar booking has been found-check if tha amounts are equal
          * if equal, add to similars array-else add to paymentsToUpdate array
@@ -344,31 +495,27 @@ export default class InvoicesPayments extends Accounts {
         } else {
           paymentsToUpdate.push(dataMapping);
         }
-        //use splice function to remove booking from incomingIds array.
-        incominginvoiceIds.splice(index, 1);
-      } else {
         /**
-         * booking not in incoming payments
-         * add it to paymentsToDelete
+         * incoming invoice payment has been processed.
+         * delete from list to avoid duplicates
          */
-        paymentsToDelete.push(dataMapping);
+        delete incomingPaymentsObject[invoiceId];
       }
     });
     /**
-     * check if there are payments remaining in incomingIds array
-     * this is a completely new payment- add then to paymentsToCreate array
+     * process any remaining incoming invoices payments
      */
-    if (incominginvoiceIds.length > 0) {
-      incominginvoiceIds.forEach(invoiceId => {
-        const dataMapping = {
-          current: 0,
-          incoming: incomingPayments[invoiceId],
-          _id: invoiceId,
-        };
+    Object.keys(incomingPaymentsObject).forEach(invoiceId => {
+      const amount = incomingPaymentsObject[invoiceId] || 0;
 
-        paymentsToCreate.push(dataMapping);
-      });
-    }
+      const dataMapping = {
+        current: 0,
+        incoming: amount,
+        invoiceId,
+      };
+
+      paymentsToCreate.push(dataMapping);
+    });
 
     const uniquePayments = [
       ...paymentsToCreate,
@@ -387,11 +534,12 @@ export default class InvoicesPayments extends Accounts {
   }
 
   //------------------------------------------------------------
-  static validateBookingPayments(
+  static validateInvoicesPayments(
     paymentTotal: number,
-    payments: { [key: string]: number }
+    payments: IInvoicePayment[]
   ) {
     const bookingPaymentsTotal = InvoicesPayments.getPaymentsTotal(payments);
+
     if (bookingPaymentsTotal > paymentTotal) {
       throw new Error(
         'bookings payments cannot be more than customer payment!'

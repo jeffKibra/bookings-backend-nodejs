@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ObjectId } from 'mongodb';
 import { ClientSession } from 'mongoose';
 //
-import { BookingModel, InvoiceModel } from '../../../../models';
+import { InvoiceModel } from '../../../../models';
 //
 import { paymentTerms } from '../../../../../constants';
 //

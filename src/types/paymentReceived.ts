@@ -19,6 +19,11 @@ interface IMeta {
   // paidInvoicesIds: string[];
 }
 
+export interface IInvoicePayment {
+  invoiceId: string;
+  amount: number;
+}
+
 export interface IPaymentReceivedForm {
   account: IAccountSummary;
   amount: number;
@@ -26,7 +31,8 @@ export interface IPaymentReceivedForm {
   paymentDate: Date;
   paymentMode: PaymentMode;
   reference: string;
-  payments: { [key: string]: number };
+  paidInvoices: IInvoicePayment[];
+  // payments: { [key: string]: number };
 }
 
 export interface IPaymentReceivedFromDb extends IPaymentReceivedForm {
@@ -41,16 +47,12 @@ export interface IPaymentReceived extends IPaymentReceivedFromDb {
 export interface IInvoicePaymentMapping {
   incoming: number;
   current: number;
-  _id: string;
+  invoiceId: string;
 }
 
 // export interface InvoicesPayments {
 //   [key: string]: number;
 // }
-
-export interface IInvoicesPayments {
-  [key: string]: number;
-}
 
 export interface PaymentWithInvoices extends IPaymentReceived {
   invoices: IInvoice[];

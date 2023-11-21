@@ -52,11 +52,11 @@ export default class PaymentReceived extends InvoicesPayments {
     console.log({ formData });
 
     // console.log({ data, orgId, userProfile });
-    const { payments, amount } = formData;
+    const { paidInvoices, amount } = formData;
 
-    const paymentsTotal = PaymentReceived.validateBookingPayments(
+    const paymentsTotal = PaymentReceived.validateInvoicesPayments(
       amount,
-      payments
+      paidInvoices
     );
     if (paymentsTotal > amount) {
       throw new Error(
@@ -71,17 +71,17 @@ export default class PaymentReceived extends InvoicesPayments {
     // console.log({ paymentData });
 
     /**
-     * make the needed invoice payments
-     */
-    this.makePayments(formData);
-
-    /**
      * create overpayment
      */
     const excess = new BigNumber(amount - paymentsTotal).dp(2).toNumber();
-    if (excess > 0) {
-      this.overpay(excess, 0, formData);
+
+    const overpayCB = this.overpay;
+    function overpay() {
+      if (excess > 0) {
+        return overpayCB(excess, 0, formData);
+      }
     }
+
     /**
      * create new payment
      */
@@ -100,7 +100,16 @@ export default class PaymentReceived extends InvoicesPayments {
       },
     });
 
-    await instance.save({ session });
+    const [result] = await Promise.all([
+      instance.save({ session }),
+      /**
+       * make the needed invoice payments
+       */
+      this.makePayments(formData),
+      overpay(),
+    ]);
+
+    return result;
   }
 
   //------------------------------------------------------------
@@ -110,24 +119,20 @@ export default class PaymentReceived extends InvoicesPayments {
   ) {
     console.log({ incomingPayment, currentPayment });
     const { session, userId, paymentId } = this;
-    const { payments: incomingPayments, amount: incomingAmount } =
+    const { paidInvoices: incomingPayments, amount: incomingAmount } =
       incomingPayment;
 
-    const incomingPaymentsTotal = PaymentReceived.validateBookingPayments(
+    const incomingPaymentsTotal = PaymentReceived.validateInvoicesPayments(
       incomingAmount,
       incomingPayments
     );
 
-    const { amount: currentAmount, payments: currentPayments } = currentPayment;
-    const currentPaymentsTotal = PaymentReceived.validateBookingPayments(
+    const { amount: currentAmount, paidInvoices: currentPayments } =
+      currentPayment;
+    const currentPaymentsTotal = PaymentReceived.validateInvoicesPayments(
       currentAmount,
       currentPayments
     );
-
-    /**
-     * update invoice payments
-     */
-    this.makePayments(incomingPayment, currentPayment);
 
     /**
      * excess amount - credit account with the excess amount
@@ -138,16 +143,28 @@ export default class PaymentReceived extends InvoicesPayments {
     const currentExcess = new BigNumber(currentAmount - currentPaymentsTotal)
       .dp(2)
       .toNumber();
-    if (incomingExcess > 0 || currentExcess > 0) {
-      this.overpay(incomingExcess, currentExcess, incomingPayment);
+
+    const overpayCB = this.overpay;
+    function overpay() {
+      if (incomingExcess > 0 || currentExcess > 0) {
+        return overpayCB(incomingExcess, currentExcess, incomingPayment);
+      }
     }
+
     /**
      * update payment
      */
-    const updatedPayment = await this._update({
-      ...incomingPayment,
-      excess: incomingExcess,
-    });
+    const [updatedPayment] = await Promise.all([
+      this._update({
+        ...incomingPayment,
+        excess: incomingExcess,
+      }),
+      /**
+       * update invoice payments
+       */
+      this.makePayments(incomingPayment, currentPayment),
+      overpay(),
+    ]);
 
     // console.log({ transactionDetails });
 
@@ -182,38 +199,46 @@ export default class PaymentReceived extends InvoicesPayments {
 
   //------------------------------------------------------------
   async delete(paymentData: IPaymentReceived) {
-    const { payments, amount } = paymentData;
-    const paymentsTotal = PaymentReceived.getPaymentsTotal(payments);
-    /**
-     * update invoice payments
-     */
-    this.makePayments(null, paymentData);
+    const { paidInvoices, amount } = paymentData;
+    const paymentsTotal = PaymentReceived.getPaymentsTotal(paidInvoices);
 
     /**
      * excess
      */
     const excess = new BigNumber(amount - paymentsTotal).dp(2).toNumber();
-    if (excess > 0) {
-      this.overpay(0, excess, paymentData);
+
+    const overpayCB = this.overpay;
+    function overpay() {
+      if (excess > 0) {
+        return overpayCB(0, excess, paymentData);
+      }
     }
+
     /**
      * mark payment as deleted
      */
     const { session, paymentId, userId } = this;
 
-    const result = await PaymentReceivedModel.findByIdAndUpdate(
-      paymentId,
-      {
-        $set: {
-          'metaData.status': -1,
-          'metaData.modifiedBy': userId,
-          'metaData.modifiedAt': new Date().toISOString(),
+    const [result] = await Promise.all([
+      PaymentReceivedModel.findByIdAndUpdate(
+        paymentId,
+        {
+          $set: {
+            'metaData.status': -1,
+            'metaData.modifiedBy': userId,
+            'metaData.modifiedAt': new Date().toISOString(),
+          },
         },
-      },
-      {
-        session,
-      }
-    ).exec();
+        {
+          session,
+        }
+      ).exec(),
+      /**
+       * update invoice payments
+       */
+      this.makePayments(null, paymentData),
+      overpay(),
+    ]);
 
     return result;
   }
@@ -226,7 +251,7 @@ export default class PaymentReceived extends InvoicesPayments {
   ) {
     const { session, orgId, userId, paymentId, transactionType } = this;
 
-    const URAccount = await this.getAccountData(Accounts.URAccountId);
+    const URAccount = await this.getAccountData(Accounts.commonIds.UR);
 
     const journalInstance = new JournalEntry(session, userId, orgId);
 
@@ -236,7 +261,7 @@ export default class PaymentReceived extends InvoicesPayments {
     if (isEqual) {
       return;
     } else if (isDelete) {
-      journalInstance.deleteEntry(paymentId, URAccount.accountId);
+      await journalInstance.deleteEntry(paymentId, URAccount.accountId);
     } else {
       if (!formData) {
         throw new Error('Payment form data is required!');
@@ -244,7 +269,7 @@ export default class PaymentReceived extends InvoicesPayments {
 
       const contacts = [formData.customer];
 
-      journalInstance.creditAccount({
+      await journalInstance.creditAccount({
         transactionId: paymentId,
         account: URAccount,
         amount: incoming,

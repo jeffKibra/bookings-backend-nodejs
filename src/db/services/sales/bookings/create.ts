@@ -1,15 +1,17 @@
 import BigNumber from 'bignumber.js';
-import { startSession } from 'mongoose';
+import { startSession, ClientSession } from 'mongoose';
 import { ObjectId } from 'mongodb';
 //
 import { formatBookingFormData, Bookings } from './utils';
 import { Invoice } from '../invoices/utils';
 //
 import { handleDBError } from '../../utils';
-import { BookingModel } from '../../../models';
+import { BookingModel, InvoiceModel } from '../../../models';
 //
 //
 import { IBookingForm } from '../../../../types';
+//
+import { PaymentReceived } from '../paymentsReceived/utils';
 
 //
 
@@ -66,7 +68,10 @@ export default async function createBooking(
       saleType: 'car_booking',
     });
 
-    const result = await invoiceInstance.create(invoiceForm);
+    const [result] = await Promise.all([
+      invoiceInstance.create(invoiceForm),
+      makeDownPayment(orgId, userUID, invoiceId, formattedFormData, session),
+    ]);
 
     console.log('result', result);
 
@@ -78,4 +83,41 @@ export default async function createBooking(
   } finally {
     await session.endSession();
   }
+}
+
+async function makeDownPayment(
+  orgId: string,
+  userUID: string,
+  invoiceId: string,
+  formData: IBookingForm,
+  session: ClientSession
+) {
+  const { downPayment, customer, saleDate } = formData;
+  const { amount, paymentMode, reference } = downPayment;
+
+  const paymentId = new ObjectId().toString();
+  const paymentInstance = new PaymentReceived(session, {
+    orgId,
+    userId: userUID,
+    paymentId,
+  });
+
+  const paymentAccount = await paymentInstance.getAccountData(
+    PaymentReceived.commonIds.UF
+  );
+
+  await paymentInstance.create({
+    account: paymentAccount,
+    amount,
+    customer,
+    paymentMode,
+    reference,
+    paymentDate: saleDate || new Date(),
+    paidInvoices: [
+      {
+        invoiceId,
+        amount,
+      },
+    ],
+  });
 }
