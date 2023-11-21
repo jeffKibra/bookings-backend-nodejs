@@ -3,13 +3,12 @@ import { ObjectId } from 'mongodb';
 //
 // type FacetPipelineStage = PipelineStage.FacetPipelineStage;
 
-
 export default function generateAvailableItemsStages(
   orgId: string,
   selectedDates?: string[],
   bookingId?: string
 ) {
-  console.log('generateAvailableItemsStages fn', { selectedDates });
+  // console.log('generateAvailableItemsStages fn', { selectedDates });
   let stages: PipelineStage[] = [];
 
   const userSelectedDates: string[] = Array.isArray(selectedDates)
@@ -18,23 +17,16 @@ export default function generateAvailableItemsStages(
 
   return [
     {
-      $addFields: {
-        vehicleId: {
-          $toString: '$_id',
-        },
-      },
-    },
-    {
       $lookup: {
-        from: 'bookings',
+        from: 'invoices',
         localField: 'id',
-        foreignField: 'vehicle._id',
+        foreignField: 'items.0.itemId',
         pipeline: [
           {
             $match: {
               'metaData.status': 0,
               'metaData.orgId': orgId,
-              selectedDates: {
+              'items.0.details.selectedDates': {
                 $in: [...userSelectedDates],
               },
               ...(bookingId
