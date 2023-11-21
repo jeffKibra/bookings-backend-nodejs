@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ObjectId } from 'mongodb';
 import { ClientSession } from 'mongoose';
 //
-import { BookingModel } from '../../../../models';
+import { BookingModel, InvoiceModel } from '../../../../models';
 //
 import { paymentTerms } from '../../../../../constants';
 //
@@ -197,12 +197,12 @@ export default class Bookings {
     selectedDates: string[],
     session?: ClientSession
   ) {
-    const booking = await BookingModel.findOne(
+    const booking = await InvoiceModel.findOne(
       {
-        'vehicle._id': vehicleId,
+        'items.0.itemId': vehicleId,
         'metaData.orgId': orgId,
         'metaData.status': 0,
-        selectedDates: { $in: [...selectedDates] },
+        'items.0.details.selectedDates': { $in: [...selectedDates] },
       },
       {},
       { ...(session ? { session } : {}) }
