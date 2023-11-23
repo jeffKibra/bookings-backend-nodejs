@@ -32,12 +32,12 @@ const schema = new Schema({
   dueDate: { type: Date, required: true },
   //
   // taxes:{type:[], required: true},
-  taxType: { type: String },
-  totalTax: { type: Schema.Types.Decimal128 },
+  taxType: { type: String, required: true },
+  totalTax: { type: Schema.Types.Decimal128, required: true },
   subTotal: { type: Schema.Types.Decimal128, required: true },
   total: { type: Schema.Types.Decimal128, required: true },
   //
-  downPayment: { type: downPaymentSchema },
+  // downPayment: { type: downPaymentSchema },
   //
   customerNotes: { type: String, default: '' },
   paymentTerm: { type: paymentTermSchema, required: true },

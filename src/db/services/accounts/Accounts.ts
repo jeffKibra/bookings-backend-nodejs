@@ -36,11 +36,11 @@ export default class Accounts {
 
   accounts: Record<string, IAccountSummary>;
   //
-  protected session: ClientSession;
+  protected session: ClientSession | null;
 
   orgId: string;
 
-  constructor(session: ClientSession, orgId: string) {
+  constructor(session: ClientSession | null, orgId: string) {
     this.session = session;
     this.accounts = {};
     this.orgId = orgId;

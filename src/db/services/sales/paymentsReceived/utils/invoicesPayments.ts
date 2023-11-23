@@ -114,32 +114,13 @@ export default class InvoicesPayments extends Accounts {
   async getInvoicePaymentsTotal(invoiceId: string) {
     const { session, orgId } = this;
 
-    const result = await PaymentReceivedModel.aggregate([
-      {
-        $match: {
-          'metaData.orgId': orgId,
-          'metaData.status': 0,
-        },
-      },
-      {
-        $unwind: '$paidInvoices',
-      },
-      {
-        $match: {
-          'paidInvoices.invoiceId': invoiceId,
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: '$paidInvoices.amount',
-          },
-        },
-      },
-    ]).session(session);
+    const total = await InvoicesPayments.getInvoicePaymentsTotal(
+      orgId,
+      invoiceId,
+      session
+    );
 
-    console.log({ result });
+    console.log({ total });
   }
 
   private async validateInvoicePayment(invoiceId: string, amount: number) {
@@ -547,6 +528,44 @@ export default class InvoicesPayments extends Accounts {
     }
 
     return bookingPaymentsTotal;
+  }
+
+  static async getInvoicePaymentsTotal(
+    orgId: string,
+    invoiceId: string,
+    session: ClientSession | null
+  ) {
+    const result = await PaymentReceivedModel.aggregate([
+      {
+        $match: {
+          'metaData.orgId': orgId,
+          'metaData.status': 0,
+          'paidInvoices.invoiceId': invoiceId,
+        },
+      },
+      {
+        $unwind: '$paidInvoices',
+      },
+      {
+        $match: {
+          'paidInvoices.invoiceId': invoiceId,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: '$paidInvoices.amount',
+          },
+        },
+      },
+    ]).session(session);
+
+    console.log({ result });
+
+    const total = result[0]?.total || 0;
+
+    return total;
   }
   //------------------------------------------------------------
   // static createContactsFromCustomer(customer: IContactSummary) {

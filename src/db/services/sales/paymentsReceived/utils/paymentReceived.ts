@@ -1,3 +1,6 @@
+import { ClientSession } from 'mongoose';
+import { ObjectId } from 'mongodb';
+
 import BigNumber from 'bignumber.js';
 //
 import { PaymentReceivedModel } from '../../../../models';
@@ -14,7 +17,6 @@ import {
   TransactionTypes,
   IPaymentReceived as IPaymentReceived,
 } from '../../../../../types';
-import { ClientSession } from 'mongoose';
 
 interface PaymentData {
   orgId: string;
@@ -48,7 +50,7 @@ export default class PaymentReceived extends InvoicesPayments {
   }
 
   async create(formData: IPaymentReceivedForm) {
-    const { session, orgId, userId, transactionType } = this;
+    const { session, orgId, userId, transactionType, paymentId } = this;
     console.log({ formData });
 
     // console.log({ data, orgId, userProfile });
@@ -88,6 +90,7 @@ export default class PaymentReceived extends InvoicesPayments {
 
     const instance = new PaymentReceivedModel({
       ...formData,
+      _id: new ObjectId(paymentId),
       excess,
       metaData: {
         status: 0,

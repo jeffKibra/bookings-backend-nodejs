@@ -1,25 +1,32 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId, Decimal128 } from 'mongodb';
 import { ClientSession } from 'mongoose';
 //
-import { BookingModel } from '../../../models';
+import { InvoiceModel } from '../../../models';
 import { IInvoice } from '../../../../types';
 //
+import { Invoice } from './utils';
+//
 
-export async function getById(invoiceId: string, orgId: string) {
-  if (!invoiceId || !orgId) {
-    throw new Error('Invalid Params: Errors in params [orgId|invoiceId]!');
-  }
+// function formatInvoice(invoice) {
+//   const formattedInvoice: IInvoice = {};
 
-  // console.log('fetching vehicle for id ' + invoiceId);
+//   return formattedInvoice;
+// }
 
-  const result = await BookingModel.findById(invoiceId).exec();
+export async function getById(
+  orgId: string,
+  userUID: string,
+  invoiceId: string
+) {
+  const instance = new Invoice(null, {
+    invoiceId,
+    orgId,
+    userId: userUID,
+    saleType: 'car_booking',
+  });
 
-  if (!result) {
-    return null;
-  }
-
-  const invoice: IInvoice = result.toJSON();
-  // as unknown as IInvoice;
+  const invoice = await instance.getCurrentInvoice();
+  console.log('getInvoiceByIdResult', invoice);
 
   return invoice;
 }

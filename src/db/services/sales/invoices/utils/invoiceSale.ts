@@ -3,6 +3,8 @@ import BigNumber from 'bignumber.js';
 
 //
 import { InvoiceModel } from '../../../../models';
+//
+import { PaymentReceived } from '../../paymentsReceived/utils';
 
 //Sale class
 import { Sale } from '../../utils';
@@ -40,7 +42,7 @@ export default class InvoiceSale extends Sale {
     [key: string]: string;
   } = { incoming: 'Please provide incoming invoice data' };
 
-  constructor(session: ClientSession, invoiceDetails: InvoiceDetails) {
+  constructor(session: ClientSession | null, invoiceDetails: InvoiceDetails) {
     // console.log({ invoiceDetails });
     const { transactionType, invoiceId, orgId, userId, saleType } =
       invoiceDetails;
@@ -80,15 +82,29 @@ export default class InvoiceSale extends Sale {
   }
 
   async getCurrentInvoice() {
-    const { orgId, transactionId, session } = this;
+    const { transactionId, session, orgId } = this;
 
-    const invoice = await InvoiceSale.getInvoice(transactionId, session);
+    const [invoice, paymentsTotal] = await Promise.all([
+      InvoiceSale.getById(transactionId, session),
+      PaymentReceived.getInvoicePaymentsTotal(orgId, transactionId, session),
+    ]);
+
+    // console.log({ paymentsTotal });
 
     if (!invoice) {
       throw new Error('Invoice not found!');
     }
 
-    return invoice;
+    const { total } = invoice;
+
+    const balance = new BigNumber(total).minus(paymentsTotal).dp(2).toNumber();
+
+    const processedInvoice: IInvoice = {
+      ...invoice,
+      balance,
+    };
+
+    return processedInvoice;
   }
 
   async createInvoice(
@@ -96,7 +112,8 @@ export default class InvoiceSale extends Sale {
     creditAccountsMapping: IAccountsMapping,
     debitAccountsMapping: IAccountsMapping
   ) {
-    const { session, userId, orgId, transactionType, saleType } = this;
+    const { session, userId, orgId, transactionType, saleType, invoiceId } =
+      this;
 
     // create invoice
     // console.log({ incomingInvoice });
@@ -106,6 +123,7 @@ export default class InvoiceSale extends Sale {
 
     const instance = new InvoiceModel({
       ...incomingInvoice,
+      _id: new ObjectId(invoiceId),
       metaData: {
         saleType,
         transactionType,
@@ -265,7 +283,7 @@ export default class InvoiceSale extends Sale {
     invoiceId: string,
     incomingInvoice: IInvoiceForm
   ) {
-    const currentInvoice = await this.getCurrentInvoice(invoiceId);
+    const currentInvoice = await this.getCurrentInvoice(invoiceId, null);
 
     const { total, customer: incomingCustomer } = incomingInvoice;
     const customerId = incomingCustomer?._id || '';
@@ -329,9 +347,9 @@ export default class InvoiceSale extends Sale {
 
   static async getCurrentInvoice(
     invoiceId: string,
-    session?: ClientSession | null
+    session: ClientSession | null
   ) {
-    const invoice = await this.getInvoice(invoiceId, session);
+    const invoice = await this.getById(invoiceId, session);
 
     if (!invoice) {
       throw new Error('Invoice data not found!');
@@ -340,21 +358,6 @@ export default class InvoiceSale extends Sale {
     return invoice;
   }
 
-  static async getInvoice(invoiceId: string, session?: ClientSession | null) {
-    const result = await InvoiceModel.findById(
-      invoiceId,
-      {},
-      { session }
-    ).exec();
-
-    if (!result) {
-      return null;
-    }
-
-    const invoice = result as unknown as IInvoice;
-
-    return invoice;
-  }
   //----------------------------------------------------------------
 
   // static retrieveInvoiceFromSnap(snap: DocumentSnapshot<IInvoiceFromDb>) {
@@ -381,6 +384,47 @@ export default class InvoiceSale extends Sale {
     }, new BigNumber(0));
 
     return total.dp(2).toNumber();
+  }
+
+  static async getById(invoiceId: string, session: ClientSession | null) {
+    console.log('getInvoice by id called');
+    if (!invoiceId) {
+      throw new Error('Invalid Params: Errors in params [invoiceId]!');
+    }
+
+    console.log('executing getInvoice by id');
+    // console.log('fetching vehicle for id ' + invoiceId);
+
+    const result = await InvoiceModel.findById(
+      invoiceId,
+      {},
+      { session }
+    ).exec();
+    console.log({ result });
+
+    if (!result) {
+      return null;
+    }
+
+    const invoiceJSON = result.toJSON();
+    const subTotal = +invoiceJSON.subTotal.toString();
+    const totalTax = +invoiceJSON.totalTax?.toString();
+    const total = +invoiceJSON.total.toString();
+
+    //
+
+    const invoice: IInvoice = {
+      ...(invoiceJSON as unknown as IInvoice),
+      _id: invoiceId,
+      subTotal,
+      totalTax,
+      total,
+      balance: 0,
+    };
+    // as unknown as IInvoice;
+    console.log({ invoice });
+
+    return invoice;
   }
 
   //----------------------------------------------------------------

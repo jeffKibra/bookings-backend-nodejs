@@ -27,7 +27,7 @@ export default class Invoice extends InvoiceSale {
   } = { incoming: 'Please provide incoming invoice data' };
 
   constructor(
-    session: ClientSession,
+    session: ClientSession | null,
     invoiceDetails: Omit<InvoiceDetails, 'transactionType'>
   ) {
     // console.log({ invoiceDetails });

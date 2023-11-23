@@ -33,7 +33,7 @@ export interface InvoicePayments {
 interface IMeta extends ISaleMeta {
   transactionType: keyof InvoiceTransactionTypes;
   // balance: number;
-  isSent: boolean;
+  // isSent: boolean;
   // isOverdue: boolean;
   // overdueAt?: Timestamp;
   // paymentsCount: number;
@@ -52,6 +52,7 @@ export interface IInvoiceForm extends ISaleForm {
 }
 
 export interface IInvoiceFromDb extends IInvoiceForm {
+  balance: number;
   metaData: IMeta;
 }
 

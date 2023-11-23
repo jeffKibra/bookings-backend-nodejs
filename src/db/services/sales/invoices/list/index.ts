@@ -24,6 +24,11 @@ export default async function search(
   const { invoices, meta: resultMeta } = result[0];
   const meta = resultMeta || { facets: {} };
 
+  // invoices.forEach(invoice => {
+  //   const { _id, payments } = invoice;
+  //   console.log('invoiceId', _id);
+  //   console.log('payments', payments);
+  // });
   console.log('searched invoices', invoices);
   console.log('meta', meta);
 

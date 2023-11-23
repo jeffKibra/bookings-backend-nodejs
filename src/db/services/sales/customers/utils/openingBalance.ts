@@ -26,7 +26,7 @@ export default class OpeningBalance extends InvoiceSale {
   // OBAAccount: Account;
   // salesAccount: Account;
 
-  constructor(session: ClientSession, data: OpeningBalanceData) {
+  constructor(session: ClientSession | null, data: OpeningBalanceData) {
     const { orgId, userId, invoiceId } = data;
 
     super(session, {

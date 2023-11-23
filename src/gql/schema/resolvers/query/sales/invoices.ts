@@ -11,11 +11,12 @@ const queryResolvers = {
     const orgId = context.orgId;
     //
     const invoiceId = args?.id;
+    console.log({ invoiceId });
 
-    const vehicle = await services.sales.invoices.getById(orgId, invoiceId);
-    // console.log({ vehicle });
+    const invoice = await services.sales.invoices.getById(orgId, '', invoiceId);
+    console.log({ invoice });
 
-    return vehicle;
+    return invoice;
   },
 
   invoices(
@@ -28,7 +29,7 @@ const queryResolvers = {
     const orgId = context.orgId;
     //
     const options = args?.options;
-    console.log('search vehicles options', options);
+    console.log('search invoices options', options);
 
     return services.sales.invoices.list(orgId, options);
   },

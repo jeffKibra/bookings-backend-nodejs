@@ -52,7 +52,7 @@ interface CustomerChangeData {
 //------------------------------------------------------------
 
 export default class Sale extends Accounts {
-  protected session: ClientSession;
+  protected session: ClientSession | null;
 
   transactionId: string;
   orgId: string;
@@ -63,7 +63,7 @@ export default class Sale extends Accounts {
   // ARAccount: Account;
   // UFAccount: Account;
 
-  constructor(session: ClientSession, saleDetails: SaleDetails) {
+  constructor(session: ClientSession | null, saleDetails: SaleDetails) {
     const { orgId, userId, transactionId, transactionType, saleType } =
       saleDetails;
 

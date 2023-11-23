@@ -41,7 +41,7 @@ export default class JournalEntry {
   userId: string;
   orgId: string;
 
-  constructor(session: ClientSession, userId: string, orgId: string) {
+  constructor(session: ClientSession | null, userId: string, orgId: string) {
     if (!session) {
       throw new Error('Invalid property session: ' + session);
     }

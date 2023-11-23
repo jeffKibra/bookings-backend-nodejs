@@ -1,7 +1,7 @@
 import { PipelineStage } from 'mongoose';
 import { BookingModel, InvoiceModel } from '../../../../models';
 //
-import { generateSearchStages } from './subPipelines';
+import { generateSearchStages, calculateBalanceStages } from './subPipelines';
 import { pagination, sort } from '../../../utils';
 //
 import { IInvoice, IInvoicesQueryOptions } from '../../../../../types';
@@ -33,6 +33,8 @@ export default async function getResult(
   //   retrieveFacets
   // );
 
+  const balanceStages = calculateBalanceStages(orgId);
+
   const page = pagination?.page || 0;
   const limit = generateLimit(pagination);
   const offset = Number(page) * limit;
@@ -58,9 +60,10 @@ export default async function getResult(
         'metaData.orgId': orgId,
       },
     },
+
     {
       $set: {
-        id: {
+        _id: {
           $toString: '$_id',
         },
         totalTax: {
@@ -74,6 +77,9 @@ export default async function getResult(
         },
       },
     },
+
+    ...balanceStages,
+
     {
       $sort: {
         [sortByField]: sortByDirection,

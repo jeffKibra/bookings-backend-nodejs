@@ -95,6 +95,10 @@ async function makeDownPayment(
   const { downPayment, customer, saleDate } = formData;
   const { amount, paymentMode, reference } = downPayment;
 
+  if (amount <= 0) {
+    return;
+  }
+
   const paymentId = new ObjectId().toString();
   const paymentInstance = new PaymentReceived(session, {
     orgId,

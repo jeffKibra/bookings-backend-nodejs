@@ -22,6 +22,7 @@ const invoiceFields = `
     _id:ID!
     customer:ContactSummary!
     paymentTerm:PaymentTerm!
+    balance:Int
     metaData:SaleMetaData!
 `;
 
