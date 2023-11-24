@@ -5,7 +5,6 @@ import { OrgMetaDataFields } from './templates';
 //
 const OrgSharedFields = `
     name:String!
-    businessType: BusinessType!
     industry: String
     phone: String
     website: String
@@ -19,14 +18,20 @@ const typeDefs = `#graphql
     input OrgInput {
         ${OrgSharedFields}
         address: AddressInput!
+        businessType: BusinessTypeInput!
     }
 
     type Org {
         ${OrgSharedFields}
         address: Address!
+        businessType: BusinessType!
         metaData: OrgMetaData!
         _id:ID!
         id:String
+         taxes: [Tax]
+        paymentTerms:[PaymentTerm!]!
+        paymentModes:[PaymentMode!]!
+       
     }
 
     

@@ -3,8 +3,8 @@ import { Schema } from 'mongoose';
 
 import {
   metaDataFields,
-  paymentModeSchema,
-  paymentTermSchema,
+  PaymentModeSchema,
+  PaymentTermSchema,
 } from './Generals';
 import { ContactSummarySchema } from './Contact';
 import { VehicleSchemaForBookingForm } from './Vehicle';
@@ -19,12 +19,12 @@ const BookingMetaDataSchema = new Schema({
 
 const downPaymentSchema = new Schema({
   amount: { type: Number, required: true },
-  paymentMode: { type: paymentModeSchema, required: true },
+  paymentMode: { type: PaymentModeSchema, required: true },
   reference: { type: String, default: '' },
 });
 
 const paymentsSchema = new Schema({
-  paymentTerm: { type: paymentTermSchema },
+  paymentTerm: { type: PaymentTermSchema },
   count: { type: Number },
   amounts: { type: Object },
 });

@@ -16,6 +16,7 @@ const invoiceInputFields = `
     paymentTerm:PaymentTermInput!
 `;
 
+//     payments: [InvoicePayment]
 const invoiceFields = `
     ${saleFields}
     ${invoiceSharedFields}
@@ -28,10 +29,9 @@ const invoiceFields = `
 
 const typeDefs = `#graphql
 
-    type InvoicePayments {
-        count:Int!
-        paymentsIds:[String]!
-        amounts:[Int]
+    type InvoicePayment {
+        paymentId: String!
+        amount: Int!
     }
 
     input InvoiceVehicleInput {

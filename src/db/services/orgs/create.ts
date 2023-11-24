@@ -1,6 +1,8 @@
 import { OrgModel } from '../../models';
 
 import { userHasOrg } from './utils';
+//
+import { paymentTerms, paymentModes } from '../../../constants';
 
 import { IOrgForm } from '../../../types';
 
@@ -29,6 +31,8 @@ async function create(userUID: string, formData: IOrgForm) {
           metaData,
         },
       ],
+      paymentTerms: Object.values(paymentTerms),
+      paymentModes: Object.values(paymentModes),
       metaData,
     });
 

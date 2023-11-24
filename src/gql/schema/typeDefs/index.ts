@@ -1,3 +1,4 @@
+import orgsTypeDefs from './orgs';
 import vehiclesTypeDefs from './vehicles';
 import salesTypeDefs from './sales';
 
@@ -43,6 +44,25 @@ const mainTypeDefs = `#graphql
         value: String
     }
 
+    type PaymentTerm {
+        _id:String
+        name:String!
+        days:Int!
+        value:String
+    }
+
+    type PaymentMode {
+        _id:String
+        name:String!
+        value:String
+    }
+
+    type Tax {
+        _id:String
+        name:String!
+        rate:Int!
+    }
+
 
     input PaginationCursor {
         _id: String
@@ -65,7 +85,12 @@ const mainTypeDefs = `#graphql
     }
 `;
 
-const typeDefs = [mainTypeDefs, vehiclesTypeDefs, ...salesTypeDefs];
+const typeDefs = [
+  mainTypeDefs,
+  orgsTypeDefs,
+  vehiclesTypeDefs,
+  ...salesTypeDefs,
+];
 
 // const typeDefs = vehiclesTypeDefs;
 

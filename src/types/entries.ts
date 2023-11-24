@@ -34,9 +34,9 @@ export interface IJournalEntry {
   metaData: IJournalEntryMetaData;
 }
 
-export interface IInvoicePaymentEntry {
-  current: number;
-  incoming: number;
-  invoiceId: string;
-  entry: IJournalEntry;
-}
+// export interface IInvoicePaymentEntry {
+//   current: number;
+//   incoming: number;
+//   invoiceId: string;
+//   entry: IJournalEntry;
+// }

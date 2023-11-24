@@ -1,14 +1,24 @@
 import { Schema } from 'mongoose';
 //
 
-import { AddressSchema, orgMetaDataFields } from './Generals';
+import AddressSchema from './Address';
+import PaymentModeSchema from './PaymentMode';
+import PaymentTermSchema from './PaymentTerm';
 import TaxSchema from './Tax';
 
 //
 import { initSchema } from './utils';
 //
 
-const OrgMetaDataSchema = new Schema({
+export const orgMetaDataFields = {
+  createdBy: { type: String, required: true },
+  createdAt: { type: Date, required: true, default: new Date() },
+  modifiedBy: { type: String, required: true },
+  modifiedAt: { type: Date, required: true, default: new Date() },
+  status: { type: Number, required: true, default: 0 },
+};
+
+export const OrgMetaDataSchema = new Schema({
   ...orgMetaDataFields,
 });
 
@@ -26,6 +36,8 @@ const schema = new Schema({
   website: { type: String, required: true },
   //
   taxes: { type: TaxSchema },
+  paymentTerms: { type: [PaymentTermSchema], required: true },
+  paymentModes: { type: [PaymentModeSchema], required: true },
   //
   metaData: { type: OrgMetaDataSchema, required: true },
 });

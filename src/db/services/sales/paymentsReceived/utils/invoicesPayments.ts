@@ -13,7 +13,8 @@ import {
   TransactionTypes,
   IPaymentReceived,
   IContactSummary,
-  IInvoicePaymentMapping,
+  IPaidInvoiceMapping,
+  IPaidInvoice,
   IInvoicePayment,
 } from '../../../../../types';
 
@@ -111,10 +112,10 @@ export default class InvoicesPayments extends Accounts {
     ]);
   }
 
-  async getInvoicePaymentsTotal(invoiceId: string) {
+  async getInvoicePayments(invoiceId: string) {
     const { session, orgId } = this;
 
-    const total = await InvoicesPayments.getInvoicePaymentsTotal(
+    const total = await InvoicesPayments.getInvoicePayments(
       orgId,
       invoiceId,
       session
@@ -130,12 +131,12 @@ export default class InvoicesPayments extends Accounts {
       session,
     }).exec();
 
-    await this.getInvoicePaymentsTotal(invoiceId);
+    await this.getInvoicePayments(invoiceId);
     console.log({ invoice });
   }
 
   private async payInvoices(
-    paymentsToCreate: IInvoicePaymentMapping[],
+    paymentsToCreate: IPaidInvoiceMapping[],
     formData?: IPaymentReceivedForm | null
   ) {
     const paramsAreValid =
@@ -264,7 +265,7 @@ export default class InvoicesPayments extends Accounts {
   //----------------------------------------------------------------
 
   private async updateInvoicesPayments(
-    paymentsToUpdate: IInvoicePaymentMapping[],
+    paymentsToUpdate: IPaidInvoiceMapping[],
     formData?: IPaymentReceivedForm | null,
     currentAccountId?: string
   ) {
@@ -342,7 +343,7 @@ export default class InvoicesPayments extends Accounts {
   //---------------------------------------------------------------------
 
   private async deleteInvoicesPayments(
-    paymentsToDelete: IInvoicePaymentMapping[],
+    paymentsToDelete: IPaidInvoiceMapping[],
     paymentAccountId?: string
   ) {
     const paramsAreValid =
@@ -418,10 +419,10 @@ export default class InvoicesPayments extends Accounts {
      * new array to hold all the different values
      * no duplicates
      */
-    const paymentsToDelete: IInvoicePaymentMapping[] = [];
-    const paymentsToUpdate: IInvoicePaymentMapping[] = [];
-    const paymentsToCreate: IInvoicePaymentMapping[] = [];
-    const similarPayments: IInvoicePaymentMapping[] = [];
+    const paymentsToDelete: IPaidInvoiceMapping[] = [];
+    const paymentsToUpdate: IPaidInvoiceMapping[] = [];
+    const paymentsToCreate: IPaidInvoiceMapping[] = [];
+    const similarPayments: IPaidInvoiceMapping[] = [];
     /**
      * are the Payment similar.
      * traverse Payment and remove similar Payment from incomingIds arrays
@@ -517,7 +518,7 @@ export default class InvoicesPayments extends Accounts {
   //------------------------------------------------------------
   static validateInvoicesPayments(
     paymentTotal: number,
-    payments: IInvoicePayment[]
+    payments: IPaidInvoice[]
   ) {
     const bookingPaymentsTotal = InvoicesPayments.getPaymentsTotal(payments);
 
@@ -530,12 +531,15 @@ export default class InvoicesPayments extends Accounts {
     return bookingPaymentsTotal;
   }
 
-  static async getInvoicePaymentsTotal(
+  static async getInvoicePayments(
     orgId: string,
     invoiceId: string,
     session: ClientSession | null
   ) {
-    const result = await PaymentReceivedModel.aggregate([
+    const result = await PaymentReceivedModel.aggregate<{
+      list: IInvoicePayment[];
+      total: { value: number };
+    }>([
       {
         $match: {
           'metaData.orgId': orgId,
@@ -552,10 +556,32 @@ export default class InvoicesPayments extends Accounts {
         },
       },
       {
-        $group: {
-          _id: null,
+        $project: {
+          paymentId: {
+            $toString: '$_id',
+          },
+          amount: '$paidInvoices.amount',
+        },
+      },
+      {
+        $facet: {
+          list: [],
+          total: [
+            {
+              $group: {
+                _id: null,
+                value: {
+                  $sum: '$amount',
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $set: {
           total: {
-            $sum: '$paidInvoices.amount',
+            $arrayElemAt: ['$total', 0],
           },
         },
       },
@@ -563,9 +589,13 @@ export default class InvoicesPayments extends Accounts {
 
     console.log({ result });
 
-    const total = result[0]?.total || 0;
+    const list = result[0]?.list;
+    const total = result[0]?.total?.value || 0;
 
-    return total;
+    return {
+      list,
+      total,
+    };
   }
   //------------------------------------------------------------
   // static createContactsFromCustomer(customer: IContactSummary) {

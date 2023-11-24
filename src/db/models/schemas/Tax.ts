@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
 //
 
-import { orgMetaDataFields } from './Generals';
+import { orgMetaDataFields } from './Org';
 
 //
 import { initSchema } from './utils';

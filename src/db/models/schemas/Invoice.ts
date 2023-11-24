@@ -3,8 +3,8 @@ import { Schema } from 'mongoose';
 
 import {
   metaDataFields,
-  paymentModeSchema,
-  paymentTermSchema,
+  PaymentModeSchema,
+  PaymentTermSchema,
 } from './Generals';
 import { ContactSummarySchema } from './Contact';
 import { SaleItemSchema } from './SaleItem';
@@ -20,7 +20,7 @@ const InvoiceMetaData = new Schema({
 
 const downPaymentSchema = new Schema({
   amount: { type: Schema.Types.Decimal128, required: true },
-  paymentMode: { type: paymentModeSchema, required: true },
+  paymentMode: { type: PaymentModeSchema, required: true },
   reference: { type: String, default: '' },
 });
 
@@ -40,7 +40,7 @@ const schema = new Schema({
   // downPayment: { type: downPaymentSchema },
   //
   customerNotes: { type: String, default: '' },
-  paymentTerm: { type: paymentTermSchema, required: true },
+  paymentTerm: { type: PaymentTermSchema, required: true },
   //extras
   // balance: { type: Schema.Types.Decimal128, required: true },
   // payments: { type: paymentsSchema },

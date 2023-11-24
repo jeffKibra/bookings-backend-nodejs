@@ -51,7 +51,13 @@ export interface IInvoiceForm extends ISaleForm {
   // downPayment: IBookingDownPayment;
 }
 
+export interface IInvoicePayment {
+  paymentId: string;
+  amount: number;
+}
+
 export interface IInvoiceFromDb extends IInvoiceForm {
+  payments?: IInvoicePayment[];
   balance: number;
   metaData: IMeta;
 }

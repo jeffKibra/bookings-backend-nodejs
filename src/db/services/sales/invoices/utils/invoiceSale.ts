@@ -84,9 +84,9 @@ export default class InvoiceSale extends Sale {
   async getCurrentInvoice() {
     const { transactionId, session, orgId } = this;
 
-    const [invoice, paymentsTotal] = await Promise.all([
+    const [invoice, paymentsResult] = await Promise.all([
       InvoiceSale.getById(transactionId, session),
-      PaymentReceived.getInvoicePaymentsTotal(orgId, transactionId, session),
+      PaymentReceived.getInvoicePayments(orgId, transactionId, session),
     ]);
 
     // console.log({ paymentsTotal });
@@ -96,12 +96,14 @@ export default class InvoiceSale extends Sale {
     }
 
     const { total } = invoice;
+    const { list: payments, total: paymentsTotal } = paymentsResult;
 
     const balance = new BigNumber(total).minus(paymentsTotal).dp(2).toNumber();
 
     const processedInvoice: IInvoice = {
       ...invoice,
       balance,
+      payments,
     };
 
     return processedInvoice;
@@ -268,7 +270,7 @@ export default class InvoiceSale extends Sale {
     /**
      * check if the invoice has payments
      */
-    // const paymentsTotal = InvoiceSale.getInvoicePaymentsTotal(
+    // const paymentsTotal = InvoiceSale.getInvoicePayments(
     //   invoice.paymentsReceived
     // );
     // if (paymentsTotal > 0) {
@@ -295,7 +297,7 @@ export default class InvoiceSale extends Sale {
     /**
      * check to ensure the new total balance is not less than payments made.
      */
-    // const paymentsTotal = InvoiceSale.getInvoicePaymentsTotal(
+    // const paymentsTotal = InvoiceSale.getInvoicePayments(
     //   paymentsReceived || {}
     // );
     /**
@@ -377,7 +379,7 @@ export default class InvoiceSale extends Sale {
   // }
 
   //------------------------------------------------------------------
-  static getInvoicePaymentsTotal(payments: InvoicePayments) {
+  static getInvoicePayments(payments: InvoicePayments) {
     const total = Object.keys(payments).reduce((sum, key) => {
       const payment = new BigNumber(payments[key]);
       return sum.plus(payment);

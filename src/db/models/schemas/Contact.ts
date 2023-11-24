@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 //
-import { paymentTermSchema, metaDataFields, AddressSchema } from './Generals';
+import { PaymentTermSchema, metaDataFields, AddressSchema } from './Generals';
 
 //
 const ContactMetaDataSchema = new Schema({
@@ -30,7 +30,7 @@ const schema = new Schema({
   // type: 'individual' | 'company',
   type: String,
   //
-  paymentTerm: paymentTermSchema,
+  paymentTerm: PaymentTermSchema,
   openingBalance: Schema.Types.Decimal128,
   //
   metaData: ContactMetaDataSchema,
