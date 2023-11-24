@@ -16,7 +16,7 @@ async function create(userUID: string, formData: IOrgForm) {
 
     const metaData = {
       createdBy: userUID,
-      updatedBy: userUID,
+      modifiedBy: userUID,
       createdAt: timestamp,
       modifiedAt: timestamp,
       status: 0,
@@ -31,8 +31,14 @@ async function create(userUID: string, formData: IOrgForm) {
           metaData,
         },
       ],
-      paymentTerms: Object.values(paymentTerms),
-      paymentModes: Object.values(paymentModes),
+      paymentTerms: Object.values(paymentTerms).map(paymentTerm => ({
+        ...paymentTerm,
+        metaData,
+      })),
+      paymentModes: Object.values(paymentModes).map(paymentMode => ({
+        ...paymentMode,
+        metaData,
+      })),
       metaData,
     });
 

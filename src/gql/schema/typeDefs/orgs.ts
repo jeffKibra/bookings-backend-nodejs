@@ -37,6 +37,7 @@ const typeDefs = `#graphql
     
     extend type Query {
         org(id:ID): Org
+        userOrg:Org
     }
    
     extend type Mutation {

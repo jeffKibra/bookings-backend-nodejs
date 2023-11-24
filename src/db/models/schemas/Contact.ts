@@ -1,6 +1,7 @@
 import { Schema } from 'mongoose';
 //
-import { PaymentTermSchema, metaDataFields, AddressSchema } from './Generals';
+import { metaDataFields, AddressSchema } from './Generals';
+import PaymentTermSchema from './PaymentTerm';
 
 //
 const ContactMetaDataSchema = new Schema({

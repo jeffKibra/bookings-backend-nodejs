@@ -11,6 +11,7 @@ export default function graphqlMiddleware(
   res: Response,
   next: NextFunction
 ) {
+  console.log('graphQl middleware...');
   //check authentication
   const context = req?.appContext;
   // console.log('graphqlMiddleware', { context });

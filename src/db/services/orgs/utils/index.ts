@@ -15,7 +15,7 @@ export async function getOrgForUser(userId: string) {
     return null;
   }
 
-  const org = result as unknown as IOrg;
+  const org = result.toJSON() as unknown as IOrg;
 
   return org;
 }

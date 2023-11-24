@@ -31,7 +31,7 @@ export default async function createGraphQLContext(
   next: NextFunction
 ) {
   try {
-    console.log('orgId middleware...');
+    console.log('createGraphQlContext middleware...');
 
     const headers = req.headers;
     // console.log({ headers });
@@ -40,7 +40,7 @@ export default async function createGraphQLContext(
 
     const contextAuth = await getAuthForContext(token);
     //
-    const orgId = req.get('org-id');
+    const orgId = req.get('org-id') || '';
     console.log({ orgId });
 
     const currentContext = req.appContext || {};

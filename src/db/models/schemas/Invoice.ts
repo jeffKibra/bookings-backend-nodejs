@@ -1,11 +1,9 @@
 import { Schema } from 'mongoose';
 //
 
-import {
-  metaDataFields,
-  PaymentModeSchema,
-  PaymentTermSchema,
-} from './Generals';
+import { metaDataFields } from './Generals';
+import PaymentModeSchema from './PaymentMode';
+import PaymentTermSchema from './PaymentTerm';
 import { ContactSummarySchema } from './Contact';
 import { SaleItemSchema } from './SaleItem';
 //

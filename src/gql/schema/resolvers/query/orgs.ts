@@ -1,9 +1,9 @@
 import { services } from '../../../../db';
 //
-import { IGQLContext, ISearchBookingsQueryOptions } from '../../../../types';
+import { IGQLContext } from '../../../../types';
 
 const queryResolvers = {
-  booking: async (
+  org: async (
     parent: unknown,
     args: { id: string },
     context: Required<IGQLContext>
@@ -17,60 +17,18 @@ const queryResolvers = {
 
     return vehicle;
   },
-  bookings: async (
+  userOrg: async (
     parent: unknown,
     args: unknown,
     context: Required<IGQLContext>
   ) => {
-    const orgId = context.orgId;
+    const userUID = context.auth?.uid || '';
 
-    const bookings = await services.bookings.getList(orgId);
+    const org = await services.orgs.getUserOrg(userUID);
 
-    // console.log('bookings: ', bookings);
+    // console.log('org: ', org);
 
-    return bookings;
-  },
-  searchBookings(
-    parent: unknown,
-    args: {
-      query: string | number;
-      queryOptions?: ISearchBookingsQueryOptions;
-    },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context.orgId;
-    //
-    const query = args?.query || '';
-    const options = args?.queryOptions;
-    console.log('search vehicles options', options);
-
-    return services.bookings.search(orgId, query, options);
-  },
-
-  async findBookingWithAtleastOneOfTheSelectedDates(
-    parent: unknown,
-    args: { dates: string[]; vehicleId: string },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context.orgId;
-    //
-    const argsIsValid = args && typeof args === 'object';
-    if (!argsIsValid) {
-      throw new Error('Invalid arguments received!');
-    }
-
-    const { dates, vehicleId } = args;
-
-    const bookings =
-      await services.bookings.findVehicleBookingWithAtleastOneOfTheSelectedDates(
-        orgId,
-        vehicleId,
-        dates
-      );
-
-    // console.log('bookings: ', bookings);
-
-    return bookings;
+    return org;
   },
 };
 
