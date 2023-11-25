@@ -25,13 +25,11 @@ const typeDefs = `#graphql
         ${OrgSharedFields}
         address: Address!
         businessType: BusinessType!
-        metaData: OrgMetaData!
         _id:ID!
-        id:String
-         taxes: [Tax]
+        taxes: [Tax]
         paymentTerms:[PaymentTerm!]!
         paymentModes:[PaymentMode!]!
-       
+        metaData: OrgMetaData!
     }
 
     
@@ -41,7 +39,7 @@ const typeDefs = `#graphql
     }
    
     extend type Mutation {
-        createOrg(formData:OrgInput!):String
+        createOrg(formData:OrgInput!):Org
         updateOrg(id:ID!, formData:OrgInput!):Org
         deleteOrg(id:ID!):String
     }

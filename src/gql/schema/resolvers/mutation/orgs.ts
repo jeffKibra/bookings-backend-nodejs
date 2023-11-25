@@ -8,7 +8,6 @@ const mutationResolvers = {
     args: { formData: IOrgForm; orgId: string },
     context: Required<IGQLContext>
   ) {
-    const orgId = context.orgId;
     const userUID = context.auth?.uid || '';
     //
     const formData = args?.formData;
@@ -16,7 +15,9 @@ const mutationResolvers = {
     console.log('org form Data', formData);
 
     // await services.orgs.create(userUID, orgId, formData);
-    await services.orgs.create(userUID, formData);
+    const createdOrg = await services.orgs.create(userUID, formData);
+
+    return createdOrg;
   },
 
   async updateOrg(

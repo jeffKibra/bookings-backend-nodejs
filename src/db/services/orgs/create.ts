@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import { OrgModel } from '../../models';
 
 import { userHasOrg } from './utils';
@@ -22,27 +23,40 @@ async function create(userUID: string, formData: IOrgForm) {
       status: 0,
     };
 
-    const instance = new OrgModel({
-      ...formData,
-      taxes: [
-        {
-          name: 'VAT',
-          rate: 16,
+    const orgId = new ObjectId();
+    const orgIdString = orgId.toString();
+
+    const createdOrg = await OrgModel.findByIdAndUpdate(
+      orgIdString,
+      {
+        $set: {
+          ...formData,
+          _id: orgId,
+          taxes: [
+            {
+              name: 'VAT',
+              rate: 16,
+              metaData,
+            },
+          ],
+          paymentTerms: Object.values(paymentTerms).map(paymentTerm => ({
+            ...paymentTerm,
+            metaData,
+          })),
+          paymentModes: Object.values(paymentModes).map(paymentMode => ({
+            ...paymentMode,
+            metaData,
+          })),
           metaData,
         },
-      ],
-      paymentTerms: Object.values(paymentTerms).map(paymentTerm => ({
-        ...paymentTerm,
-        metaData,
-      })),
-      paymentModes: Object.values(paymentModes).map(paymentMode => ({
-        ...paymentMode,
-        metaData,
-      })),
-      metaData,
-    });
+      },
+      {
+        new: true,
+        upsert: true,
+      }
+    );
 
-    await instance.save();
+    return createdOrg;
   } catch (err) {
     const error = err as Error;
     console.log(error);
