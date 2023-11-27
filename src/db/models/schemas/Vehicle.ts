@@ -38,6 +38,15 @@ const schema = new Schema({
   metaData: { type: VehicleMetaDataSchema, required: true },
 });
 
+// schema.index(
+//   {
+//     registration: 'text',
+//     description:"text",
+//     color:"text"
+//   },
+//   { name: 'search vehicles' }
+// );
+
 initSchema(schema);
 
 export default schema;

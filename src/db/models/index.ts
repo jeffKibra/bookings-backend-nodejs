@@ -12,6 +12,7 @@ import {
   PaymentReceivedSchema,
   OrgSchema,
 } from './schemas';
+
 //
 
 export const OrgModel = model('Organization', OrgSchema);
@@ -19,8 +20,9 @@ export const OrgModel = model('Organization', OrgSchema);
 export const ContactModel = model('Contact', ContactSchema);
 
 export const VehicleModel = model('Vehicle', VehicleSchema);
-//Run per model to init indexes for unique fields-run only once
+// Run per model to init indexes for unique fields-run only once
 // VehicleModel.init().then()
+
 export const BookingModel = model('Booking', BookingSchema);
 
 export const JournalEntryModel = model('Journal_Entry', JournalEntrySchema);

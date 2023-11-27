@@ -1,0 +1,45 @@
+{
+  "dynamic": false,
+  "fields": {
+    "color": {
+      "type": "stringFacet"
+    },
+    "description": {
+      "type": "string"
+    },
+    "metaData": {
+      "fields": {
+        "orgId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "number"
+        }
+      },
+      "type": "document"
+    },
+    "model": {
+      "fields": {
+        "make": {
+          "type": "stringFacet"
+        },
+        "model": {
+          "type": "stringFacet"
+        },
+        "type": {
+          "type": "stringFacet"
+        }
+      },
+      "type": "document"
+    },
+    "rate": {
+      "type": "number"
+    },
+    "registration": {
+      "type": "string"
+    },
+    "year": {
+      "type": "stringFacet"
+    }
+  }
+}

@@ -39,10 +39,10 @@ export default function generateSearchStages(
               text: {
                 path: [
                   'registration',
-                  'make',
-                  'model.model',
-                  'color',
-                  'description',
+                  // 'make',
+                  // 'model.model',
+                  // 'color',
+                  // 'description',
                 ],
                 query,
                 fuzzy: {},
