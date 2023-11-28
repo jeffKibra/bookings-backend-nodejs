@@ -1,7 +1,7 @@
 import {
   IBookingForm,
   InvoiceTransactionTypes,
-  PaymentTerm,
+  IPaymentTermSummary,
   IContactSummary,
   IBookingItem,
   ISaleItem,
@@ -46,7 +46,7 @@ export interface IInvoiceForm extends ISaleForm {
   customerNotes: string;
   dueDate: Date | string;
 
-  paymentTerm: PaymentTerm;
+  paymentTerm: IPaymentTermSummary;
   //
   // downPayment: IBookingDownPayment;
 }

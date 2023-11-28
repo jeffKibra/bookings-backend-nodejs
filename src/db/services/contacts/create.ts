@@ -13,6 +13,7 @@ async function create(
   formData: IContactForm,
   group: IContactGroup
 ) {
+  console.log('creating contact');
   const openingBalance = formData?.openingBalance;
   if (openingBalance < 0) {
     throw new Error('Opening Balance cannot be a negative number');
@@ -27,6 +28,7 @@ async function create(
     const contact = new Contact(session, orgId, userUID, contactId);
 
     const result = await contact.create(formData, group);
+    console.log('result', result);
 
     //create contact
     await session.commitTransaction();

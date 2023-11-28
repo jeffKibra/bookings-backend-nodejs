@@ -2,16 +2,6 @@ export const contactSummaryFields = `
     _id: ID!
     displayName:String!
 `;
-export const paymentModeFields = `
-    name:String!
-    value:String!
-`;
-
-export const paymentTermFields = `
-    name: String!
-    value: String!
-    days: Int!
-`;
 
 export const downPaymentSharedFields = `
     amount:Int!

@@ -1,5 +1,7 @@
 import { IAddress } from './address';
 import { ITax } from './tax';
+import { PaymentMode } from 'paymentMode';
+import { PaymentTerm } from './paymentTerm';
 export interface IOrgSummary {
   orgId?: string;
   name?: string;
@@ -32,5 +34,7 @@ export interface IOrgForm {
 export interface IOrg extends IOrgForm {
   _id: string;
   taxes?: ITax[];
+  paymentModes: PaymentMode[];
+  paymentTerms: PaymentTerm[];
   metaData: IOrgMeta;
 }

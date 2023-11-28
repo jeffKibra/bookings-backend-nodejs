@@ -18,7 +18,7 @@ const typeDefs = `
 
     type ContactMetaData {
         ${MetaDataSharedFields}
-        contactType: String!
+        group: String!
     }
 
     input ContactInput {
@@ -64,7 +64,8 @@ const typeDefs = `
     }
 
     extend type Mutation {
-        createContact(formData:ContactInput!):String
+        createContact(contactGroup:String!, formData:ContactInput!):String
+        createCustomer(formData:ContactInput!):String
         updateContact(id:ID!, formData:ContactInput!):Contact
         deleteContact(id:ID!): String
     }

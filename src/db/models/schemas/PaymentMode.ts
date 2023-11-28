@@ -6,9 +6,17 @@ import { initSchema } from './utils';
 
 const PaymentModeMetaDataSchema = new Schema({ ...orgMetaDataFields });
 
-const schema = new Schema({
+const paymentModeFields = {
   name: { type: String, required: true },
-  value: { type: String, required: true },
+};
+
+export const PaymentModeSummarySchema = new Schema({
+  ...paymentModeFields,
+});
+
+const schema = new Schema({
+  ...paymentModeFields,
+  value: { type: String, default: '' },
   metaData: { type: PaymentModeMetaDataSchema, required: true },
 });
 

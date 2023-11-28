@@ -1,7 +1,7 @@
-import { PaymentTerm } from '../types';
+import { IPaymentTermForm } from '../types';
 
 type Terms = {
-  [key: string]: PaymentTerm;
+  [key: string]: IPaymentTermForm;
 };
 
 const paymentTerms = {

@@ -1,5 +1,5 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { PaymentTerm, IAddress, ISearchQueryOptions } from '.';
+import { IPaymentTermSummary, IAddress, ISearchQueryOptions } from '.';
 
 export type IContactGroup = 'customer' | 'vendor';
 
@@ -15,7 +15,7 @@ export interface IContactForm {
   salutation: string;
   billingAddress: IAddress;
   shippingAddress: IAddress;
-  paymentTerm: PaymentTerm;
+  paymentTerm: IPaymentTermSummary;
   website: string;
   openingBalance: number;
 }

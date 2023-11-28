@@ -23,6 +23,9 @@ export * from './org';
 export * from './tax';
 export * from './entries';
 //
+export * from './paymentMode';
+export * from './paymentTerm';
+//
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
 // export type {} from
 // Customer,
@@ -31,10 +34,7 @@ export * from './entries';
 // CustomerFormData,
 // './customer';
 
-
 export type { ExpenseItem } from './expenseItem';
-export type { PaymentMode } from './paymentMode';
-export type { PaymentTerm } from './paymentTerm';
 
 export type { DailySummary } from './dailySummary';
 export type {

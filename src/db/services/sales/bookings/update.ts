@@ -36,7 +36,10 @@ export default async function updateBooking(
     //   formData
     // );
 
-    const invoiceForm = Bookings.createInvoiceFormFromBooking(formData);
+    const invoiceForm = await Bookings.createInvoiceFormFromBooking(
+      orgId,
+      formData
+    );
 
     const invoiceInstance = new Invoice(session, {
       invoiceId: bookingId,

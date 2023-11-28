@@ -20,7 +20,7 @@ export async function getOrgForUser(userId: string) {
   return org;
 }
 
-export async function getOrgData(orgId: string) {
+export async function getById(orgId: string) {
   const result = await OrgModel.findById(orgId).exec();
 
   if (!result) {

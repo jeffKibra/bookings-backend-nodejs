@@ -58,7 +58,7 @@ export default async function createBooking(
   try {
     await Bookings.validateFormData(orgId, formattedFormData, session);
 
-    const invoiceForm = Bookings.createInvoiceFormFromBooking(formData);
+    const invoiceForm = await Bookings.createInvoiceFormFromBooking(orgId, formData);
     console.log({ invoiceForm });
 
     const invoiceInstance = new Invoice(session, {

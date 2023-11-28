@@ -1,12 +1,12 @@
 import { Schema } from 'mongoose';
 //
 import { metaDataFields, AddressSchema } from './Generals';
-import PaymentTermSchema from './PaymentTerm';
+import { PaymentTermSummarySchema } from './PaymentTerm';
 
 //
 const ContactMetaDataSchema = new Schema({
   ...metaDataFields,
-  contactType: { type: String, required: true },
+  group: { type: String, required: true },
 });
 
 export const ContactSummarySchema = new Schema({
@@ -16,10 +16,10 @@ export const ContactSummarySchema = new Schema({
 });
 
 const schema = new Schema({
-  type: String,
+  type: { type: String, required: true },
   salutation: String,
-  firstName: String,
-  lastName: String,
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
   companyName: String,
   displayName: { type: String, required: true },
   email: String,
@@ -29,10 +29,10 @@ const schema = new Schema({
   website: String,
   remarks: String,
   //
-  paymentTerm: PaymentTermSchema,
+  paymentTerm: { type: PaymentTermSummarySchema, required: true },
   openingBalance: Schema.Types.Decimal128,
   //
-  metaData: ContactMetaDataSchema,
+  metaData: { type: ContactMetaDataSchema, required: true },
 });
 
 export default schema;

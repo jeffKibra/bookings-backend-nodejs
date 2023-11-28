@@ -2,7 +2,7 @@ import { Schema } from 'mongoose';
 //
 
 import { metaDataFields } from './Generals';
-import PaymentModeSchema from './PaymentMode';
+import { PaymentModeSummarySchema } from './PaymentMode';
 import { ContactSummarySchema } from './Contact';
 import { AccountSummarySchema } from './Account';
 //
@@ -23,7 +23,7 @@ const schema = new Schema({
   customer: { type: ContactSummarySchema, required: true },
   amount: { type: Number, required: true },
   paymentDate: { type: Date, required: true },
-  paymentMode: { type: PaymentModeSchema, required: true },
+  paymentMode: { type: PaymentModeSummarySchema, required: true },
   reference: String,
   paidInvoices: { type: [PaidInvoiceSchema], required: true },
   excess: { type: Number, required: true },

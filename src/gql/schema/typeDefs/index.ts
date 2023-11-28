@@ -8,24 +8,19 @@ import { SearchMetaCommonFields, AddressFields } from './templates';
 const paymentTermFormFields = `
     name:String!
     days:Int!
-    value:String
 `;
 
 const paymentTermFields = `
+    ${paymentTermFormFields}
     _id:String!
-    name:String!
-    days:Int!
-    value:String
 `;
 
 const paymentModeFormFields = `
     name:String!
-    value:String
 `;
 const paymentModeFields = `
+    ${paymentModeFormFields}
     _id:String!
-    name:String!
-    value:String
 `;
 
 const mainTypeDefs = `#graphql

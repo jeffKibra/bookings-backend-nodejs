@@ -6,6 +6,8 @@ import { InvoiceModel } from '../../../../models';
 //
 import { paymentTerms } from '../../../../../constants';
 //
+import { getPaymentTermByValue } from '../../../paymentTerms';
+//
 import { getById } from '../getOne';
 import { formatBookingFormData } from '.';
 
@@ -58,7 +60,12 @@ export default class Bookings {
   //----------------------------------------------------------------------
 
   //----------------------------------------------------------------------
-  static createInvoiceFormFromBooking(bookingForm: IBookingForm) {
+  static async createInvoiceFormFromBooking(
+    orgId: string,
+    bookingForm: IBookingForm
+  ) {
+    const paymentTerm = await getPaymentTermByValue(orgId, 'on_receipt');
+
     const {
       customer,
       customerNotes,
@@ -138,7 +145,7 @@ export default class Bookings {
       discount: 0,
       subTotal,
       total,
-      paymentTerm: paymentTerms.on_receipt,
+      paymentTerm,
     };
 
     return invoiceForm;

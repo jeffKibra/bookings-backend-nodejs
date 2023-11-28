@@ -3,8 +3,6 @@ import { MetaDataSharedFields } from '../templates';
 import {
   contactSummaryFields,
   downPaymentSharedFields,
-  paymentModeFields,
-  paymentTermFields,
   saleItemDetailsFields,
   saleItemDetailsInputFields,
   saleItemFields,
@@ -18,25 +16,11 @@ import invoicesTypeDefs from './invoices';
 
 const common = `
 
-    input PaymentTermInput {
-        ${paymentTermFields}
-    }
-    type PaymentTerm {
-        ${paymentTermFields}
-    }
-
     input ContactSummaryInput {
         ${contactSummaryFields}
     }
     type ContactSummary {
         ${contactSummaryFields}
-    }
-
-    input PaymentModeInput {
-        ${paymentModeFields}
-    }
-    type PaymentMode {
-        ${paymentModeFields}
     }
 
     input DownPaymentInput {

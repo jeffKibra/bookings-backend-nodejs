@@ -7,12 +7,14 @@ import { InvoiceModel } from '../../../../models';
 import { PaymentReceived } from '../../paymentsReceived/utils';
 import { JournalEntry } from '../../../journal';
 import { InvoiceSale } from '../../invoices/utils';
+import { getPaymentTermByValue } from '../../../paymentTerms';
 
 import {
   IAccount,
   IInvoiceForm,
   IContactSummary,
   IInvoice,
+  IPaymentTermSummary,
 } from '../../../../../types';
 
 interface OpeningBalanceData {
@@ -61,8 +63,13 @@ export default class OpeningBalance extends InvoiceSale {
 
   async generateInvoice(openingBalance: number, customer: IContactSummary) {
     // const salesAccount = await this.getAccountData('sales');
+    const { orgId } = this;
 
-    return OpeningBalance.generateInvoiceEquivalent(openingBalance, customer);
+    return OpeningBalance.generateInvoiceEquivalent(
+      orgId,
+      openingBalance,
+      customer
+    );
   }
 
   async create(openingBalance: number, customerSummary: IContactSummary) {
@@ -211,11 +218,15 @@ export default class OpeningBalance extends InvoiceSale {
   //------------------------------------------------------------
   //static methods
   //------------------------------------------------------------
-  static generateInvoiceEquivalent(
+
+  static async generateInvoiceEquivalent(
+    orgId: string,
     openingBalance: number,
     customer: IContactSummary
   ) {
     const { displayName } = customer;
+
+    const paymentTerm = await getPaymentTermByValue(orgId, 'on_receipt');
 
     const invoiceForm: IInvoiceForm = {
       customer,
@@ -224,7 +235,7 @@ export default class OpeningBalance extends InvoiceSale {
       // orderNumber: "",
       // subject: "",
       customerNotes: '',
-      paymentTerm: { days: 0, name: 'Due on Receipt', value: 'on_receipt' },
+      paymentTerm,
       items: [
         {
           itemId: 'customer_opening_balance',

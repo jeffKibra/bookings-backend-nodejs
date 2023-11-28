@@ -17,6 +17,20 @@ const mutationResolvers = {
     await services.contacts.create(userUID, orgId, formData, contactGroup);
   },
 
+  async createCustomer(
+    parent: unknown,
+    args: { formData: IContactForm; contactGroup: IContactGroup },
+    context: Required<IGQLContext>
+  ) {
+    console.log('creating customer');
+    const orgId = context.orgId;
+    const userUID = context.auth?.uid || '';
+    //
+    const formData = args?.formData;
+
+    await services.contacts.create(userUID, orgId, formData, 'customer');
+  },
+
   async updateContact(
     parent: unknown,
     args: { id: string; formData: IContactForm },

@@ -5,10 +5,18 @@ import { initSchema } from './utils';
 
 const PaymentTermMetaDataSchema = new Schema({ ...orgMetaDataFields });
 
-const schema = new Schema({
+const paymentTermFields = {
   days: { type: Number, required: true },
   name: { type: String, required: true },
-  value: { type: String, required: true },
+};
+
+export const PaymentTermSummarySchema = new Schema({
+  ...paymentTermFields,
+});
+
+const schema = new Schema({
+  ...paymentTermFields,
+  value: { type: String, default: '' },
   metaData: { type: PaymentTermMetaDataSchema, required: true },
 });
 
