@@ -58,12 +58,11 @@ export default class Invoice extends InvoiceSale {
 
   async update(incomingInvoice: IInvoiceForm) {
     const ARAccount = await this.getARAccount();
-    const { invoiceId } = this;
+    const { invoiceId, orgId } = this;
 
-    const { currentInvoice } = await InvoiceSale.validateUpdate(
-      invoiceId,
-      incomingInvoice
-    );
+    const currentInvoice = await this.getCurrentInvoice();
+
+    InvoiceSale.validateUpdate(currentInvoice, incomingInvoice);
     /**
      * initialize sale update-happens after fetching current invoice
      */
@@ -100,6 +99,8 @@ export default class Invoice extends InvoiceSale {
   }
 
   async delete() {
+    const { orgId } = this;
+
     const currentInvoice = await this.getCurrentInvoice();
 
     InvoiceSale.validateDelete(currentInvoice);

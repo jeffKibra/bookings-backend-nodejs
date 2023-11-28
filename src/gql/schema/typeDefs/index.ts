@@ -1,8 +1,32 @@
 import orgsTypeDefs from './orgs';
 import vehiclesTypeDefs from './vehicles';
 import salesTypeDefs from './sales';
+import contactsTypeDefs from './contacts';
 
 import { SearchMetaCommonFields, AddressFields } from './templates';
+
+const paymentTermFormFields = `
+    name:String!
+    days:Int!
+    value:String
+`;
+
+const paymentTermFields = `
+    _id:String!
+    name:String!
+    days:Int!
+    value:String
+`;
+
+const paymentModeFormFields = `
+    name:String!
+    value:String
+`;
+const paymentModeFields = `
+    _id:String!
+    name:String!
+    value:String
+`;
 
 const mainTypeDefs = `#graphql
     input SortByInput{
@@ -45,16 +69,23 @@ const mainTypeDefs = `#graphql
     }
 
     type PaymentTerm {
-        _id:String
-        name:String!
-        days:Int!
-        value:String
+        ${paymentTermFields}
+    }
+    input PaymentTermInput {
+        ${paymentTermFields}
+    }
+    input PaymentTermForm {
+        ${paymentTermFormFields}
     }
 
     type PaymentMode {
-        _id:String
-        name:String!
-        value:String
+        ${paymentModeFields}
+    }
+    input PaymentModeInput {
+        ${paymentModeFields}
+    }
+    input PaymentModeForm {
+        ${paymentModeFormFields}
     }
 
     type Tax {
@@ -89,6 +120,7 @@ const typeDefs = [
   mainTypeDefs,
   orgsTypeDefs,
   vehiclesTypeDefs,
+  contactsTypeDefs,
   ...salesTypeDefs,
 ];
 

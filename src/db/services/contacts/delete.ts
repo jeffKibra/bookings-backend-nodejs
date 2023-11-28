@@ -1,8 +1,8 @@
-import { Customer } from './utils';
+import { Contact } from './utils';
 
 //------------------------------------------------------------
 
-async function deleteCustomer(
+async function deleteContact(
   orgId: string,
   userUID: string,
   customerId: string
@@ -15,9 +15,9 @@ async function deleteCustomer(
   // }
 
   try {
-    await Customer.validateDelete(orgId, customerId);
+    await Contact.validateDelete(orgId, customerId);
 
-    const customer = new Customer(null, orgId, userUID, customerId);
+    const customer = new Contact(null, orgId, userUID, customerId);
 
     await customer.delete();
   } catch (err) {
@@ -27,4 +27,4 @@ async function deleteCustomer(
   }
 }
 
-export default deleteCustomer;
+export default deleteContact;

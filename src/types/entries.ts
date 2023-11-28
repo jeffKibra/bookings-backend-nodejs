@@ -29,7 +29,7 @@ export interface IJournalEntry {
   // date: DateDetails;
   date: Record<string, unknown>;
   transactionId: string;
-  contacts: IContactSummary[];
+  contact: IContactSummary;
   // contactsIds: string[];
   metaData: IJournalEntryMetaData;
 }

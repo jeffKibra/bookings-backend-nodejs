@@ -3,13 +3,13 @@ import {
   FieldValue,
   Timestamp,
   DocumentReference,
-} from "firebase-admin/firestore";
-import BigNumber from "bignumber.js";
+} from 'firebase-admin/firestore';
+import BigNumber from 'bignumber.js';
 
-import Journal from "../../../utils/journal";
-import { dbCollections } from "../../../utils/firebase";
+import Journal from '../../../utils/journal';
+import { dbCollections } from '../../../utils/firebase';
 
-import PaymentSummary from "./paymentSummary";
+import PaymentSummary from './paymentSummary';
 
 import {
   Account,
@@ -17,7 +17,7 @@ import {
   PaymentReceivedFromDb,
   TransactionTypes,
   PaymentReceived as PaymentReceivedData,
-} from "../../../types";
+} from '../../../types';
 
 interface PaymentData {
   accounts: Record<string, Account>;
@@ -30,7 +30,7 @@ interface PaymentData {
 const { serverTimestamp } = FieldValue;
 
 export default class PaymentReceived extends PaymentSummary {
-  transactionType: keyof Pick<TransactionTypes, "customer_payment">;
+  transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
   paymentRef: DocumentReference<PaymentReceivedFromDb>;
 
   constructor(batch: WriteBatch, paymentData: PaymentData) {
@@ -38,7 +38,7 @@ export default class PaymentReceived extends PaymentSummary {
 
     super(batch, { accounts, orgId, userId, paymentId });
 
-    this.transactionType = "customer_payment";
+    this.transactionType = 'customer_payment';
 
     const paymentsReceivedCollection = dbCollections(orgId).paymentsReceived;
     this.paymentRef = paymentsReceivedCollection.doc(paymentId);
@@ -230,10 +230,10 @@ export default class PaymentReceived extends PaymentSummary {
       journalInstance.deleteEntry(paymentDocPath, unearnedRevenue.accountId);
     } else {
       if (!formData) {
-        throw new Error("Payment form data is required!");
+        throw new Error('Payment form data is required!');
       }
 
-      const contacts = PaymentSummary.createContactsFromCustomer(
+      const contacts = PaymentSummary.createContactFromCustomer(
         formData.customer
       );
 

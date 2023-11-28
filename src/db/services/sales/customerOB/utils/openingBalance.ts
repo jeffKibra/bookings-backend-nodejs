@@ -1,6 +1,10 @@
 import { ClientSession } from 'mongodb';
 import BigNumber from 'bignumber.js';
 
+//
+import { InvoiceModel } from '../../../../models';
+//
+import { PaymentReceived } from '../../paymentsReceived/utils';
 import { JournalEntry } from '../../../journal';
 import { InvoiceSale } from '../../invoices/utils';
 
@@ -15,6 +19,7 @@ interface OpeningBalanceData {
   orgId: string;
   userId: string;
   invoiceId: string;
+  customerId: string;
 }
 
 //------------------------------------------------------------------------------
@@ -25,9 +30,10 @@ const OBAAccountId = 'opening_balance_adjustments';
 export default class OpeningBalance extends InvoiceSale {
   // OBAAccount: Account;
   // salesAccount: Account;
+  customerId: string;
 
   constructor(session: ClientSession | null, data: OpeningBalanceData) {
-    const { orgId, userId, invoiceId } = data;
+    const { orgId, userId, invoiceId, customerId } = data;
 
     super(session, {
       invoiceId,
@@ -36,6 +42,8 @@ export default class OpeningBalance extends InvoiceSale {
       transactionType: 'customer_opening_balance',
       saleType: 'normal',
     });
+
+    this.customerId = customerId;
 
     // const salesAccount = getAccountData('sales', accounts);
     // const OBAAccount = getAccountData('opening_balance_adjustments', accounts);
@@ -57,7 +65,16 @@ export default class OpeningBalance extends InvoiceSale {
     return OpeningBalance.generateInvoiceEquivalent(openingBalance, customer);
   }
 
-  async create(obInvoice: IInvoiceForm) {
+  async create(openingBalance: number, customerSummary: IContactSummary) {
+    const obInvoice = await this.generateInvoice(
+      openingBalance,
+      customerSummary
+    );
+
+    this._create(obInvoice);
+  }
+
+  async _create(obInvoice: IInvoiceForm) {
     const creditAccountsMapping = InvoiceSale.generateCreditAccounts(obInvoice);
     const debitAccountsMapping = InvoiceSale.generateDebitAccounts(obInvoice);
 
@@ -82,7 +99,7 @@ export default class OpeningBalance extends InvoiceSale {
       total,
     } = incomingOBInvoice;
 
-    const contacts = InvoiceSale.createContactsFromCustomer(
+    const contact = InvoiceSale.createContactFromCustomer(
       incomingOBInvoice.customer
     );
 
@@ -95,7 +112,7 @@ export default class OpeningBalance extends InvoiceSale {
       amount: total,
       transactionId: customerId,
       transactionType: 'opening_balance',
-      contacts,
+      contact,
     });
 
     /**
@@ -106,15 +123,22 @@ export default class OpeningBalance extends InvoiceSale {
       amount: total,
       transactionId: customerId,
       transactionType: 'opening_balance',
-      contacts,
+      contact,
     });
   }
 
   async update(incomingOBInvoice: IInvoiceForm) {
-    const { invoiceId } = this;
+    const { orgId, session, customerId } = this;
 
-    const { currentInvoice: currentOBInvoice } =
-      await InvoiceSale.validateUpdate(invoiceId, incomingOBInvoice);
+    const currentOBInvoice = await OpeningBalance.getCustomerOBInvoice(
+      orgId,
+      customerId,
+      session
+    );
+
+    if (!currentOBInvoice) {
+      throw new Error('Invoice to update not found!');
+    }
 
     const { total: incomingTotal } = incomingOBInvoice;
     const { total: currentTotal } = currentOBInvoice;
@@ -149,7 +173,7 @@ export default class OpeningBalance extends InvoiceSale {
   }
 
   async delete(currentOBInvoice: IInvoice) {
-    InvoiceSale.validateDelete(currentOBInvoice);
+    const { orgId } = this;
 
     const { deletedAccounts: deletedCreditAccounts } =
       InvoiceSale.generateCreditAccounts(null, currentOBInvoice);
@@ -230,4 +254,51 @@ export default class OpeningBalance extends InvoiceSale {
     return invoiceForm;
   }
   //----------------------------------------------------------------
+  static async getCustomerOBRawInvoice(orgId: string, customerId: string) {
+    const result = await InvoiceModel.findOne({
+      'metaData.orgId': orgId,
+      'metaData.status': 0,
+      'customer._id': customerId,
+    });
+
+    if (!result) {
+      return null;
+    }
+
+    const invoiceId = result._id.toString();
+    const total = +result.total.toString();
+    console.log({ total, invoiceId });
+
+    const invoice = result.toJSON() as unknown as IInvoice;
+
+    return {
+      ...invoice,
+      _id: invoiceId,
+      total,
+    };
+  }
+
+  static async getCustomerOBInvoice(
+    orgId: string,
+    customerId: string,
+    session?: ClientSession | null
+  ) {
+    const invoice = await this.getCustomerOBRawInvoice(orgId, customerId);
+
+    if (!invoice) {
+      return null;
+    }
+    const { _id: invoiceId } = invoice;
+
+    const { total: paymentsTotal } = await PaymentReceived.getInvoicePayments(
+      orgId,
+      invoiceId,
+      session || null
+    );
+
+    return {
+      ...invoice,
+      paymentsTotal,
+    };
+  }
 }

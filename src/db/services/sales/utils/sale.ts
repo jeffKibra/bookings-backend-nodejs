@@ -18,6 +18,7 @@ import {
   ISaleType,
   IJournalEntry,
 } from '../../../../types';
+import { constant } from 'lodash';
 
 type TransactionType = keyof SaleTransactionTypes;
 
@@ -95,11 +96,11 @@ export default class Sale extends Accounts {
     console.log('creating entries', newAccounts, { transactionId });
 
     const journal = new JournalEntry(session, userId, orgId);
-    const contacts = Sale.createContactsFromCustomer(incomingSale.customer);
+    const contact = Sale.createContactFromCustomer(incomingSale.customer);
 
     const result = await Promise.all(
       newAccounts.map(mappedAccount =>
-        this.setJournalEntry(mappedAccount, contacts, journal, entriesType)
+        this.setJournalEntry(mappedAccount, contact, journal, entriesType)
       )
     );
 
@@ -116,13 +117,13 @@ export default class Sale extends Accounts {
     const { similarAccounts, updatedAccounts } = accountsMapping;
     const accountsToUpdate = [...similarAccounts, ...updatedAccounts];
 
-    const contacts = Sale.createContactsFromCustomer(incomingSale.customer);
+    const contact = Sale.createContactFromCustomer(incomingSale.customer);
 
     const journal = new JournalEntry(session, userId, orgId);
 
     const result = await Promise.all(
       accountsToUpdate.map(data =>
-        this.setJournalEntry(data, contacts, journal, entriesType)
+        this.setJournalEntry(data, contact, journal, entriesType)
       )
     );
 
@@ -132,7 +133,7 @@ export default class Sale extends Accounts {
   //----------------------------------------------------------------
   async setJournalEntry(
     accountToSet: IAccountMapping,
-    contacts: IContactSummary[],
+    contact: IContactSummary,
     journalInstance: JournalEntry,
     entriesType: 'debit' | 'credit'
   ) {
@@ -151,7 +152,7 @@ export default class Sale extends Accounts {
         amount: incoming,
         transactionId,
         transactionType,
-        contacts,
+        contact,
       });
     } else if (entriesType === 'debit') {
       result = await journalInstance.debitAccount({
@@ -159,7 +160,7 @@ export default class Sale extends Accounts {
         amount: incoming,
         transactionId,
         transactionType,
-        contacts,
+        contact,
       });
     } else {
       throw new Error(
@@ -421,22 +422,22 @@ export default class Sale extends Accounts {
     });
   }
   //------------------------------------------------------------
-  static createContactsFromCustomer(
+  static createContactFromCustomer(
     customer?: IContactSummary | IContact | null
   ) {
-    if (!customer) {
-      return [];
-    }
+    let contact: IContactSummary = {
+      _id: '',
+      displayName: '',
+    };
 
-    const { _id, displayName } = customer;
-
-    const contacts: IContactSummary[] = [
-      {
+    if (customer) {
+      const { _id, displayName } = customer;
+      contact = {
         _id,
         displayName,
-      },
-    ];
+      };
+    }
 
-    return contacts;
+    return contact;
   }
 }

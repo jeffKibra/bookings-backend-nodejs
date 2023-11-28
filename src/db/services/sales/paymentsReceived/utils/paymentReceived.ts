@@ -270,14 +270,14 @@ export default class PaymentReceived extends InvoicesPayments {
         throw new Error('Payment form data is required!');
       }
 
-      const contacts = [formData.customer];
+      const contact = formData.customer;
 
       await journalInstance.creditAccount({
         transactionId: paymentId,
         account: URAccount,
         amount: incoming,
         transactionType,
-        contacts,
+        contact,
       });
     }
   }

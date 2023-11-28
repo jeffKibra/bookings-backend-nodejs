@@ -1,9 +1,12 @@
 import { ObjectId } from 'mongodb';
 import { startSession } from 'mongoose';
 //
-import { Customer, OpeningBalance } from '../utils';
+import { InvoiceModel } from '../../../models';
+//
+import { CustomerOpeningBalance } from './utils';
+import { Contact } from '../../contacts/utils';
 
-import { IContactFromDb, IContact } from '../../../../../types';
+import { IContactFromDb, IContact } from '../../../../types';
 
 //------------------------------------------------------------
 
@@ -33,34 +36,34 @@ async function update(
   let updatedCustomer: IContact | null = null;
 
   try {
-    const customerInstance = new Customer(session, orgId, userUID, customerId);
-    const [customer] = await Promise.all([
-      customerInstance.fetchCurrentCustomer(),
+    const contactInstance = new Contact(session, orgId, userUID, customerId);
+    const [customer, currentInvoice] = await Promise.all([
+      contactInstance.fetchCurrentContact(),
+      CustomerOpeningBalance.getCustomerOBInvoice(orgId, customerId),
     ]);
-    const {
-      openingBalance: {
-        amount: currentAmount,
-        transactionId: currentInvoiceId,
-      },
-    } = customer;
+
+    const currentInvoiceId = currentInvoice?._id || '';
+
+    let currentAmount = currentInvoice?.total || 0;
+    let invoiceId = currentInvoiceId;
 
     if (amount === currentAmount) {
+      //amounts have not changed
       return;
     }
-
-    let invoiceId = currentInvoiceId;
 
     if (!invoiceId) {
       invoiceId = new ObjectId().toString();
     }
 
-    const obInstance = new OpeningBalance(session, {
+    const obInstance = new CustomerOpeningBalance(session, {
       invoiceId,
       orgId,
       userId: userUID,
+      customerId,
     });
 
-    const customerDataSummary = Customer.createCustomerSummary(
+    const customerDataSummary = Contact.createContactSummary(
       customerId,
       customer
     );
@@ -75,13 +78,13 @@ async function update(
     const isDelete = currentAmount > 0 && amount === 0;
 
     if (isNew) {
-      await obInstance.create(obInvoice);
+      await obInstance._create(obInvoice);
     } else {
       if (!currentInvoiceId) {
         throw new Error('Opening balance id not found!');
       }
 
-      const currentInvoice = await obInstance.getCurrentInvoice();
+      // const currentInvoice = await obInstance.getCurrentInvoice();
 
       if (isUpdate) {
         await obInstance.update(obInvoice);
@@ -93,7 +96,7 @@ async function update(
     }
 
     //update customer
-    updatedCustomer = await customerInstance.updateOpeningBalance(
+    updatedCustomer = await contactInstance.updateOpeningBalance(
       amount,
       invoiceId
     );

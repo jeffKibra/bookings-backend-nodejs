@@ -1,6 +1,6 @@
-import { IContactForm } from '../../../../types';
+import { IContactForm } from '../../../types';
 
-import { Customer } from './utils';
+import { Contact } from './utils';
 
 //------------------------------------------------------------
 
@@ -11,12 +11,12 @@ async function update(
   formData: IContactForm
 ) {
   try {
-    const customer = new Customer(null, orgId, userUID, customerId);
+    const contact = new Contact(null, orgId, userUID, customerId);
 
     //create customer
-    const updatedCustomer = await customer.update(formData);
+    const updatedContact = await contact.update(formData);
 
-    return updatedCustomer;
+    return updatedContact;
   } catch (err) {
     const error = err as Error;
     console.log(error);

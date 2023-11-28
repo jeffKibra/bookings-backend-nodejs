@@ -3,14 +3,14 @@ import {
   FieldValue,
   getFirestore,
   DocumentSnapshot,
-} from "firebase-admin/firestore";
-import { getAccountsMapping, getAccountData } from "../../utils/accounts";
-import Journal from "../../utils/journal";
-import BigNumber from "bignumber.js";
+} from 'firebase-admin/firestore';
+import { getAccountsMapping, getAccountData } from '../../utils/accounts';
+import Journal from '../../utils/journal';
+import BigNumber from 'bignumber.js';
 
-import BookingsBase from "../../bookings/utils/BookingsBase";
+import BookingsBase from '../../bookings/utils/BookingsBase';
 
-import { ContactSummary, SummaryData } from "../../utils/summaries";
+import { ContactSummary, SummaryData } from '../../utils/summaries';
 
 import {
   AccountsMapping,
@@ -19,7 +19,7 @@ import {
   SaleTransactionTypes,
   IBookingForm,
   IContactSummary,
-} from "../../types";
+} from '../../types';
 
 type TransactionType = keyof SaleTransactionTypes;
 
@@ -92,8 +92,8 @@ export default class Sale extends BookingsBase {
     this.transactionType = transactionType;
     //
 
-    this.ARAccount = getAccountData("accounts_receivable", accounts);
-    this.UFAccount = getAccountData("undeposited_funds", accounts);
+    this.ARAccount = getAccountData('accounts_receivable', accounts);
+    this.UFAccount = getAccountData('undeposited_funds', accounts);
   }
 
   //writing methods
@@ -101,16 +101,16 @@ export default class Sale extends BookingsBase {
   createJournalEntries(
     newAccounts: AccountMapping[],
     incomingSale: IBookingForm,
-    entriesType: "debit" | "credit"
+    entriesType: 'debit' | 'credit'
   ) {
     const { transaction, userId, orgId, transactionId } = this;
 
-    console.log("creating entries", newAccounts, { transactionId });
+    console.log('creating entries', newAccounts, { transactionId });
 
     const journal = new Journal(transaction, userId, orgId);
-    const contacts = Sale.createContactsFromCustomer(incomingSale.customer);
+    const contacts = Sale.createContactFromCustomer(incomingSale.customer);
 
-    newAccounts.forEach((mappedAccount) => {
+    newAccounts.forEach(mappedAccount => {
       this.setJournalEntry(mappedAccount, contacts, journal, entriesType);
     });
   }
@@ -118,18 +118,18 @@ export default class Sale extends BookingsBase {
   updateJournalEntries(
     accountsMapping: AccountsMapping,
     incomingSale: IBookingForm,
-    entriesType: "debit" | "credit"
+    entriesType: 'debit' | 'credit'
   ) {
     const { transaction, userId, orgId } = this;
 
     const { similarAccounts, updatedAccounts } = accountsMapping;
     const accountsToUpdate = [...similarAccounts, ...updatedAccounts];
 
-    const contacts = Sale.createContactsFromCustomer(incomingSale.customer);
+    const contacts = Sale.createContactFromCustomer(incomingSale.customer);
 
     const journal = new Journal(transaction, userId, orgId);
 
-    accountsToUpdate.forEach((data) => {
+    accountsToUpdate.forEach(data => {
       this.setJournalEntry(data, contacts, journal, entriesType);
     });
   }
@@ -139,7 +139,7 @@ export default class Sale extends BookingsBase {
     accountToSet: AccountMapping,
     contacts: Record<string, IContactSummary>,
     journalInstance: Journal,
-    entriesType: "debit" | "credit"
+    entriesType: 'debit' | 'credit'
   ) {
     const { collectionPath, transactionId, accounts, transactionType } = this;
 
@@ -147,7 +147,7 @@ export default class Sale extends BookingsBase {
 
     const account = getAccountData(accountId, accounts);
 
-    if (entriesType === "credit") {
+    if (entriesType === 'credit') {
       journalInstance.creditAccount({
         account,
         amount: incoming,
@@ -156,7 +156,7 @@ export default class Sale extends BookingsBase {
         transactionType,
         contacts,
       });
-    } else if (entriesType === "debit") {
+    } else if (entriesType === 'debit') {
       journalInstance.debitAccount({
         account,
         amount: incoming,
@@ -202,12 +202,12 @@ export default class Sale extends BookingsBase {
     const creditAccountsSummary = Sale.generateAccountsSummary(
       creditAccountsMapping,
       accounts,
-      "credit"
+      'credit'
     );
     const debitAccountsSummary = Sale.generateAccountsSummary(
       debitAccountsMapping,
       accounts,
-      "debit"
+      'debit'
     );
 
     const accountsSummary = {
@@ -232,12 +232,12 @@ export default class Sale extends BookingsBase {
     this.createJournalEntries(
       creditAccountsMapping.newAccounts,
       incomingSale,
-      "credit"
+      'credit'
     );
     this.createJournalEntries(
       debitAccountsMapping.newAccounts,
       incomingSale,
-      "debit"
+      'debit'
     );
   }
 
@@ -252,16 +252,16 @@ export default class Sale extends BookingsBase {
     this.createJournalEntries(
       creditAccountsMapping.newAccounts,
       incomingSale,
-      "credit"
+      'credit'
     );
     this.createJournalEntries(
       debitAccountsMapping.newAccounts,
       incomingSale,
-      "debit"
+      'debit'
     );
     //update journal entries
-    this.updateJournalEntries(creditAccountsMapping, incomingSale, "credit");
-    this.updateJournalEntries(debitAccountsMapping, incomingSale, "debit");
+    this.updateJournalEntries(creditAccountsMapping, incomingSale, 'credit');
+    this.updateJournalEntries(debitAccountsMapping, incomingSale, 'debit');
     //delete journal entries
     this.deleteJournalEntries(creditAccountsMapping.deletedAccounts);
     this.deleteJournalEntries(debitAccountsMapping.deletedAccounts);
@@ -371,7 +371,7 @@ export default class Sale extends BookingsBase {
   ) {
     if (!incomingSale && !currentSale) {
       throw new Error(
-        "Please provide atleast either the current or the incoming sale data"
+        'Please provide atleast either the current or the incoming sale data'
       );
     }
 
@@ -384,7 +384,7 @@ export default class Sale extends BookingsBase {
               amount: currentSale.bookingTotal || 0,
             },
             {
-              accountId: "transfer_charge",
+              accountId: 'transfer_charge',
               amount: currentSale.transferAmount || 0,
             },
             // { accountId: "tax_payable", amount
@@ -401,7 +401,7 @@ export default class Sale extends BookingsBase {
               amount: incomingSale.bookingTotal || 0,
             },
             {
-              accountId: "transfer_charge",
+              accountId: 'transfer_charge',
               amount: incomingSale.transferAmount || 0,
             },
             // {
@@ -426,7 +426,7 @@ export default class Sale extends BookingsBase {
   ) {
     if (!incomingSale && !currentSale) {
       throw new Error(
-        "Please provide atleast either the current or the incoming sale data"
+        'Please provide atleast either the current or the incoming sale data'
       );
     }
 
@@ -439,11 +439,11 @@ export default class Sale extends BookingsBase {
     const currentAccounts = currentSale
       ? [
           {
-            accountId: "accounts_receivable",
+            accountId: 'accounts_receivable',
             amount: currentBalance,
           },
           {
-            accountId: "undeposited_funds",
+            accountId: 'undeposited_funds',
             amount: currentDownPayment,
           },
           // { accountId: "tax_payable", amount
@@ -460,11 +460,11 @@ export default class Sale extends BookingsBase {
     const incomingAccounts = incomingSale
       ? [
           {
-            accountId: "accounts_receivable",
+            accountId: 'accounts_receivable',
             amount: incomingBalance,
           },
           {
-            accountId: "undeposited_funds",
+            accountId: 'undeposited_funds',
             amount: incomingDownPayment,
           },
           // {
@@ -486,13 +486,13 @@ export default class Sale extends BookingsBase {
   static generateAccountsSummary(
     accountsMapping: AccountsMapping,
     accounts: Record<string, Account>,
-    entriesType: "debit" | "credit"
+    entriesType: 'debit' | 'credit'
   ) {
     const { uniqueAccounts } = accountsMapping;
 
     const summaryData = new SummaryData(accounts);
 
-    uniqueAccounts.forEach((accountMapping) => {
+    uniqueAccounts.forEach(accountMapping => {
       const { accountId } = accountMapping;
       const current = new BigNumber(accountMapping.current);
       const incoming = new BigNumber(accountMapping.incoming);
@@ -502,7 +502,7 @@ export default class Sale extends BookingsBase {
         return;
       }
 
-      if (entriesType === "credit") {
+      if (entriesType === 'credit') {
         summaryData.creditAccount(accountId, adjustment);
       } else {
         summaryData.debitAccount(accountId, adjustment);
@@ -532,12 +532,12 @@ export default class Sale extends BookingsBase {
     const currentCustomerCreditAccountsSummary = Sale.generateAccountsSummary(
       currentCustomerCreditAccountsMapping,
       accounts,
-      "credit"
+      'credit'
     );
     const currentCustomerDebitAccountsSummary = Sale.generateAccountsSummary(
       currentCustomerDebitAccountsMapping,
       accounts,
-      "debit"
+      'debit'
     );
 
     const currentCustomerAccountsSummary = {
@@ -554,12 +554,12 @@ export default class Sale extends BookingsBase {
     const incomingCustomerCreditAccountsSummary = Sale.generateAccountsSummary(
       incomingCustomerCreditAccountsMapping,
       accounts,
-      "credit"
+      'credit'
     );
     const incomingCustomerDebitAccountsSummary = Sale.generateAccountsSummary(
       incomingCustomerDebitAccountsMapping,
       accounts,
-      "debit"
+      'debit'
     );
 
     const incomingCustomerAccountsSummary = {
@@ -600,7 +600,7 @@ export default class Sale extends BookingsBase {
 
     if (
       !snap.exists ||
-      snap.data()?.status === "deleted" ||
+      snap.data()?.status === 'deleted' ||
       data === undefined
     ) {
       throw new Error(`Sale with id ${transactionId} not found!`);
@@ -623,7 +623,7 @@ export default class Sale extends BookingsBase {
   //   });
   // }
   //------------------------------------------------------------
-  static createContactsFromCustomer(customer?: IContactSummary) {
+  static createContactFromCustomer(customer?: IContactSummary) {
     if (!customer) {
       return {};
     }

@@ -3,29 +3,11 @@ import { PipelineStage } from 'mongoose';
 import { generateFilters } from '../utils/filters';
 //
 
-import {
-  ISearchVehiclesPagination,
-  IPaginationLastDoc,
-} from '../../../../../types';
-
-// function generateFirstSortField(sortOptions?: ISortOptions) {
-//   const sortDirection =
-//     String(sortOptions?.direction).toLowerCase() === 'desc' ? -1 : 1;
-//   const sortField = String(sortOptions?.field || '');
-
-//   const firstSortField = sortField
-//     ? { [sortField]: sortDirection } //only registration or rate allowed for sorting
-//     : { unused: { $meta: 'searchScore' } }; //sorts by search score(defaults to desc)
-//   console.log({ firstSortField });
-
-//   return firstSortField;
-// }
-
 export default function generateSearchStages(
   orgId: string,
   query: string | number,
   userFilters?: Record<string, (string | number | Date)[]>,
-  retrieveFacets = false
+  retrieveFacets?: false
   // sortOptions?: ISortOptions
 ) {
   const filters = generateFilters(orgId, userFilters);
@@ -38,11 +20,12 @@ export default function generateSearchStages(
             {
               text: {
                 path: [
-                  'registration',
-                  'make',
-                  'model.model',
-                  'color',
-                  'description',
+                  'displayName',
+                  'firstName',
+                  'lastName',
+                  'companyName',
+                  'email',
+                  'phone',
                 ],
                 query,
                 fuzzy: {},
@@ -70,17 +53,17 @@ export default function generateSearchStages(
                   //   type: 'string',
                   //   path: 'make',
                   // },
-                  modelsFacet: {
-                    type: 'string',
-                    path: 'model.model',
-                  },
                   typesFacet: {
                     type: 'string',
-                    path: 'model.type',
+                    path: 'type',
                   },
-                  colorsFacet: {
+                  contactTypesFacet: {
                     type: 'string',
-                    path: 'color',
+                    path: 'metaData.contactType',
+                  },
+                  salutationsFacet: {
+                    type: 'string',
+                    path: 'salutation',
                   },
                 },
               },

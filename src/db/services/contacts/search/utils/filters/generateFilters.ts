@@ -24,12 +24,6 @@ export default function generateFilters(
         value: 0,
       },
     },
-    // {
-    //   equals: {
-    //     path: 'metaData.deleted',
-    //     value: false,
-    //   },
-    // },
   ];
 
   if (userFilters && typeof userFilters === 'object') {
@@ -38,21 +32,13 @@ export default function generateFilters(
       if (Array.isArray(values) && values.length > 0) {
         let filter = {};
 
-        if (field === 'rate') {
-          const tempFilter = generateRangeFilter(field, values);
-          if (tempFilter) {
-            filter = tempFilter;
-          }
-        } else {
-          let fieldPrefix = '';
+        let fieldPrefix = '';
 
-          const isModelField = field === 'model' || field === 'type';
-          if (isModelField) {
-            fieldPrefix = 'model.';
-          }
-
-          filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
+        if (field === 'contactType') {
+          fieldPrefix = 'metaData.';
         }
+
+        filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
 
         filters.push(filter);
       }

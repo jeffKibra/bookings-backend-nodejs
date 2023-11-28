@@ -16,20 +16,18 @@ export const ContactSummarySchema = new Schema({
 });
 
 const schema = new Schema({
+  type: String,
   salutation: String,
   firstName: String,
   lastName: String,
   companyName: String,
   displayName: { type: String, required: true },
   email: String,
-  mobile: String,
   phone: String,
   billingAddress: AddressSchema,
   shippingAddress: AddressSchema,
   website: String,
   remarks: String,
-  // type: 'individual' | 'company',
-  type: String,
   //
   paymentTerm: PaymentTermSchema,
   openingBalance: Schema.Types.Decimal128,

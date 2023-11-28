@@ -31,7 +31,7 @@ type entryFnParams = {
   account: IAccountSummary;
   amount: number;
   transactionType: keyof TransactionTypes;
-  contacts?: IContactSummary[];
+  contact?: IContactSummary;
   details?: Record<string, unknown>;
 };
 
@@ -64,6 +64,7 @@ export default class JournalEntry {
   generateFindFilters(
     transactionId: string,
     accountId: string,
+    // contactId?: string,
     details?: Record<string, unknown>
   ) {
     const { orgId } = this;
@@ -80,6 +81,7 @@ export default class JournalEntry {
       'account.accountId': accountId,
       'metaData.orgId': orgId,
       transactionId,
+      // ...(contactId ? { 'contact._id': contactId } : {}),
       ...detailsFilters,
     };
   }
@@ -90,7 +92,7 @@ export default class JournalEntry {
       transactionId,
       amount,
       transactionType,
-      contacts,
+      contact,
       details,
     } = entryParams;
 
@@ -99,10 +101,12 @@ export default class JournalEntry {
     const { orgId, userId, session } = this;
     //
     const { accountId } = account;
+    // const contactId = contact?._id || '';
 
     const findFilters = this.generateFindFilters(
       transactionId,
       accountId,
+      // contactId,
       details
     );
 
@@ -114,7 +118,7 @@ export default class JournalEntry {
           entryType,
           account,
           transactionId,
-          contacts: contacts || [],
+          contact: contact || {},
           // transactionType,
           ...(details ? { details } : {}),
           metaData: {
@@ -142,7 +146,7 @@ export default class JournalEntry {
     account: IAccountSummary,
     amount: number,
     transactionType: keyof TransactionTypes,
-    contacts: IContactSummary[],
+    contact: IContactSummary,
     details?: Record<string, unknown>
   ) {
     const { accountType } = account;
@@ -163,7 +167,7 @@ export default class JournalEntry {
         account,
         amount: entryAmount,
         transactionType,
-        contacts,
+        contact,
         details,
       },
       entryType
@@ -175,7 +179,7 @@ export default class JournalEntry {
     transactionType: keyof TransactionTypes,
     account: IAccountSummary,
     amount: number,
-    contacts?: IContactSummary[],
+    contact?: IContactSummary,
     details?: Record<string, unknown>
   ) {
     const { accountType, accountId } = account;
@@ -200,7 +204,7 @@ export default class JournalEntry {
       {
         account,
         amount: credit || debit,
-        contacts,
+        contact,
         transactionId,
         transactionType,
         details,
@@ -495,9 +499,9 @@ export default class JournalEntry {
     }
   }
   //------------------------------------------------------------
-  // static generateContactsIds(contacts: IContactSummary[]) {
-  //   if (contacts && typeof contacts === 'object') {
-  //     return Object.keys(contacts).map(key => contacts[key].id);
+  // static generateContactsIds(contact: IContactSummary) {
+  //   if (contact && typeof contact === 'object') {
+  //     return Object.keys(contact).map(key => contact[key].id);
   //   } else {
   //     return [];
   //   }

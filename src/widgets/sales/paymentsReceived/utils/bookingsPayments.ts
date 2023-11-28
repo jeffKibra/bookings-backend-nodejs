@@ -129,7 +129,7 @@ export default class BookingsPayments {
     // console.log({ account });
     const paymentAccount = formData.account;
 
-    const contacts = BookingsPayments.createContactsFromCustomer(
+    const contacts = BookingsPayments.createContactFromCustomer(
       formData.customer
     );
 
@@ -197,7 +197,7 @@ export default class BookingsPayments {
     const { account: incomingAccount } = formData;
     const { accountId: incomingAccountId } = incomingAccount;
 
-    const contacts = BookingsPayments.createContactsFromCustomer(
+    const contacts = BookingsPayments.createContactFromCustomer(
       formData.customer
     );
 
@@ -439,7 +439,7 @@ export default class BookingsPayments {
     return bookingPaymentsTotal;
   }
   //------------------------------------------------------------
-  static createContactsFromCustomer(customer: IContactSummary) {
+  static createContactFromCustomer(customer: IContactSummary) {
     const { id, ...contactDetails } = customer;
 
     const contacts: Record<string, IContactSummary> = {

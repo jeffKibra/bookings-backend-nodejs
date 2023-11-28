@@ -58,6 +58,7 @@ export interface IInvoicePayment {
 
 export interface IInvoiceFromDb extends IInvoiceForm {
   payments?: IInvoicePayment[];
+  paymentsTotal: number;
   balance: number;
   metaData: IMeta;
 }

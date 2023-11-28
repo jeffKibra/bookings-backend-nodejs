@@ -1,22 +1,22 @@
-import { Transaction } from "firebase-admin/firestore";
-import BigNumber from "bignumber.js";
+import { Transaction } from 'firebase-admin/firestore';
+import BigNumber from 'bignumber.js';
 
-import { getAccountData } from "../../../utils/accounts";
+import { getAccountData } from '../../../utils/accounts';
 import {
   OrgSummary,
   ContactSummary,
   SummaryData,
-} from "../../../utils/summaries";
-import Journal from "../../../utils/journal";
-import { InvoiceSale } from "../../invoices/utils";
-import { dbCollections } from "../../../utils/firebase";
+} from '../../../utils/summaries';
+import Journal from '../../../utils/journal';
+import { InvoiceSale } from '../../invoices/utils';
+import { dbCollections } from '../../../utils/firebase';
 
 import {
   Account,
   InvoiceFormData,
   IContactSummary,
   Invoice,
-} from "../../../types";
+} from '../../../types';
 
 interface OpeningBalanceData {
   accounts: Record<string, Account>;
@@ -39,17 +39,17 @@ export default class OpeningBalance extends InvoiceSale {
       invoiceId,
       orgId,
       userId,
-      transactionType: "customer_opening_balance",
+      transactionType: 'customer_opening_balance',
     });
 
-    const salesAccount = getAccountData("sales", accounts);
-    const OBAAccount = getAccountData("opening_balance_adjustments", accounts);
+    const salesAccount = getAccountData('sales', accounts);
+    const OBAAccount = getAccountData('opening_balance_adjustments', accounts);
 
     if (!salesAccount) {
-      throw new Error("Sales account not found!");
+      throw new Error('Sales account not found!');
     }
     if (!OBAAccount) {
-      throw new Error("Opening balance adjustments account not found!");
+      throw new Error('Opening balance adjustments account not found!');
     }
 
     this.salesAccount = salesAccount;
@@ -83,9 +83,9 @@ export default class OpeningBalance extends InvoiceSale {
      */
     summary.debitAccount(ARAccount.accountId, total);
     summary.creditAccount(OBAAccount.accountId, total);
-    summary.append("invoices", 1);
-    summary.append("overdueInvoices.amount", total);
-    summary.append("overdueInvoices.count", 1);
+    summary.append('invoices', 1);
+    summary.append('overdueInvoices.amount', total);
+    summary.append('overdueInvoices.count', 1);
 
     const orgSummaryInstance = new OrgSummary(transaction, orgId, accounts);
     orgSummaryInstance.data = summary.data;
@@ -123,7 +123,7 @@ export default class OpeningBalance extends InvoiceSale {
       total,
     } = incomingOBInvoice;
 
-    const contacts = InvoiceSale.createContactsFromCustomer(
+    const contacts = InvoiceSale.createContactFromCustomer(
       incomingOBInvoice.customer
     );
 
@@ -136,7 +136,7 @@ export default class OpeningBalance extends InvoiceSale {
       amount: total,
       transactionCollection: customersCollection,
       transactionId: customerId,
-      transactionType: "opening_balance",
+      transactionType: 'opening_balance',
       contacts,
     });
 
@@ -148,7 +148,7 @@ export default class OpeningBalance extends InvoiceSale {
       amount: total,
       transactionCollection: customersCollection,
       transactionId: customerId,
-      transactionType: "opening_balance",
+      transactionType: 'opening_balance',
       contacts,
     });
   }
@@ -285,21 +285,21 @@ export default class OpeningBalance extends InvoiceSale {
       dueDate: new Date(),
       // orderNumber: "",
       // subject: "",
-      customerNotes: "",
-      paymentTerm: { days: 0, name: "Due on Receipt", value: "on_receipt" },
+      customerNotes: '',
+      paymentTerm: { days: 0, name: 'Due on Receipt', value: 'on_receipt' },
       item: {
-        itemId: "customer_opening_balance",
+        itemId: 'customer_opening_balance',
         salesAccount,
         rate: openingBalance,
-        unit: "days",
-        sku: "customer_opening_balance",
-        type: "opening_balance",
-        name: "customer opening balance",
+        unit: 'days',
+        sku: 'customer_opening_balance',
+        type: 'opening_balance',
+        name: 'customer opening balance',
       },
       downPayment: {
-        paymentMode: { name: "", value: "" },
+        paymentMode: { name: '', value: '' },
         amount: 0,
-        reference: "",
+        reference: '',
       },
       quantity: 1,
       startDate: new Date().toISOString(),

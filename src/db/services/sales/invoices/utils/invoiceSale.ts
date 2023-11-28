@@ -82,31 +82,9 @@ export default class InvoiceSale extends Sale {
   }
 
   async getCurrentInvoice() {
-    const { transactionId, session, orgId } = this;
-
-    const [invoice, paymentsResult] = await Promise.all([
-      InvoiceSale.getById(transactionId, session),
-      PaymentReceived.getInvoicePayments(orgId, transactionId, session),
-    ]);
-
-    // console.log({ paymentsTotal });
-
-    if (!invoice) {
-      throw new Error('Invoice not found!');
-    }
-
-    const { total } = invoice;
-    const { list: payments, total: paymentsTotal } = paymentsResult;
-
-    const balance = new BigNumber(total).minus(paymentsTotal).dp(2).toNumber();
-
-    const processedInvoice: IInvoice = {
-      ...invoice,
-      balance,
-      payments,
-    };
-
-    return processedInvoice;
+    const { orgId, session, invoiceId } = this;
+    
+    return InvoiceSale.getById(orgId, invoiceId, session);
   }
 
   async createInvoice(
@@ -168,6 +146,8 @@ export default class InvoiceSale extends Sale {
     // update invoice
     const { session, userId, invoiceId, orgId } = this;
 
+    InvoiceSale.validateUpdate(currentInvoice, incomingInvoice);
+
     const { total } = incomingInvoice;
 
     /**
@@ -215,6 +195,8 @@ export default class InvoiceSale extends Sale {
     deletedDebitAccounts: IAccountMapping[]
   ) {
     const { session, userId, invoiceId, orgId } = this;
+
+    InvoiceSale.validateDelete(currentInvoice);
 
     // console.log("deleted accounts", deletedAccounts);
 
@@ -270,45 +252,47 @@ export default class InvoiceSale extends Sale {
     /**
      * check if the invoice has payments
      */
-    // const paymentsTotal = InvoiceSale.getInvoicePayments(
-    //   invoice.paymentsReceived
-    // );
-    // if (paymentsTotal > 0) {
-    //   // deletion not allowed
-    //   throw new Error(
-    //     `Invoice Deletion Failed! You cannot delete an invoice that has payments! If you are sure you want to delete it, Please DELETE all the associated PAYMENTS first!`
-    //   );
-    // }
+    const { paymentsTotal } = invoice;
+
+    if (paymentsTotal > 0) {
+      // deletion not allowed
+      throw new Error(
+        `Invoice Deletion Failed! You cannot delete an invoice that has payments! If you are sure you want to delete it, Please DELETE all the associated PAYMENTS first!`
+      );
+    }
   }
   //------------------------------------------------------------
   static async validateUpdate(
-    invoiceId: string,
+    currentInvoice: IInvoice,
     incomingInvoice: IInvoiceForm
+    // session?: ClientSession | null
   ) {
-    const currentInvoice = await this.getCurrentInvoice(invoiceId, null);
-
     const { total, customer: incomingCustomer } = incomingInvoice;
     const customerId = incomingCustomer?._id || '';
     const {
       // paymentsReceived,
       customer: currentCustomer,
+      paymentsTotal,
     } = currentInvoice;
     const currentCustomerId = currentCustomer?._id || '';
     /**
      * check to ensure the new total balance is not less than payments made.
      */
-    // const paymentsTotal = InvoiceSale.getInvoicePayments(
-    //   paymentsReceived || {}
+    // const { total: paymentsTotal } = await PaymentReceived.getInvoicePayments(
+    //   orgId,
+    //   invoiceId,
+    //   session
     // );
+
     /**
      * trying to update invoice total with an amount less than paymentsTotal
      * throw an error
      */
-    // if (paymentsTotal > total) {
-    //   throw new Error(
-    //     `Invoice Update Failed! The new Invoice Total is less than the invoice payments. If you are sure you want to edit, delete the associated payments or adjust them to be less than or equal to the new invoice total`
-    //   );
-    // }
+    if (paymentsTotal > total) {
+      throw new Error(
+        `Invoice Update Failed! The new Invoice Total is less than the invoice payments. If you are sure you want to edit, delete the associated payments or adjust them to be less than or equal to the new invoice total`
+      );
+    }
     /**
      * check if customer has been changed
      */
@@ -316,13 +300,11 @@ export default class InvoiceSale extends Sale {
     /**
      * customer cannot be changed if the invoice has some payments made to it
      */
-    // if (paymentsTotal > 0 && customerHasChanged) {
-    //   throw new Error(
-    //     `CUSTOMER cannot be changed in an invoice that has payments! This is because all the payments are from the PREVIOUS customer. If you are sure you want to change the customer, DELETE the associated payments first!`
-    //   );
-    // }
-
-    return { currentInvoice };
+    if (paymentsTotal > 0 && customerHasChanged) {
+      throw new Error(
+        `CUSTOMER cannot be changed in an invoice that has payments! This is because all the payments are from the PREVIOUS customer. If you are sure you want to change the customer, DELETE the associated payments first!`
+      );
+    }
   }
 
   //------------------------------------------------------------
@@ -347,17 +329,35 @@ export default class InvoiceSale extends Sale {
   // }
   //------------------------------------------------------------
 
-  static async getCurrentInvoice(
+  static async getById(
+    orgId: string,
     invoiceId: string,
-    session: ClientSession | null
+    session?: ClientSession | null
   ) {
-    const invoice = await this.getById(invoiceId, session);
+    const [invoice, paymentsResult] = await Promise.all([
+      InvoiceSale.getByIdRaw(invoiceId, session || null),
+      PaymentReceived.getInvoicePayments(orgId, invoiceId, session),
+    ]);
+
+    // console.log({ paymentsTotal });
 
     if (!invoice) {
-      throw new Error('Invoice data not found!');
+      throw new Error('Invoice not found!');
     }
 
-    return invoice;
+    const { total } = invoice;
+    const { list: payments, total: paymentsTotal } = paymentsResult;
+
+    const balance = new BigNumber(total).minus(paymentsTotal).dp(2).toNumber();
+
+    const processedInvoice: IInvoice = {
+      ...invoice,
+      balance,
+      payments,
+      paymentsTotal,
+    };
+
+    return processedInvoice;
   }
 
   //----------------------------------------------------------------
@@ -379,16 +379,16 @@ export default class InvoiceSale extends Sale {
   // }
 
   //------------------------------------------------------------------
-  static getInvoicePayments(payments: InvoicePayments) {
-    const total = Object.keys(payments).reduce((sum, key) => {
-      const payment = new BigNumber(payments[key]);
-      return sum.plus(payment);
-    }, new BigNumber(0));
+  // static getInvoicePayments(payments: InvoicePayments) {
+  //   const total = Object.keys(payments).reduce((sum, key) => {
+  //     const payment = new BigNumber(payments[key]);
+  //     return sum.plus(payment);
+  //   }, new BigNumber(0));
 
-    return total.dp(2).toNumber();
-  }
+  //   return total.dp(2).toNumber();
+  // }
 
-  static async getById(invoiceId: string, session: ClientSession | null) {
+  static async getByIdRaw(invoiceId: string, session?: ClientSession | null) {
     console.log('getInvoice by id called');
     if (!invoiceId) {
       throw new Error('Invalid Params: Errors in params [invoiceId]!');

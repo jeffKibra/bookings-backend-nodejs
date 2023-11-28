@@ -155,7 +155,7 @@ export default class InvoicesPayments extends Accounts {
     // console.log({ account });
     const paymentAccount = formData.account;
 
-    const contacts = [formData.customer];
+    const contact = formData.customer
 
     const ARAccount = await this.getAccountData(ARAccountId);
     //
@@ -183,7 +183,7 @@ export default class InvoicesPayments extends Accounts {
               amount: incoming,
               transactionId,
               transactionType: 'invoice_payment',
-              contacts,
+              contact,
               // details: { invoiceId },
             }),
             /**
@@ -194,7 +194,7 @@ export default class InvoicesPayments extends Accounts {
               amount: incoming,
               transactionId,
               transactionType: 'invoice_payment',
-              contacts,
+              contact,
               // details: { invoiceId },
             }),
           ]);
@@ -219,7 +219,7 @@ export default class InvoicesPayments extends Accounts {
     journalInstance: JournalEntry,
     data: {
       invoiceId: string;
-      contacts: IContactSummary[];
+      contact: IContactSummary;
       incomingAmount: number;
       incomingAccount: IAccountSummary;
       currentAccountId: string;
@@ -232,7 +232,7 @@ export default class InvoicesPayments extends Accounts {
 
     const {
       invoiceId,
-      contacts,
+      contact,
       incomingAmount,
       incomingAccount,
       currentAccountId,
@@ -256,7 +256,7 @@ export default class InvoicesPayments extends Accounts {
         account: incomingAccount,
         amount: incomingAmount,
         transactionType: 'invoice_payment',
-        contacts,
+        contact,
         details: { invoiceId },
       }),
       deletePrevAccountEntry(),
@@ -287,7 +287,7 @@ export default class InvoicesPayments extends Accounts {
     const { account: incomingAccount } = formData;
     const { accountId: incomingAccountId } = incomingAccount;
 
-    const contacts = [formData.customer];
+    const contact = formData.customer
 
     const ARAccount = await this.getAccountData(ARAccountId);
     //
@@ -315,11 +315,11 @@ export default class InvoicesPayments extends Accounts {
               amount: incoming,
               transactionId,
               transactionType: 'invoice_payment',
-              contacts,
+              contact,
               details: { invoiceId },
             }),
             this.updateInvoicePaymentDepositAccount(journalInstance, {
-              contacts,
+              contact,
               currentAccountId,
               incomingAccount,
               invoiceId,
@@ -534,7 +534,7 @@ export default class InvoicesPayments extends Accounts {
   static async getInvoicePayments(
     orgId: string,
     invoiceId: string,
-    session: ClientSession | null
+    session?: ClientSession | null
   ) {
     const result = await PaymentReceivedModel.aggregate<{
       list: IInvoicePayment[];
@@ -585,11 +585,11 @@ export default class InvoicesPayments extends Accounts {
           },
         },
       },
-    ]).session(session);
+    ]).session(session || null);
 
     console.log({ result });
 
-    const list = result[0]?.list;
+    const list = result[0]?.list || [];
     const total = result[0]?.total?.value || 0;
 
     return {
@@ -598,16 +598,16 @@ export default class InvoicesPayments extends Accounts {
     };
   }
   //------------------------------------------------------------
-  // static createContactsFromCustomer(customer: IContactSummary) {
+  // static createContactFromCustomer(customer: IContactSummary) {
   //   const { id, ...contactDetails } = customer;
 
-  //   const contacts: Record<string, IContactSummary> = {
+  //   const contact: Record<string, IContactSummary> = {
   //     [id]: {
   //       ...contactDetails,
   //       id,
   //     },
   //   };
 
-  //   return contacts;
+  //   return contact;
   // }
 }
