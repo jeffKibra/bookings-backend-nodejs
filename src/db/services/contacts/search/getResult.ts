@@ -24,11 +24,17 @@ export default async function getResult(
   query: string | number,
   options?: ISearchContactsQueryOptions
 ) {
+  // console.log('options', options);
   const [sortByField, sortByDirection] = generateSortBy(query, options?.sortBy);
 
   const pagination = options?.pagination;
   //   console.log('pagination', pagination);
-  const filters = options?.filters;
+  const rawFilters = options?.filters || {};
+  const group = options?.group || '';
+  const filters = {
+    ...rawFilters,
+    group: [group],
+  };
 
   const searchPipelineStages = generateSearchStages(orgId, query, filters);
 
@@ -52,9 +58,16 @@ export default async function getResult(
     {
       $skip: offset,
     },
+
     {
       $facet: {
         contacts: [
+          //if match is activated, prevents returning newly created docs as well.
+          // {
+          //   $match: {
+          //     'metaData.status': 0,
+          //   },
+          // },
           {
             //limit items returned
             $limit: limit,
@@ -71,6 +84,12 @@ export default async function getResult(
             $limit: 1,
           },
         ],
+      },
+    },
+    {
+      //change meta field from array to object
+      $set: {
+        meta: { $arrayElemAt: ['$meta', 0] },
       },
     },
     {

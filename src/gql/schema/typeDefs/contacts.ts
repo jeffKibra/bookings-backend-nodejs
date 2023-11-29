@@ -1,17 +1,17 @@
 import { MetaDataSharedFields, SearchMetaCommonFields } from './templates';
 
 const contactSharedFields = `
-   type: String!
+   type: String
   salutation: String
   firstName: String
   lastName: String
   companyName: String
-  displayName: String!
+  displayName: String
   email: String
   phone: String
   website: String
   remarks: String
-    openingBalance: Int
+    openingBalance: Float
 `;
 
 const typeDefs = `
@@ -30,9 +30,11 @@ const typeDefs = `
 
     type Contact {
         ${contactSharedFields}
+        _id:ID!
         billingAddress: Address
         shippingAddress: Address
-        paymentTerm: PaymentTerm
+        paymentTerm: PaymentTerm!
+        searchScore:Float
         metaData: ContactMetaData
     }
 
@@ -41,7 +43,7 @@ const typeDefs = `
     }
 
     type ContactsSearchResult {
-        list: [Contact]!
+        list: [Contact]
         meta: SearchContactsMetaData
     }
 
@@ -55,6 +57,7 @@ const typeDefs = `
         sortBy:[String!]
         pagination:Pagination
         filters:ContactsFilters
+        group: String
     }
 
 

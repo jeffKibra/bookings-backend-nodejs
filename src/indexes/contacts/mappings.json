@@ -1,0 +1,58 @@
+{
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "companyName": {
+        "type": "string"
+      },
+      "displayName": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "firstName": {
+        "type": "string"
+      },
+      "lastName": {
+        "type": "string"
+      },
+      "metaData": {
+        "fields": {
+          "group": [
+            {
+              "type": "stringFacet"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "orgId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "number"
+          }
+        },
+        "type": "document"
+      },
+      "openingBalance": {
+        "type": "number"
+      },
+      "phone": {
+        "type": "string"
+      },
+      "salutation": {
+        "type": "stringFacet"
+      },
+      "type": [
+        {
+          "type": "stringFacet"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

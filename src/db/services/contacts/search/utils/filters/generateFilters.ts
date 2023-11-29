@@ -3,18 +3,23 @@ import { filters } from '../../../../utils';
 
 const { generateQueryStringFilter, generateRangeFilter } = filters;
 
-const filterFields = ['make', 'model', 'type', 'color', 'rate'];
-
-type Filters = {};
+const filterFields = ['group'];
 
 export default function generateFilters(
   orgId: string,
   userFilters?: Record<string, (string | number | Date)[]>
 ) {
+  // console.log('userFilters', userFilters);
   const filters: Record<string, unknown>[] = [
+    // {
+    //   text: {
+    //     path: 'metaData.orgId',
+    //     query: orgId,
+    //   },
+    // },
     {
-      text: {
-        path: 'metaData.orgId',
+      queryString: {
+        defaultPath: 'metaData.orgId',
         query: orgId,
       },
     },
@@ -34,7 +39,7 @@ export default function generateFilters(
 
         let fieldPrefix = '';
 
-        if (field === 'contactType') {
+        if (field === 'group') {
           fieldPrefix = 'metaData.';
         }
 
@@ -45,7 +50,7 @@ export default function generateFilters(
     });
   }
 
-  console.log('search vehicles aggregation pipeline filters: ', filters);
+  console.log('search contacts aggregation pipeline filters: ', filters);
 
   return filters;
 }

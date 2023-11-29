@@ -2,6 +2,7 @@ import { PipelineStage } from 'mongoose';
 //
 import { generateFilters } from '../utils/filters';
 //
+import transformDocFields from './transformDocFields';
 
 export default function generateSearchStages(
   orgId: string,
@@ -57,9 +58,9 @@ export default function generateSearchStages(
                     type: 'string',
                     path: 'type',
                   },
-                  contactTypesFacet: {
+                  contactGroupFacet: {
                     type: 'string',
-                    path: 'metaData.contactType',
+                    path: 'metaData.group',
                   },
                   salutationsFacet: {
                     type: 'string',
@@ -78,14 +79,18 @@ export default function generateSearchStages(
       },
     },
     {
-      $addFields: {
+      $set: {
         //add searchscore field for sorting in next stages
         searchScore: {
           $meta: 'searchScore',
         },
-        id: {
-          $toString: '$_id',
-        },
+        ...transformDocFields,
+        // _id: {
+        //   $toString: '$_id',
+        // },
+        // openingBalance: {
+        //   $toDouble: '$openingBalance',
+        // },
       },
     },
     // {

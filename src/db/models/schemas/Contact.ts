@@ -30,7 +30,7 @@ const schema = new Schema({
   remarks: String,
   //
   paymentTerm: { type: PaymentTermSummarySchema, required: true },
-  openingBalance: Schema.Types.Decimal128,
+  openingBalance: { type: Schema.Types.Decimal128, required: true },
   //
   metaData: { type: ContactMetaDataSchema, required: true },
 });

@@ -4,11 +4,6 @@ import getResult from './getResult';
 import { ISearchContactsQueryOptions } from '../../../../types';
 //
 
-interface INumRange {
-  min: number;
-  max: number;
-}
-
 export default async function search(
   orgId: string,
   query: string | number,
@@ -30,7 +25,7 @@ export default async function search(
   const page = pagination?.page || 0;
 
   return {
-    contacts,
+    list: contacts,
     meta: {
       ...meta,
       page,

@@ -4,6 +4,8 @@ import { CustomerOpeningBalance } from '../../sales/customerOB/utils';
 //
 import { ContactModel, JournalEntryModel } from '../../../models';
 //
+import { transformDocFields } from '../search/subPipelines';
+//
 import { paymentTerms } from '../../../../constants';
 
 import {
@@ -170,7 +172,18 @@ export default class Contact {
       { session, new: true }
     );
 
-    const updatedContact = result as unknown as IContact;
+    const contactFields = result?.toJSON();
+
+    if (!contactFields) {
+      return null;
+    }
+
+    const openingBalance = +contactFields.openingBalance?.toString() || 0;
+
+    const updatedContact = {
+      ...contactFields,
+      openingBalance,
+    } as unknown as IContact;
 
     return updatedContact;
   }
@@ -223,15 +236,30 @@ export default class Contact {
   }
 
   //----------------------------------------------------------------
-  static async getById(contactId: string) {
-    const result = await ContactModel.findById(contactId).exec();
-    if (!result) {
+  static async getById(contactId: string, session?: ClientSession | null) {
+    const result = await ContactModel.aggregate<IContact>([
+      {
+        $match: {
+          _id: new ObjectId(contactId),
+          'metaData.status': 0,
+        },
+      },
+      {
+        $set: {
+          ...transformDocFields,
+        },
+      },
+    ]).session(session || null);
+
+    // console.log({ result });
+
+    const contact = result[0];
+
+    if (!contact) {
       return null;
     }
 
-    const customer = result.toJSON() as unknown as IContact;
-
-    return customer;
+    return contact;
   }
 
   //------------------------------------------------------------

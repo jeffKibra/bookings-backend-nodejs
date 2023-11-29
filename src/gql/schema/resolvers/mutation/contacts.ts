@@ -36,6 +36,7 @@ const mutationResolvers = {
     args: { id: string; formData: IContactForm },
     context: Required<IGQLContext>
   ) {
+    console.log('updating contact');
     const orgId = context?.orgId;
     const userUID = context.auth?.uid || '';
     //\
