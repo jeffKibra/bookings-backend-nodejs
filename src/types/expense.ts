@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 import {
   PaymentMode,
-  Account,
+  IAccount,
   ExpenseItem,
   IContactSummary,
   TransactionTypes,
@@ -19,7 +19,7 @@ export interface ExpenseFormData {
   reference: string;
   taxType: string;
   vendor?: IContactSummary;
-  paymentAccount: Account;
+  paymentAccount: IAccount;
   items: ExpenseItem[];
   expenseDate: Date;
   summary: ExpenseSummary;

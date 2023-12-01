@@ -1,5 +1,5 @@
 import { getFutureDate } from "../../../utils/dates";
-import { PaymentTerm } from "../../../types";
+import { PaymentTerm } from "../../../../../types";
 
 export default function deriveDueDate(
   paymentTerm: PaymentTerm,

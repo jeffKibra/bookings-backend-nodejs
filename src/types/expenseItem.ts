@@ -1,10 +1,10 @@
-import { Tax, Account } from ".";
+import { ITax, IAccount } from ".";
 
 export interface ExpenseItem {
   amount: number;
   details: string;
   itemRate: number;
   itemTax: number;
-  tax: Tax;
-  account: Account;
+  tax: ITax;
+  account: IAccount;
 }

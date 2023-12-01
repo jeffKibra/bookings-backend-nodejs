@@ -1,6 +1,6 @@
 import { getFirestore } from "firebase-admin/firestore";
 
-import { PaymentMode } from "../../types";
+import { PaymentMode } from "../../../../types";
 //------------------------------------------------------------
 const db = getFirestore();
 

@@ -1,7 +1,7 @@
-import { IContactSummary, IContact } from "../../types";
+import { IContactSummary, IContact } from "../../../../types";
 
 export function createSummary(contact: IContact): IContactSummary {
-  const { displayName, type, companyName, email, id, contactType } = contact;
+  const { displayName,_id } = contact;
 
-  return { displayName, type, companyName, email, id, contactType };
+  return { displayName, _id,  };
 }

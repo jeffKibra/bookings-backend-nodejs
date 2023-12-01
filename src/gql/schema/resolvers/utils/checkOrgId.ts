@@ -1,6 +1,6 @@
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
 //
-import { IGQLContext } from 'types';
+import { IGQLContext } from '../../../../types';
 
 export default function checkOrgId() {
   return (next: GraphQLFieldResolver<any, any, any>) => {
