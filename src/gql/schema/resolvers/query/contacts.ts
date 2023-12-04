@@ -19,6 +19,23 @@ const queryResolvers = {
     return contact;
   },
 
+  getContactSuggestions(
+    parent: unknown,
+    args: {
+      query: string | number;
+      contactGroup: string;
+    },
+    context: Required<IGQLContext>
+  ) {
+    const orgId = context.orgId;
+    //
+    const query = args?.query || '';
+    const contactGroup = args?.contactGroup || '';
+    console.log('search contacts group', contactGroup);
+
+    return services.contacts.autoComplete(orgId, query, contactGroup);
+  },
+
   searchContacts(
     parent: unknown,
     args: {

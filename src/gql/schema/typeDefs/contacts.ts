@@ -60,9 +60,21 @@ const typeDefs = `
         group: String
     }
 
+    type AutoCompleteContactSuggestion {
+        _id:String
+        type: String
+        firstName: String
+        lastName: String
+        companyName: String
+        displayName: String
+        paymentTerm: PaymentTerm
+        searchScore:Float
+    }
+
 
     extend type Query {
         contact(id:ID!):Contact
+        getContactSuggestions(query:ID, contactGroup:String): [AutoCompleteContactSuggestion]
         searchContacts(query:ID, queryOptions:ContactsQueryOptions):ContactsSearchResult!
     }
 

@@ -2,6 +2,7 @@ import { IAddress } from './address';
 import { ITax } from './tax';
 import { PaymentMode } from './paymentMode';
 import { PaymentTerm } from './paymentTerm';
+
 export interface IOrgSummary {
   orgId?: string;
   name?: string;
