@@ -16,6 +16,12 @@ const BookingSharedFields = `
     customerNotes:String
 `;
 
+const BookingInputFields = `
+    customer:ContactSummaryInput!
+    vehicle: BookingVehicleInput
+    ${BookingSharedFields}
+`;
+
 const typeDefs = `#graphql
 
     
@@ -38,9 +44,11 @@ const typeDefs = `#graphql
     }
 
     input BookingInput {
-        customer:ContactSummaryInput!
-        vehicle: BookingVehicleInput
-        ${BookingSharedFields}
+        ${BookingInputFields}
+    }
+
+    input BookingAndDownPaymentInput {
+        ${BookingInputFields}
         downPayment:DownPaymentInput!
     }
 
@@ -82,8 +90,8 @@ const typeDefs = `#graphql
     }
    
     extend type Mutation {
-        createBooking(formData:BookingInput!):String
-        updateBooking(id:ID!, formData:BookingInput!):Booking
+        createBooking(formData:BookingAndDownPaymentInput!):String
+        updateBooking(id:ID!, formData:BookingInput!):Invoice
         deleteBooking(id:ID!):String
     }
 `;

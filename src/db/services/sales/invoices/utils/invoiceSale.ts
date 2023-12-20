@@ -21,6 +21,7 @@ import {
   InvoicePayments,
   ISaleType,
 } from '../../../../../types';
+import InvoicesPayments from '../../paymentsReceived/utils/invoicesPayments';
 
 // ----------------------------------------------------------------
 
@@ -81,9 +82,9 @@ export default class InvoiceSale extends Sale {
     return account;
   }
 
-  async getCurrentInvoice() {
+  getCurrentInvoice() {
     const { orgId, session, invoiceId } = this;
-    
+
     return InvoiceSale.getById(orgId, invoiceId, session);
   }
 
@@ -173,6 +174,7 @@ export default class InvoiceSale extends Sale {
           },
         },
         {
+          new: true,
           session,
         }
       ),
@@ -184,9 +186,27 @@ export default class InvoiceSale extends Sale {
       ),
     ]);
 
-    const updatedInvoice = result as unknown as IInvoice;
+    const invoiceJSON = result?.toJSON() as IInvoiceFromDb;
 
-    return updatedInvoice;
+    const updatedInvoice = InvoiceSale.processRawInvoiceResult(invoiceJSON);
+
+    const paymentsResult = await InvoicesPayments.getInvoicePayments(
+      orgId,
+      invoiceId
+    );
+
+    const { list: payments, total: paymentsTotal } = paymentsResult;
+
+    const balance = new BigNumber(total).minus(paymentsTotal).dp(2).toNumber();
+
+    const processedInvoice: IInvoice = {
+      ...updatedInvoice,
+      balance,
+      payments,
+      paymentsTotal,
+    };
+
+    return processedInvoice;
   }
 
   async deleteInvoice(
@@ -253,6 +273,7 @@ export default class InvoiceSale extends Sale {
      * check if the invoice has payments
      */
     const { paymentsTotal } = invoice;
+    console.log('validating invoice deletion:', invoice);
 
     if (paymentsTotal > 0) {
       // deletion not allowed
@@ -262,7 +283,7 @@ export default class InvoiceSale extends Sale {
     }
   }
   //------------------------------------------------------------
-  static async validateUpdate(
+  static validateUpdate(
     currentInvoice: IInvoice,
     incomingInvoice: IInvoiceForm
     // session?: ClientSession | null
@@ -388,6 +409,25 @@ export default class InvoiceSale extends Sale {
   //   return total.dp(2).toNumber();
   // }
 
+  static processRawInvoiceResult(invoiceFromDb: IInvoiceFromDb) {
+    const subTotal = +invoiceFromDb.subTotal.toString();
+    const totalTax = +invoiceFromDb.totalTax?.toString();
+    const total = +invoiceFromDb.total.toString();
+    //
+    const _id = invoiceFromDb._id.toString();
+
+    const invoice: IInvoice = {
+      ...invoiceFromDb,
+      _id,
+      subTotal,
+      totalTax,
+      total,
+      balance: 0,
+    };
+
+    return invoice;
+  }
+
   static async getByIdRaw(invoiceId: string, session?: ClientSession | null) {
     console.log('getInvoice by id called');
     if (!invoiceId) {
@@ -397,33 +437,20 @@ export default class InvoiceSale extends Sale {
     console.log('executing getInvoice by id');
     // console.log('fetching vehicle for id ' + invoiceId);
 
-    const result = await InvoiceModel.findById(
-      invoiceId,
-      {},
-      { session }
-    ).exec();
+    const [result] = await Promise.all([
+      InvoiceModel.findById(invoiceId, {}, { session }).exec(),
+    ]);
     console.log({ result });
 
     if (!result) {
       return null;
     }
 
-    const invoiceJSON = result.toJSON();
-    const subTotal = +invoiceJSON.subTotal.toString();
-    const totalTax = +invoiceJSON.totalTax?.toString();
-    const total = +invoiceJSON.total.toString();
+    const invoiceJSON = result.toJSON() as IInvoiceFromDb;
+
+    const invoice = this.processRawInvoiceResult(invoiceJSON);
 
     //
-
-    const invoice: IInvoice = {
-      ...(invoiceJSON as unknown as IInvoice),
-      _id: invoiceId,
-      subTotal,
-      totalTax,
-      total,
-      balance: 0,
-    };
-    // as unknown as IInvoice;
     console.log({ invoice });
 
     return invoice;

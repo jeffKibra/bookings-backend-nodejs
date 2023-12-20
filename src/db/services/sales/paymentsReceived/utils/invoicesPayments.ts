@@ -16,6 +16,7 @@ import {
   IPaidInvoiceMapping,
   IPaidInvoice,
   IInvoicePayment,
+  IInvoicePaymentsResult,
 } from '../../../../../types';
 
 interface PaymentData {
@@ -155,7 +156,7 @@ export default class InvoicesPayments extends Accounts {
     // console.log({ account });
     const paymentAccount = formData.account;
 
-    const contact = formData.customer
+    const contact = formData.customer;
 
     const ARAccount = await this.getAccountData(ARAccountId);
     //
@@ -287,7 +288,7 @@ export default class InvoicesPayments extends Accounts {
     const { account: incomingAccount } = formData;
     const { accountId: incomingAccountId } = incomingAccount;
 
-    const contact = formData.customer
+    const contact = formData.customer;
 
     const ARAccount = await this.getAccountData(ARAccountId);
     //
@@ -536,66 +537,70 @@ export default class InvoicesPayments extends Accounts {
     invoiceId: string,
     session?: ClientSession | null
   ) {
-    const result = await PaymentReceivedModel.aggregate<{
-      list: IInvoicePayment[];
-      total: { value: number };
-    }>([
-      {
-        $match: {
-          'metaData.orgId': orgId,
-          'metaData.status': 0,
-          'paidInvoices.invoiceId': invoiceId,
-        },
-      },
-      {
-        $unwind: '$paidInvoices',
-      },
-      {
-        $match: {
-          'paidInvoices.invoiceId': invoiceId,
-        },
-      },
-      {
-        $project: {
-          paymentId: {
-            $toString: '$_id',
+    console.log({ orgId, invoiceId, session });
+    const result = await PaymentReceivedModel.aggregate<IInvoicePaymentsResult>(
+      [
+        {
+          $match: {
+            'metaData.orgId': orgId,
+            'metaData.status': 0,
+            'paidInvoices.invoiceId': invoiceId,
           },
-          amount: '$paidInvoices.amount',
         },
-      },
-      {
-        $facet: {
-          list: [],
-          total: [
-            {
-              $group: {
-                _id: null,
-                value: {
-                  $sum: '$amount',
+        {
+          $unwind: '$paidInvoices',
+        },
+        {
+          $match: {
+            'paidInvoices.invoiceId': invoiceId,
+          },
+        },
+        {
+          $project: {
+            paymentId: {
+              $toString: '$_id',
+            },
+            amount: '$paidInvoices.amount',
+          },
+        },
+        {
+          $facet: {
+            list: [],
+            total: [
+              {
+                $group: {
+                  _id: null,
+                  value: {
+                    $sum: '$amount',
+                  },
                 },
               },
-            },
-          ],
-        },
-      },
-      {
-        $set: {
-          total: {
-            $arrayElemAt: ['$total', 0],
+            ],
           },
         },
-      },
-    ]).session(session || null);
+        {
+          $set: {
+            total: {
+              $arrayElemAt: ['$total', 0],
+            },
+          },
+        },
+        {
+          $set: {
+            total: '$total.value',
+          },
+        },
+      ]
+    ).session(session || null);
 
-    console.log({ result });
+    console.log(`invoice ${invoiceId} payments result: `, result);
 
     const list = result[0]?.list || [];
-    const total = result[0]?.total?.value || 0;
+    const total = result[0]?.total || 0;
 
-    return {
-      list,
-      total,
-    };
+    const invoicePayments: IInvoicePaymentsResult = { list, total };
+
+    return invoicePayments;
   }
   //------------------------------------------------------------
   // static createContactFromCustomer(customer: IContactSummary) {

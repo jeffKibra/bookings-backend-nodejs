@@ -13,9 +13,9 @@ const mutationResolvers = {
     //
     const formData = args?.formData;
 
-    console.log('booking form Data', formData);
+    console.log('invoice form Data', formData);
 
-    // await services.bookings.create(userUID, orgId, formData);
+    // await services.invoices.create(userUID, orgId, formData);
     await services.sales.invoices.create(userUID, orgId, formData);
   },
 
@@ -27,13 +27,13 @@ const mutationResolvers = {
     const orgId = context?.orgId;
     const userUID = context.auth?.uid || '';
     //\
-    const bookingId = args?.id;
+    const invoiceId = args?.id;
     const formData = args?.formData;
 
     const updatedInvoice = await services.sales.invoices.update(
       userUID,
       orgId,
-      bookingId,
+      invoiceId,
       formData
     );
 
@@ -47,9 +47,10 @@ const mutationResolvers = {
     const orgId = context?.orgId;
     const userUID = context.auth?.uid || '';
     //
-    const bookingId = args?.id;
+    const invoiceId = args?.id;
+    // console.log('delete invoice resolver', { orgId, userUID, invoiceId });
 
-    await services.sales.invoices.archive(userUID, orgId, bookingId);
+    await services.sales.invoices.archive(userUID, orgId, invoiceId);
   },
 };
 

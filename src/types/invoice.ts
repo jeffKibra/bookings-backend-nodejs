@@ -1,3 +1,5 @@
+import { Decimal128, ObjectId } from 'mongodb';
+
 import {
   IBookingForm,
   InvoiceTransactionTypes,
@@ -56,15 +58,32 @@ export interface IInvoicePayment {
   amount: number;
 }
 
-export interface IInvoiceFromDb extends IInvoiceForm {
+export interface IInvoicePaymentsResult {
+  list: IInvoicePayment[];
+  total: number;
+}
+
+export interface IInvoiceFromDb
+  extends Omit<IInvoiceForm, 'subTotal' | 'totalTax' | 'total'> {
   payments?: IInvoicePayment[];
   paymentsTotal: number;
   balance: number;
   metaData: IMeta;
+  //
+  _id: ObjectId;
+  //
+  subTotal: Decimal128;
+  totalTax: Decimal128;
+  total: Decimal128;
 }
 
-export interface IInvoice extends IInvoiceFromDb {
+export interface IInvoice
+  extends Omit<IInvoiceFromDb, 'subTotal' | 'totalTax' | 'total' | '_id'> {
   _id: string;
+  //
+  subTotal: number;
+  totalTax: number;
+  total: number;
 }
 
 export interface IInvoiceSummary

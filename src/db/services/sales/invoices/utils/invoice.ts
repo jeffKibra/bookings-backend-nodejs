@@ -99,8 +99,6 @@ export default class Invoice extends InvoiceSale {
   }
 
   async delete() {
-    const { orgId } = this;
-
     const currentInvoice = await this.getCurrentInvoice();
 
     InvoiceSale.validateDelete(currentInvoice);
@@ -112,12 +110,13 @@ export default class Invoice extends InvoiceSale {
      * delete invoice
      */
 
-    await this.deleteInvoice(
+    const result = await this.deleteInvoice(
       currentInvoice,
       creditAccountsMapping.deletedAccounts,
       debitAccountsMapping.deletedAccounts
     );
-    // console.log({ accountsSummary, accountsMapping });
+
+    return result;
   }
 
   //-------------------------------------------------------------

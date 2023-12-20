@@ -5,8 +5,8 @@ import { Invoice } from './utils';
 //------------------------------------------------------------
 
 export default async function archive(
-  orgId: string,
   userUID: string,
+  orgId: string,
   invoiceId: string
 ) {
   const session = await startSession();

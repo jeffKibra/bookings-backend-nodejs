@@ -8,6 +8,7 @@ export default async function search(
   orgId: string,
   options?: IInvoicesQueryOptions
 ) {
+  console.log('list invoices options', options);
   const pagination = options?.pagination;
   // console.log('pagination', pagination);
 
