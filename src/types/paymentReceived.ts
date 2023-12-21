@@ -1,4 +1,5 @@
-import { Timestamp } from 'firebase-admin/firestore';
+import { Decimal128, ObjectId } from 'mongodb';
+
 import {
   IContactSummary,
   IAccountSummary,
@@ -6,12 +7,13 @@ import {
   TransactionTypes,
   IInvoice,
   IBooking,
+  ISearchQueryOptions,
 } from '.';
 
 interface IMeta {
-  createdAt: Date | Timestamp;
+  createdAt: Date | string;
   createdBy: string;
-  modifiedAt: Date | Timestamp;
+  modifiedAt: Date | string;
   modifiedBy: string;
   status: number;
   orgId: string;
@@ -19,8 +21,12 @@ interface IMeta {
   // paidInvoicesIds: string[];
 }
 
-export interface IPaidInvoice {
+export interface IPaidInvoiceFromDb {
   invoiceId: string;
+  amount: Decimal128;
+}
+
+export interface IPaidInvoice extends Omit<IPaidInvoiceFromDb, 'amount'> {
   amount: number;
 }
 
@@ -35,13 +41,18 @@ export interface IPaymentReceivedForm {
   // payments: { [key: string]: number };
 }
 
-export interface IPaymentReceivedFromDb extends IPaymentReceivedForm {
+export interface IPaymentReceived extends IPaymentReceivedForm {
+  _id: string;
   excess: number;
   metaData: IMeta;
 }
 
-export interface IPaymentReceived extends IPaymentReceivedFromDb {
-  paymentId: string;
+export interface IPaymentReceivedFromDb
+  extends Omit<IPaymentReceived, '_id' | 'amount' | 'excess' | 'paidInvoices'> {
+  _id: ObjectId;
+  amount: Decimal128;
+  excess: Decimal128;
+  paidInvoices: IPaidInvoiceFromDb[];
 }
 
 export interface IPaidInvoiceMapping {
@@ -61,3 +72,5 @@ export interface PaymentWithInvoices extends IPaymentReceived {
 // export interface IPaymentWithBookings extends PaymentReceived {
 //   bookings: IBooking[];
 // }
+
+export interface IPaymentsReceivedQueryOptions extends ISearchQueryOptions {}

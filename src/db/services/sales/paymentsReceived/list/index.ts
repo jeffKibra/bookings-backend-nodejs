@@ -1,14 +1,14 @@
 //
 import getResult from './getResult';
 //
-import { IInvoicesQueryOptions } from '../../../../../types';
+import { IPaymentsReceivedQueryOptions } from '../../../../../types';
 //
 
 export default async function list(
   orgId: string,
-  options?: IInvoicesQueryOptions
+  options?: IPaymentsReceivedQueryOptions
 ) {
-  console.log('list invoices options', options);
+  console.log('list paymentsReceived options', options);
   const pagination = options?.pagination;
   // console.log('pagination', pagination);
 
@@ -22,21 +22,21 @@ export default async function list(
   const result = await getResult(orgId, options, retrieveFacets);
   console.log('result', result);
 
-  const { invoices, meta: resultMeta } = result[0];
+  const { paymentsReceived, meta: resultMeta } = result[0];
   const meta = resultMeta || { facets: {} };
 
-  // invoices.forEach(invoice => {
+  // paymentsReceived.forEach(invoice => {
   //   const { _id, payments } = invoice;
   //   console.log('invoiceId', _id);
   //   console.log('payments', payments);
   // });
-  console.log('searched invoices', invoices);
+  console.log('listed paymentsReceived', paymentsReceived);
   console.log('meta', meta);
 
   const page = pagination?.page || 0;
 
   return {
-    list: invoices,
+    list: paymentsReceived,
     meta: {
       ...meta,
       page,

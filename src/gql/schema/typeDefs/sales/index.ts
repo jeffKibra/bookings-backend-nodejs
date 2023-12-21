@@ -12,6 +12,7 @@ import {
 //
 import bookingsTypeDefs from './bookings';
 import invoicesTypeDefs from './invoices';
+import paymentsReceivedTypeDefs from './paymentsReceived';
 //
 
 const common = `
@@ -64,6 +65,11 @@ const common = `
 
 `;
 
-const salesTypeDefs = [common, bookingsTypeDefs, invoicesTypeDefs];
+const salesTypeDefs = [
+  common,
+  bookingsTypeDefs,
+  invoicesTypeDefs,
+  paymentsReceivedTypeDefs,
+];
 
 export default salesTypeDefs;

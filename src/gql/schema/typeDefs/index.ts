@@ -3,7 +3,13 @@ import vehiclesTypeDefs from './vehicles';
 import salesTypeDefs from './sales';
 import contactsTypeDefs from './contacts';
 
-import { SearchMetaCommonFields, AddressFields } from './templates';
+import {
+  SearchMetaCommonFields,
+  AddressFields,
+  AccountCommonFields,
+  AccountInputCommonFields,
+  AccountTypeFields,
+} from './templates';
 
 const paymentTermFormFields = `
     name:String!
@@ -23,7 +29,30 @@ const paymentModeFields = `
     _id:String!
 `;
 
+//
+export const AccountInputFields = `
+    ${AccountCommonFields}
+`;
+
+export const AccountFields = `
+    ${AccountCommonFields}
+`;
+
 const mainTypeDefs = `#graphql
+    input AccountTypeInput {
+        ${AccountTypeFields}
+    }
+    type AccountType {
+        ${AccountTypeFields}
+    }
+
+    input SelectedAccountInput {
+        ${AccountInputCommonFields}
+    }
+    type SelectedAccount {
+        ${AccountCommonFields}
+    }
+
     input SortByInput{
         field:String
         direction:String

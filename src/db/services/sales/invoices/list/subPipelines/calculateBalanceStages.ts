@@ -40,21 +40,22 @@ export default function calculateBalanceStages(orgId: string) {
             },
           },
         ],
-        as: 'payments',
+        as: 'paymentsTotal',
       },
     },
     {
       $set: {
-        payments: {
-          $arrayElemAt: ['$payments', 0],
+        paymentsTotal: {
+          $arrayElemAt: ['$paymentsTotal', 0],
         },
       },
     },
     {
       $set: {
         balance: {
-          $subtract: ['$total', '$payments.total'],
+          $subtract: ['$total', '$paymentsTotal.total'],
         },
+        paymentsTotal: '$paymentsTotal.total',
       },
     },
   ];

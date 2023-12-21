@@ -371,6 +371,12 @@ export default class InvoiceSale extends Sale {
 
     const balance = new BigNumber(total).minus(paymentsTotal).dp(2).toNumber();
 
+    // console.log('get invoice by id payments result', {
+    //   balance,
+    //   paymentsTotal,
+    //   total,
+    // });
+
     const processedInvoice: IInvoice = {
       ...invoice,
       balance,

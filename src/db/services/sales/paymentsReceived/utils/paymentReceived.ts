@@ -15,7 +15,7 @@ import {
   IPaymentReceivedForm,
   IPaymentReceivedFromDb,
   TransactionTypes,
-  IPaymentReceived as IPaymentReceived,
+  IPaymentReceived,
 } from '../../../../../types';
 
 interface PaymentData {
@@ -29,7 +29,7 @@ interface PaymentData {
 export default class PaymentReceived extends InvoicesPayments {
   transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
 
-  constructor(session: ClientSession, paymentData: PaymentData) {
+  constructor(session: ClientSession | null, paymentData: PaymentData) {
     const { orgId, userId, paymentId } = paymentData;
 
     super(session, { orgId, userId, paymentId });
@@ -175,7 +175,7 @@ export default class PaymentReceived extends InvoicesPayments {
   }
 
   protected async _update(
-    data: IPaymentReceivedForm | Partial<IPaymentReceivedFromDb>
+    data: IPaymentReceivedForm | Partial<IPaymentReceived>
   ) {
     const { session, paymentId, userId } = this;
 
@@ -288,13 +288,60 @@ export default class PaymentReceived extends InvoicesPayments {
 
   //------------------------------------------------------------
   static async fetchPaymentData(paymentId: string) {
-    const result = await PaymentReceivedModel.findById(paymentId).exec();
+    const result = await PaymentReceivedModel.aggregate([
+      {
+        $match: {
+          _id: new ObjectId(paymentId),
+        },
+      },
+      {
+        $unwind: '$paidInvoices',
+      },
+      {
+        $set: {
+          'paidInvoices.amount': {
+            $toDouble: '$paidInvoices.amount',
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          paidInvoices: {
+            $push: '$paidInvoices',
+          },
+          original: {
+            $mergeObjects: '$$ROOT',
+          },
+        },
+      },
+      {
+        $replaceWith: {
+          $mergeObjects: [{}, '$original', { paidInvoices: '$paidInvoices' }],
+        },
+      },
+      {
+        $set: {
+          _id: {
+            $toString: '$_id',
+          },
+          amount: {
+            $toDouble: '$amount',
+          },
+          excess: {
+            $toDouble: '$excess',
+          },
+        },
+      },
+    ]);
+    // findById(paymentId).exec();
 
-    if (!result) {
+    if (result.length === 0) {
       return null;
     }
 
-    const paymentData = result as unknown as IPaymentReceived;
+    const paymentData = result[0] as IPaymentReceived;
+
 
     return paymentData;
   }

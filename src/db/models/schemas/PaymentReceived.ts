@@ -16,17 +16,18 @@ const PaymentMetaDataSchema = new Schema({
 
 const PaidInvoiceSchema = new Schema({
   invoiceId: { type: String, required: true },
-  amount: { type: Number, required: true },
+  amount: { type: Schema.Types.Decimal128, required: true },
+  // amount: { type: Number, required: true },
 });
 
 const schema = new Schema({
   customer: { type: ContactSummarySchema, required: true },
-  amount: { type: Number, required: true },
+  amount: { type: Schema.Types.Decimal128, required: true },
   paymentDate: { type: Date, required: true },
   paymentMode: { type: PaymentModeSummarySchema, required: true },
   reference: String,
   paidInvoices: { type: [PaidInvoiceSchema], required: true },
-  excess: { type: Number, required: true },
+  excess: { type: Schema.Types.Decimal128, required: true },
   account: { type: AccountSummarySchema, required: true },
   //
   metaData: { type: PaymentMetaDataSchema },

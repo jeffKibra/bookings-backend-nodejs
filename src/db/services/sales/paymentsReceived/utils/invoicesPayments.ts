@@ -33,13 +33,13 @@ const {
 
 export default class InvoicesPayments extends Accounts {
   //
-  session: ClientSession;
+  session: ClientSession | null;
   orgId: string;
   userId: string;
   paymentId: string;
   transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
 
-  constructor(session: ClientSession, paymentData: PaymentData) {
+  constructor(session: ClientSession | null, paymentData: PaymentData) {
     const { orgId, userId, paymentId } = paymentData;
 
     super(session, orgId);
@@ -537,7 +537,7 @@ export default class InvoicesPayments extends Accounts {
     invoiceId: string,
     session?: ClientSession | null
   ) {
-    console.log({ orgId, invoiceId, session });
+    // console.log({ orgId, invoiceId, session });
     const result = await PaymentReceivedModel.aggregate<IInvoicePaymentsResult>(
       [
         {
@@ -560,7 +560,10 @@ export default class InvoicesPayments extends Accounts {
             paymentId: {
               $toString: '$_id',
             },
-            amount: '$paidInvoices.amount',
+            amountRaw: '$paidInvoices.amount',
+            amount: {
+              $toDouble: '$paidInvoices.amount',
+            },
           },
         },
         {
@@ -571,7 +574,7 @@ export default class InvoicesPayments extends Accounts {
                 $group: {
                   _id: null,
                   value: {
-                    $sum: '$amount',
+                    $sum: '$amountRaw', //use raw since type is maintained at Decimal128
                   },
                 },
               },
@@ -587,13 +590,15 @@ export default class InvoicesPayments extends Accounts {
         },
         {
           $set: {
-            total: '$total.value',
+            total: {
+              $toDouble: '$total.value',
+            },
           },
         },
       ]
     ).session(session || null);
 
-    console.log(`invoice ${invoiceId} payments result: `, result);
+    // console.log(`invoice ${invoiceId} payments result: `, result);
 
     const list = result[0]?.list || [];
     const total = result[0]?.total || 0;

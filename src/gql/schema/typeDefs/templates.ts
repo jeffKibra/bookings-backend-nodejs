@@ -1,8 +1,8 @@
 export const OrgMetaDataFields = `
     createdBy: String!
-    createdAt: Int!
+    createdAt: String!
     modifiedBy: String!
-    modifiedAt: Int!
+    modifiedAt: String!
     status:Int!
 `;
 
@@ -26,4 +26,28 @@ export const AddressFields = `
   postalCode: String
   state: String
   street: String
+`;
+
+export const AccountTypeFields = `
+    name: String!
+    main: String!
+    _id: String!
+`;
+
+export const AccountSharedFields = `
+    _id: String!
+    name: String!
+    accountId: String!
+    description: String
+`;
+
+export const AccountInputCommonFields = `
+    ${AccountSharedFields}
+    accountType: AccountTypeInput
+
+`;
+
+export const AccountCommonFields = `
+    ${AccountSharedFields}
+    accountType: AccountType
 `;

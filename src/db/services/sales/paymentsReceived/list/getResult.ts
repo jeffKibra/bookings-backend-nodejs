@@ -1,10 +1,13 @@
 import { PipelineStage } from 'mongoose';
-import { BookingModel, InvoiceModel } from '../../../../models';
+import { PaymentReceivedModel } from '../../../../models';
 //
-import { generateSearchStages, calculateBalanceStages } from './subPipelines';
+import { generateSearchStages } from './subPipelines';
 import { pagination, sort } from '../../../utils';
 //
-import { IInvoice, IInvoicesQueryOptions } from '../../../../../types';
+import {
+  IPaymentReceived,
+  IPaymentsReceivedQueryOptions,
+} from '../../../../../types';
 //
 
 // type FacetPipelineStage = PipelineStage.FacetPipelineStage;
@@ -17,7 +20,7 @@ const { generateLimit } = pagination;
 
 export default async function getResult(
   orgId: string,
-  options?: IInvoicesQueryOptions,
+  options?: IPaymentsReceivedQueryOptions,
   retrieveFacets?: boolean
 ) {
   const [sortByField, sortByDirection] = generateSortBy('', options?.sortBy);
@@ -33,8 +36,6 @@ export default async function getResult(
   //   retrieveFacets
   // );
 
-  const balanceStages = calculateBalanceStages(orgId);
-
   const page = pagination?.page || 0;
   const limit = generateLimit(pagination);
   const offset = Number(page) * limit;
@@ -42,13 +43,13 @@ export default async function getResult(
 
   // aggregation to fetch items not booked.
   // <{
-  //   invoices: IInvoice[];
+  //   paymentsReceived: IPaymentReceived[];
   //   meta: {
   //     count: number;
   //   };
   // }>
-  return InvoiceModel.aggregate<{
-    invoices: IInvoice[];
+  return PaymentReceivedModel.aggregate<{
+    paymentsReceived: IPaymentReceived[];
     meta: {
       count: number;
     };
@@ -61,38 +62,19 @@ export default async function getResult(
       },
     },
 
-    {
-      $set: {
-        _id: {
-          $toString: '$_id',
-        },
-      },
-    },
-
-    ...balanceStages,
-
-    {
-      $set: {
-        _id: {
-          $toString: '$_id',
-        },
-        totalTax: {
-          $toDouble: '$totalTax',
-        },
-        subTotal: {
-          $toDouble: '$subTotal',
-        },
-        total: {
-          $toDouble: '$total',
-        },
-        paymentsTotal: {
-          $toDouble: '$paymentsTotal',
-        },
-        balance: {
-          $toDouble: '$balance',
-        },
-      },
-    },
+    // {
+    //   $set: {
+    //     _id: {
+    //       $toString: '$_id',
+    //     },
+    //     amount: {
+    //       $toDouble: '$amount',
+    //     },
+    //     excess: {
+    //       $toDouble: '$excess',
+    //     },
+    //   },
+    // },
 
     {
       $sort: {
@@ -103,7 +85,7 @@ export default async function getResult(
 
     {
       $facet: {
-        invoices: [
+        paymentsReceived: [
           {
             $skip: offset,
           },
@@ -111,25 +93,52 @@ export default async function getResult(
             //limit items returned
             $limit: limit,
           },
+
+          {
+            $set: {
+              _id: {
+                $toString: '$_id',
+              },
+              amount: {
+                $toDouble: '$amount',
+              },
+              excess: {
+                $toDouble: '$excess',
+              },
+              paidInvoices: [],
+            },
+          },
         ],
         count: [
           {
             $count: 'value',
           },
         ],
+        // meta: [
+        //   {
+        //     //must be used before a lookup
+        //     $replaceWith: '$$SEARCH_META',
+        //   },
+        //   {
+        //     $limit: 1,
+        //   },
+        // ], //use only if we have a search stage in the pipeline
       },
     },
+
     {
       //change count field from array to object
       $set: {
         count: { $arrayElemAt: ['$count', 0] },
       },
     },
+
     {
       //format metadata
       $project: {
-        invoices: 1,
+        paymentsReceived: 1,
         meta: {
+          // count: '$meta.count.lowerBound',//use only if is previously initialized
           count: '$count.value',
         },
       },
