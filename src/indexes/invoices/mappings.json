@@ -1,0 +1,29 @@
+{
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "customer": {
+        "fields": {
+          "_id": {
+            "type": "string"
+          }
+        },
+        "type": "document"
+      },
+      "metaData": {
+        "fields": {
+          "orgId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "number"
+          },
+          "transactionType": {
+            "type": "string"
+          }
+        },
+        "type": "document"
+      }
+    }
+  }
+}
