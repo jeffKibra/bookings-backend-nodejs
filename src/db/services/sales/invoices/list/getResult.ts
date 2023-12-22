@@ -30,9 +30,8 @@ export default async function getResult(
   console.log('list invoices getResult fn options', options);
   console.log('list invoices getResult fn filters', filters);
 
-  const searchPipelineStages = generateSearchStages(orgId, {
+  const searchPipelineStages = generateSearchStages(orgId, customerId, {
     ...filters,
-    customerId: [customerId],
   });
 
   const balanceStages = calculateBalanceStages(orgId);
@@ -56,12 +55,12 @@ export default async function getResult(
     };
   }>([
     ...searchPipelineStages,
-    {
-      $match: {
-        'metaData.status': 0,
-        'metaData.orgId': orgId,
-      },
-    },
+    // {
+    //   $match: {
+    //     'metaData.status': 0,
+    //     'metaData.orgId': orgId,
+    //   },
+    // },
 
     {
       $set: {

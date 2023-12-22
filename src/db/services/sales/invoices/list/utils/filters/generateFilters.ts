@@ -3,12 +3,11 @@ import { filters } from '../../../../../utils';
 
 const { generateQueryStringFilter, generateRangeFilter } = filters;
 
-const filterFields = ['customerId'];
-
-type Filters = {};
+const filterFields: string[] = [];
 
 export default function generateFilters(
   orgId: string,
+  customerId?: string,
   userFilters?: Record<string, (string | number | Date)[]>
 ) {
   const filters: Record<string, unknown>[] = [
@@ -24,6 +23,16 @@ export default function generateFilters(
         value: 0,
       },
     },
+    ...(customerId
+      ? [
+          {
+            text: {
+              path: 'customer._id',
+              query: customerId,
+            },
+          },
+        ]
+      : []),
     // {
     //   equals: {
     //     path: 'metaData.deleted',
@@ -47,16 +56,7 @@ export default function generateFilters(
         } else {
           let fieldPrefix = '';
 
-          if (field === 'customerId') {
-            fieldPrefix = 'customer.';
-
-            filter = generateQueryStringFilter(`${fieldPrefix}_id`, values);
-          } else {
-            filter = generateQueryStringFilter(
-              `${fieldPrefix}${field}`,
-              values
-            );
-          }
+          filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
         }
 
         filters.push(filter);

@@ -10,10 +10,11 @@ import {
 
 export default function generateSearchStages(
   orgId: string,
+  customerId?: string,
   userFilters?: Record<string, (string | number | Date)[]>
   // sortOptions?: ISortOptions
 ) {
-  const filters = generateFilters(orgId, userFilters);
+  const filters = generateFilters(orgId, customerId, userFilters);
   console.log('filters', filters);
 
   const compoundOperators = {
