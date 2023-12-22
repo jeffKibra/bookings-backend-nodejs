@@ -10,34 +10,13 @@ import {
 
 export default function generateSearchStages(
   orgId: string,
-  query: string | number,
-  userFilters?: Record<string, (string | number | Date)[]>,
-  retrieveFacets = false
+  userFilters?: Record<string, (string | number | Date)[]>
   // sortOptions?: ISortOptions
 ) {
   const filters = generateFilters(orgId, userFilters);
   console.log('filters', filters);
 
   const compoundOperators = {
-    // must: [
-    //   ...(query
-    //     ? [
-    //         {
-    //           text: {
-    //             path: [
-    //               'items.name',
-    //               // 'items.details.make',
-    //               // 'model.model',
-    //               // 'color',
-    //               // 'description',
-    //             ],
-    //             query,
-    //             fuzzy: {},
-    //           },
-    //         },
-    //       ]
-    //     : []),
-    // ],
     filter: [...filters],
   };
 
@@ -46,33 +25,7 @@ export default function generateSearchStages(
   const stages: PipelineStage[] = [
     {
       $search: {
-        ...(retrieveFacets
-          ? {
-              facet: {
-                operator: {
-                  compound: compoundOperators,
-                },
-                facets: {
-                  // makesFacet: {
-                  //   type: 'string',
-                  //   path: 'make',
-                  // },
-                  modelsFacet: {
-                    type: 'string',
-                    path: 'items.vehicle.model.model',
-                  },
-                  typesFacet: {
-                    type: 'string',
-                    path: 'items.vehicle.model.type',
-                  },
-                  // colorsFacet: {
-                  //   type: 'string',
-                  //   path: 'color',
-                  // },
-                },
-              },
-            }
-          : { compound: compoundOperators }),
+        compound: compoundOperators,
 
         // sort: {
         //   // unused: { $meta: 'searchScore' }, //defaults to desc add order:1 for asc

@@ -25,13 +25,15 @@ export default async function getResult(
   const pagination = options?.pagination;
   //   console.log('pagination', pagination);
   const filters = options?.filters;
+  const customerId = options?.customerId || '';
 
-  // const searchPipelineStages = generateSearchStages(
-  //   orgId,
-  //   query,
-  //   filters,
-  //   retrieveFacets
-  // );
+  console.log('list invoices getResult fn options', options);
+  console.log('list invoices getResult fn filters', filters);
+
+  const searchPipelineStages = generateSearchStages(orgId, {
+    ...filters,
+    customerId: [customerId],
+  });
 
   const balanceStages = calculateBalanceStages(orgId);
 
@@ -53,7 +55,7 @@ export default async function getResult(
       count: number;
     };
   }>([
-    // ...searchPipelineStages,
+    ...searchPipelineStages,
     {
       $match: {
         'metaData.status': 0,

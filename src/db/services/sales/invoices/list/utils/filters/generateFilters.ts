@@ -3,7 +3,7 @@ import { filters } from '../../../../../utils';
 
 const { generateQueryStringFilter, generateRangeFilter } = filters;
 
-const filterFields = ['make', 'model', 'type', 'color', 'rate'];
+const filterFields = ['customerId'];
 
 type Filters = {};
 
@@ -35,6 +35,7 @@ export default function generateFilters(
   if (userFilters && typeof userFilters === 'object') {
     filterFields.forEach(field => {
       const values = userFilters[field];
+
       if (Array.isArray(values) && values.length > 0) {
         let filter = {};
 
@@ -46,12 +47,16 @@ export default function generateFilters(
         } else {
           let fieldPrefix = '';
 
-          const isModelField = field === 'model' || field === 'type';
-          if (isModelField) {
-            fieldPrefix = 'model.';
-          }
+          if (field === 'customerId') {
+            fieldPrefix = 'customer.';
 
-          filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
+            filter = generateQueryStringFilter(`${fieldPrefix}_id`, values);
+          } else {
+            filter = generateQueryStringFilter(
+              `${fieldPrefix}${field}`,
+              values
+            );
+          }
         }
 
         filters.push(filter);
@@ -59,7 +64,7 @@ export default function generateFilters(
     });
   }
 
-  console.log('search vehicles aggregation pipeline filters: ', filters);
+  console.log('list invoices aggregation pipeline filters: ', filters);
 
   return filters;
 }

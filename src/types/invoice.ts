@@ -97,4 +97,6 @@ export interface IInvoiceSummary
   // total: IInvoice['total'];
 }
 
-export interface IInvoicesQueryOptions extends ISearchQueryOptions {}
+export interface IInvoicesQueryOptions extends ISearchQueryOptions {
+  customerId?: string;
+}

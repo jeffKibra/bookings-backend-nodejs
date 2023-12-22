@@ -56,10 +56,15 @@ const typeDefs = `#graphql
         ${ListMetaCommonFields}
     }
 
+    input PaymentReceivedFilters {
+        invoiceId: String
+    }
+
     input PaymentsReceivedQueryOptions {
         customerId:String
         sortBy:[String!]
         pagination:Pagination
+        filters: PaymentReceivedFilters
     }
 
     type PaymentsReceivedResult {

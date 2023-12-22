@@ -29,7 +29,7 @@ const queryResolvers = {
     const orgId = context.orgId;
     //
     const options = args?.options;
-    console.log('search invoices options', options);
+    console.log('list invoices resolver options ', options);
 
     return services.sales.invoices.list(orgId, options);
   },
