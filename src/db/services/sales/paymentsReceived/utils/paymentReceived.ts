@@ -13,9 +13,11 @@ import { Accounts } from '../../../accounts';
 import {
   IAccountSummary,
   IPaymentReceivedForm,
+  IUserPaymentReceivedForm,
   IPaymentReceivedFromDb,
   TransactionTypes,
   IPaymentReceived,
+  IPaymentAllocation,
 } from '../../../../../types';
 
 interface PaymentData {
@@ -49,22 +51,20 @@ export default class PaymentReceived extends InvoicesPayments {
     return payment;
   }
 
-  async create(formData: IPaymentReceivedForm) {
+  async create(formData: IUserPaymentReceivedForm) {
     const { session, orgId, userId, transactionType, paymentId } = this;
     console.log({ formData });
 
     // console.log({ data, orgId, userProfile });
-    const { paidInvoices, amount } = formData;
+    const { allocations: userAllocations, amount } = formData;
 
-    const paymentsTotal = PaymentReceived.validateInvoicesPayments(
+    const { excess, allocations } = PaymentReceived.validateInvoicesPayments(
       amount,
-      paidInvoices
+      userAllocations
     );
-    if (paymentsTotal > amount) {
-      throw new Error(
-        "Invoices payments cannot be more than the customer's payment!"
-      );
-    }
+
+    const incomingPayment: IPaymentReceivedForm = { ...formData, allocations };
+
     // console.log({ paymentsTotal, excess });
 
     /**
@@ -75,12 +75,11 @@ export default class PaymentReceived extends InvoicesPayments {
     /**
      * create overpayment
      */
-    const excess = new BigNumber(amount - paymentsTotal).dp(2).toNumber();
 
     const overpayCB = this.overpay;
     function overpay() {
       if (excess > 0) {
-        return overpayCB(excess, 0, formData);
+        return overpayCB(excess, 0, incomingPayment);
       }
     }
 
@@ -89,17 +88,17 @@ export default class PaymentReceived extends InvoicesPayments {
      */
 
     const instance = new PaymentReceivedModel({
-      ...formData,
+      ...incomingPayment,
       _id: new ObjectId(paymentId),
-      excess,
+      // excess,
       metaData: {
         status: 0,
         orgId,
         createdBy: userId,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(),
         modifiedBy: userId,
-        modifiedAt: new Date().toISOString(),
-        transactionType,
+        modifiedAt: new Date(),
+        // transactionType,
       },
     });
 
@@ -108,7 +107,7 @@ export default class PaymentReceived extends InvoicesPayments {
       /**
        * make the needed invoice payments
        */
-      this.makePayments(formData),
+      this.makePayments(incomingPayment),
       overpay(),
     ]);
 
@@ -117,42 +116,41 @@ export default class PaymentReceived extends InvoicesPayments {
 
   //------------------------------------------------------------
   async update(
-    incomingPayment: IPaymentReceivedForm,
+    formData: IUserPaymentReceivedForm,
     currentPayment: IPaymentReceived
   ) {
-    console.log({ incomingPayment, currentPayment });
+    console.log({ formData, currentPayment });
     const { session, userId, paymentId } = this;
-    const { paidInvoices: incomingPayments, amount: incomingAmount } =
-      incomingPayment;
+    const { allocations: incomingUserAllocations, amount: incomingAmount } =
+      formData;
 
-    const incomingPaymentsTotal = PaymentReceived.validateInvoicesPayments(
-      incomingAmount,
-      incomingPayments
-    );
+    const { allocations: incomingAllocations, excess: incomingExcess } =
+      PaymentReceived.validateInvoicesPayments(
+        incomingAmount,
+        incomingUserAllocations
+      );
+    const incomingPayment: IPaymentReceivedForm = {
+      ...formData,
+      allocations: incomingAllocations,
+    };
 
-    const { amount: currentAmount, paidInvoices: currentPayments } =
+    const { amount: currentAmount, allocations: currentUserAllocations } =
       currentPayment;
-    const currentPaymentsTotal = PaymentReceived.validateInvoicesPayments(
-      currentAmount,
-      currentPayments
-    );
+    // const { allocations: currentAllocations, excess: currentExcess } =
+    //   PaymentReceived.validateInvoicesPayments(
+    //     currentAmount,
+    //     currentUserAllocations
+    //   );
 
     /**
      * excess amount - credit account with the excess amount
      */
-    const incomingExcess = new BigNumber(incomingAmount - incomingPaymentsTotal)
-      .dp(2)
-      .toNumber();
-    const currentExcess = new BigNumber(currentAmount - currentPaymentsTotal)
-      .dp(2)
-      .toNumber();
-
-    const overpayCB = this.overpay;
-    function overpay() {
-      if (incomingExcess > 0 || currentExcess > 0) {
-        return overpayCB(incomingExcess, currentExcess, incomingPayment);
-      }
-    }
+    // const overpayCB = this.overpay;
+    // function overpay() {
+    //   if (incomingExcess > 0 || currentExcess > 0) {
+    //     return overpayCB(incomingExcess, currentExcess, incomingPayment);
+    //   }
+    // }
 
     /**
      * update payment
@@ -160,13 +158,13 @@ export default class PaymentReceived extends InvoicesPayments {
     const [updatedPayment] = await Promise.all([
       this._update({
         ...incomingPayment,
-        excess: incomingExcess,
+        // excess: incomingExcess,
       }),
       /**
        * update invoice payments
        */
       this.makePayments(incomingPayment, currentPayment),
-      overpay(),
+      // overpay(),
     ]);
 
     // console.log({ transactionDetails });
@@ -185,7 +183,7 @@ export default class PaymentReceived extends InvoicesPayments {
         $set: {
           ...data,
           'metaData.modifiedBy': userId,
-          'metaData.modifiedAt': new Date().toISOString(),
+          'metaData.modifiedAt': new Date(),
         },
       },
       {
@@ -202,20 +200,20 @@ export default class PaymentReceived extends InvoicesPayments {
 
   //------------------------------------------------------------
   async delete(paymentData: IPaymentReceived) {
-    const { paidInvoices, amount } = paymentData;
-    const paymentsTotal = PaymentReceived.getPaymentsTotal(paidInvoices);
+    const { allocations, amount } = paymentData;
+    // const paymentsTotal = PaymentReceived.getPaymentsTotal(allocations);
 
-    /**
-     * excess
-     */
-    const excess = new BigNumber(amount - paymentsTotal).dp(2).toNumber();
+    // /**
+    //  * excess
+    //  */
+    // const excess = new BigNumber(amount - paymentsTotal).dp(2).toNumber();
 
-    const overpayCB = this.overpay;
-    function overpay() {
-      if (excess > 0) {
-        return overpayCB(0, excess, paymentData);
-      }
-    }
+    // const overpayCB = this.overpay;
+    // function overpay() {
+    //   if (excess > 0) {
+    //     return overpayCB(0, excess, paymentData);
+    //   }
+    // }
 
     /**
      * mark payment as deleted
@@ -229,7 +227,7 @@ export default class PaymentReceived extends InvoicesPayments {
           $set: {
             'metaData.status': -1,
             'metaData.modifiedBy': userId,
-            'metaData.modifiedAt': new Date().toISOString(),
+            'metaData.modifiedAt': new Date(),
           },
         },
         {
@@ -240,7 +238,7 @@ export default class PaymentReceived extends InvoicesPayments {
        * update invoice payments
        */
       this.makePayments(null, paymentData),
-      overpay(),
+      // overpay(),
     ]);
 
     return result;
@@ -295,20 +293,20 @@ export default class PaymentReceived extends InvoicesPayments {
         },
       },
       {
-        $unwind: '$paidInvoices',
+        $unwind: '$allocations',
       },
       {
         $set: {
-          'paidInvoices.amount': {
-            $toDouble: '$paidInvoices.amount',
+          'allocations.amount': {
+            $toDouble: '$allocations.amount',
           },
         },
       },
       {
         $group: {
           _id: '$_id',
-          paidInvoices: {
-            $push: '$paidInvoices',
+          allocations: {
+            $push: '$allocations',
           },
           original: {
             $mergeObjects: '$$ROOT',
@@ -317,7 +315,7 @@ export default class PaymentReceived extends InvoicesPayments {
       },
       {
         $replaceWith: {
-          $mergeObjects: [{}, '$original', { paidInvoices: '$paidInvoices' }],
+          $mergeObjects: [{}, '$original', { allocations: '$allocations' }],
         },
       },
       {
@@ -341,7 +339,6 @@ export default class PaymentReceived extends InvoicesPayments {
     }
 
     const paymentData = result[0] as IPaymentReceived;
-
 
     return paymentData;
   }

@@ -18,47 +18,63 @@ interface IMeta {
   status: number;
   orgId: string;
   transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
-  // paidInvoicesIds: string[];
+  // allocationsIds: string[];
 }
 
-export interface IPaidInvoiceFromDb {
-  invoiceId: string;
+export interface IPaymentAllocationFromDb {
+  ref: string; //invoiceId or "excess"
   amount: Decimal128;
+  transactionType: keyof Pick<
+    TransactionTypes,
+    'customer_payment' | 'invoice_payment'
+  >;
 }
 
-export interface IPaidInvoice extends Omit<IPaidInvoiceFromDb, 'amount'> {
+export interface IPaymentAllocation
+  extends Omit<IPaymentAllocationFromDb, 'amount'> {
   amount: number;
 }
 
-export interface IPaymentReceivedForm {
-  account: IAccountSummary;
+export interface IUserPaymentAllocation {
+  invoiceId: string;
+  amount: number;
+}
+
+export interface IUserPaymentReceivedForm {
+  // account: IAccountSummary;
   amount: number;
   customer: IContactSummary;
   paymentDate: Date;
   paymentMode: PaymentMode;
   reference: string;
-  paidInvoices: IPaidInvoice[];
+  allocations: IUserPaymentAllocation[];
+  // allocations: IPaymentAllocation[];
   // payments: { [key: string]: number };
+}
+
+export interface IPaymentReceivedForm
+  extends Omit<IUserPaymentReceivedForm, 'allocations'> {
+  allocations: IPaymentAllocation[];
 }
 
 export interface IPaymentReceived extends IPaymentReceivedForm {
   _id: string;
-  excess: number;
+  // excess: number;
   metaData: IMeta;
 }
 
 export interface IPaymentReceivedFromDb
-  extends Omit<IPaymentReceived, '_id' | 'amount' | 'excess' | 'paidInvoices'> {
+  extends Omit<IPaymentReceived, '_id' | 'amount' | 'excess' | 'allocations'> {
   _id: ObjectId;
   amount: Decimal128;
-  excess: Decimal128;
-  paidInvoices: IPaidInvoiceFromDb[];
+  // excess: Decimal128;
+  allocations: IPaymentAllocationFromDb[];
 }
 
-export interface IPaidInvoiceMapping {
+export interface IPaymentAllocationMapping
+  extends Omit<IPaymentAllocation, 'amount'> {
   incoming: number;
   current: number;
-  invoiceId: string;
 }
 
 // export interface InvoicesPayments {
