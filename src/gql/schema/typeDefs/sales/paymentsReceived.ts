@@ -13,7 +13,7 @@ const paymentReceivedInputFields = `
     ${paymentReceivedSharedFields}
     customer:ContactSummaryInput!
     paymentMode: PaymentModeInput!
-    paidInvoices: [PaidInvoiceInput]
+    allocations: [InvoicePaymentAllocationInput]
 `;
 
 //     payments: [PaidInvoice]
@@ -23,25 +23,25 @@ const paymentReceivedFields = `
     ${paymentReceivedSharedFields}
     customer:ContactSummary!
     paymentMode: PaymentMode!
-    paidInvoices: [PaidInvoice]
+    allocations: [PaidInvoice]
 
     _id:ID!
     excess:Int
     metaData:SaleMetaData!
 `;
 
-const paidInvoicesFields = `
+const allocationsFields = `
     invoiceId: String!
     amount: Int!
 `;
 
 const typeDefs = `#graphql
 
-    input PaidInvoiceInput {
-        ${paidInvoicesFields}
+    input InvoicePaymentAllocationInput {
+        ${allocationsFields}
     }
     type PaidInvoice {
-        ${paidInvoicesFields}
+        ${allocationsFields}
     }
 
     input PaymentReceivedInput {

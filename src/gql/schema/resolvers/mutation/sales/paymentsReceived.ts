@@ -1,11 +1,11 @@
 import { services } from '../../../../../db';
 //
-import { IGQLContext, IPaymentReceivedForm } from '../../../../../types';
+import { IGQLContext, IUserPaymentReceivedForm } from '../../../../../types';
 
 const mutationResolvers = {
   async createPaymentReceived(
     parent: unknown,
-    args: { formData: IPaymentReceivedForm; orgId: string },
+    args: { formData: IUserPaymentReceivedForm; orgId: string },
     context: Required<IGQLContext>
   ) {
     const orgId = context.orgId;
@@ -21,7 +21,7 @@ const mutationResolvers = {
 
   async updatePaymentReceived(
     parent: unknown,
-    args: { id: string; formData: IPaymentReceivedForm },
+    args: { id: string; formData: IUserPaymentReceivedForm },
     context: Required<IGQLContext>
   ) {
     const orgId = context?.orgId;

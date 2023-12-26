@@ -2,7 +2,7 @@ import { startSession } from 'mongoose';
 
 import { PaymentReceived } from './utils';
 
-import { IPaymentReceivedForm } from '../../../../types';
+import { IUserPaymentReceivedForm } from '../../../../types';
 
 //------------------------------------------------------------
 
@@ -10,7 +10,7 @@ async function update(
   orgId: string,
   userUID: string,
   paymentId: string,
-  formData: IPaymentReceivedForm
+  formData: IUserPaymentReceivedForm
 ) {
   const session = await startSession();
   session.startTransaction();

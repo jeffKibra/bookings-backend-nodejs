@@ -4,8 +4,11 @@ import BigNumber from 'bignumber.js';
 
 import { InvoiceModel, PaymentReceivedModel } from '../../../../models';
 
+import { InvoiceSale } from '../../invoices/utils';
 import { JournalEntry } from '../../../journal';
 import { Accounts } from '../../../accounts';
+import PaymentAllocationsMapping from './paymentAllocationsMapping';
+//
 
 import {
   IAccountSummary,
@@ -14,6 +17,7 @@ import {
   IPaymentReceived,
   IContactSummary,
   IPaymentAllocationMapping,
+  IPaymentAllocationMappingResult,
   IPaymentAllocation,
   IUserPaymentAllocation,
   IInvoicePayment,
@@ -55,6 +59,7 @@ export default class InvoicesPayments extends Accounts {
   }
 
   async makePayments(
+    allocationsMappingResult: IPaymentAllocationMappingResult,
     incomingPayment: IPaymentReceivedForm | null,
     currentPayment?: IPaymentReceived
   ) {
@@ -73,68 +78,124 @@ export default class InvoicesPayments extends Accounts {
     // const paymentAccountHasChanged = incomingAccountId !== currentAccountId;
 
     const {
-      similarPayments,
-      paymentsToUpdate,
-      paymentsToCreate,
-      paymentsToDelete,
-    } = InvoicesPayments.getPaymentsMapping(
-      currentPayment?.allocations || [],
-      incomingPayment?.allocations || []
-    );
+      similarAllocations,
+      allocationsToUpdate,
+      allocationsToCreate,
+      allocationsToDelete,
+    } = allocationsMappingResult;
+
     console.log({
-      similarPayments,
-      paymentsToUpdate,
-      paymentsToCreate,
-      paymentsToDelete,
+      similarAllocations,
+      allocationsToUpdate,
+      allocationsToCreate,
+      allocationsToDelete,
     });
     /**
      * create two different update values based on the accounts:
      * 1. accountsReceivable account
      * 2. deposit account
      * if either customer or deposit account has changed:
-     * values include paymentsToUpdate and similarPayments
-     * else, paymentsToUpdate only
+     * values include allocationsToUpdate and similarAllocations
+     * else, allocationsToUpdate only
      */
-    const updatedPayments = customerHasChanged
-      ? [...paymentsToUpdate, ...similarPayments]
-      : paymentsToUpdate;
+    const updatedAllocations = customerHasChanged
+      ? [...allocationsToUpdate, ...similarAllocations]
+      : allocationsToUpdate;
 
     await Promise.all([
-      this.createPaymentAllocations(paymentsToCreate, incomingPayment),
+      this.createPaymentAllocations(allocationsToCreate, incomingPayment),
       this.updatePaymentAllocations(
-        updatedPayments,
+        updatedAllocations,
         incomingPayment,
         UFAccountId
       ),
       this.deletePaymentAllocations(
-        paymentsToDelete,
+        allocationsToDelete,
         UFAccountId
         // currentAccount?.accountId
       ),
     ]);
   }
 
-  private async validateInvoicePayment(
-    allocationMapping: IPaymentAllocationMapping
+  private async writeToJournal(
+    allocationsToWrite: IPaymentAllocationMapping[],
+    contact?: IContactSummary
   ) {
-    const { session, orgId } = this;
-    const { ref, transactionType } = allocationMapping;
+    const { session, userId, orgId, paymentId } = this;
 
-    if (transactionType === 'invoice_payment') {
-      const invoice = await InvoiceModel.findById(ref, 'total', {
-        session,
-      }).exec();
+    const [ARAccount, UFAccount, URAccount] = await Promise.all([
+      this.getAccountData(ARAccountId),
+      this.getAccountData(UFAccountId),
+      this.getAccountData(URAccountId),
+    ]);
+    //
+    const journalInstance = new JournalEntry(session, userId, orgId);
 
-      console.log({ invoice });
+    const results = await Promise.all(
+      allocationsToWrite.map(async allocationMapping => {
+        const { ref, incoming, transactionType } = allocationMapping;
+        console.log({ ref, incoming, paymentId });
 
-      //todo: verify incoming payment does not overpay the invoice
+        const transactionId = `${paymentId}_${ref}`;
 
-      const { total } = await InvoicesPayments.getInvoicePayments(
-        orgId,
-        ref,
-        session
-      );
-    }
+        if (incoming <= 0) {
+          return;
+        }
+
+        const accountToCredit =
+          transactionType === 'invoice_payment' ? ARAccount : URAccount;
+
+        //update booking
+        const result = await Promise.all([
+          /**
+           * credit accounts_receivable
+           */
+          journalInstance.creditAccount({
+            account: accountToCredit,
+            amount: incoming,
+            transactionId,
+            transactionType,
+            contact,
+            // details: { invoiceId },
+          }),
+          /**
+           * debit payment account-
+           */
+
+          this.updatePaymentAllocationDepositAccount(journalInstance, {
+            account: UFAccount,
+            amount: incoming,
+            transactionId,
+            transactionType,
+            contact,
+            // currentDepositAccountId,
+          }),
+          // journalInstance.debitAccount({
+          //   account: UFAccount,
+          //   amount: incoming,
+          //   transactionId,
+          //   transactionType,
+          //   contact,
+          //   // details: { invoiceId },
+          // }),
+        ]);
+
+        // const adjustment = new BigNumber(0 - incoming).dp(2).toNumber();
+
+        // batch.update(bookingRef, {
+        //   balance: increment(adjustment),
+        //   paymentsCount: increment(1),
+        //   paymentsIds: arrayUnion(paymentId),
+        //   [`paymentsReceived.${paymentId}`]: incoming,
+        //   modifiedBy: userId,
+        //   modifiedAt: serverTimestamp(),
+        // });
+
+        return result;
+      })
+    );
+
+    return results;
   }
 
   private async createPaymentAllocations(
@@ -153,70 +214,9 @@ export default class InvoicesPayments extends Accounts {
 
     console.log('creating payment allocations');
 
-    const { orgId, userId, paymentId, session } = this;
-    // console.log({ account });
-    // const paymentAccount = formData.account;
-
     const contact = formData.customer;
 
-    const [ARAccount, UFAccount] = await Promise.all([
-      this.getAccountData(ARAccountId),
-      this.getAccountData(UFAccountId),
-    ]);
-    //
-    const journalInstance = new JournalEntry(session, userId, orgId);
-    /**
-     * update bookings with the current payment
-     */
-    await Promise.all(
-      allocationsToCreate.map(async allocationMapping => {
-        const { ref, incoming, transactionType } = allocationMapping;
-        console.log({ ref, incoming, paymentId });
-
-        this.validateInvoicePayment(allocationMapping);
-
-        const transactionId = `${paymentId}_${ref}`;
-
-        if (incoming > 0) {
-          //update booking
-          await Promise.all([
-            /**
-             * credit accounts_receivable
-             */
-            journalInstance.creditAccount({
-              account: ARAccount,
-              amount: incoming,
-              transactionId,
-              transactionType,
-              contact,
-              // details: { invoiceId },
-            }),
-            /**
-             * debit payment account-
-             */
-            journalInstance.debitAccount({
-              account: UFAccount,
-              amount: incoming,
-              transactionId,
-              transactionType,
-              contact,
-              // details: { invoiceId },
-            }),
-          ]);
-
-          // const adjustment = new BigNumber(0 - incoming).dp(2).toNumber();
-
-          // batch.update(bookingRef, {
-          //   balance: increment(adjustment),
-          //   paymentsCount: increment(1),
-          //   paymentsIds: arrayUnion(paymentId),
-          //   [`paymentsReceived.${paymentId}`]: incoming,
-          //   modifiedBy: userId,
-          //   modifiedAt: serverTimestamp(),
-          // });
-        }
-      })
-    );
+    this.writeToJournal(allocationsToCreate, contact);
   }
 
   //----------------------------------------------------------------
@@ -224,14 +224,14 @@ export default class InvoicesPayments extends Accounts {
     journalInstance: JournalEntry,
     data: {
       transactionId: string;
-      contact: IContactSummary;
-      incomingAmount: number;
-      incomingAccount: IAccountSummary;
-      currentAccountId: string;
+      contact?: IContactSummary;
+      amount: number;
+      account: IAccountSummary;
       transactionType: keyof Pick<
         TransactionTypes,
         'customer_payment' | 'invoice_payment'
       >;
+      // currentAccountId: string;
     }
   ) {
     /**
@@ -240,11 +240,11 @@ export default class InvoicesPayments extends Accounts {
 
     const {
       contact,
-      incomingAmount,
-      incomingAccount,
-      currentAccountId,
+      amount,
+      account,
       transactionType,
       transactionId,
+      // currentAccountId,
     } = data;
 
     // async function deletePrevAccountEntry() {
@@ -259,8 +259,8 @@ export default class InvoicesPayments extends Accounts {
       //debit incoming account
       journalInstance.debitAccount({
         transactionId,
-        account: incomingAccount,
-        amount: incomingAmount,
+        account,
+        amount,
         transactionType,
         contact,
         // details: { invoiceId },
@@ -288,67 +288,9 @@ export default class InvoicesPayments extends Accounts {
 
     console.log('updating payment allocations');
 
-    const { orgId, userId, paymentId, session } = this;
-    // console.log({ account });
-    // const { account: incomingAccount } = formData;
-    // const { accountId: incomingAccountId } = incomingAccount;
-
     const contact = formData.customer;
 
-    const [ARAccount, UFAccount] = await Promise.all([
-      this.getAccountData(ARAccountId),
-      this.getAccountData(UFAccountId),
-    ]);
-    //
-    const journalInstance = new JournalEntry(session, userId, orgId);
-
-    /**
-     * update bookings with the current payment
-     */
-    await Promise.all(
-      allocationsToUpdate.map(async allocationMapping => {
-        const { ref, incoming, current, transactionType } = allocationMapping;
-        console.log({ ref, incoming, paymentId });
-
-        const transactionId = `${paymentId}_${ref}`;
-
-        if (incoming > 0) {
-          //update booking
-
-          await Promise.all([
-            /**
-             * accounts receivable account should be credited
-             */
-            journalInstance.creditAccount({
-              account: ARAccount,
-              amount: incoming,
-              transactionId,
-              transactionType,
-              contact,
-              details: { ref },
-            }),
-
-            this.updatePaymentAllocationDepositAccount(journalInstance, {
-              contact,
-              currentAccountId,
-              incomingAccount: UFAccount,
-              transactionId,
-              transactionType,
-              incomingAmount: incoming,
-            }),
-          ]);
-
-          // const adjustment = new BigNumber(current - incoming).dp(2).toNumber();
-
-          // batch.update(bookingRef, {
-          //   balance: increment(adjustment),
-          //   [`paymentsReceived.${paymentId}`]: incoming,
-          //   modifiedBy: userId,
-          //   modifiedAt: serverTimestamp(),
-          // });
-        }
-      })
-    );
+    this.writeToJournal(allocationsToUpdate, contact);
   }
 
   //---------------------------------------------------------------------
@@ -374,13 +316,16 @@ export default class InvoicesPayments extends Accounts {
 
     await Promise.all(
       allocationsToDelete.map(async allocationMapping => {
-        const { ref } = allocationMapping;
+        const { ref, transactionType } = allocationMapping;
 
         const transactionId = `${paymentId}_${ref}`;
 
+        const accountToCredit =
+          transactionType === 'invoice_payment' ? ARAccountId : URAccountId;
+
         await Promise.all([
           //delete accounts_receivable entry
-          journalInstance.deleteEntry(transactionId, ARAccountId),
+          journalInstance.deleteEntry(transactionId, accountToCredit),
           //delete paymentAccount entries
           journalInstance.deleteEntry(transactionId, paymentAccountId),
         ]);
@@ -406,15 +351,15 @@ export default class InvoicesPayments extends Accounts {
   static getPaymentsTotal(allocations: IUserPaymentAllocation[]) {
     if (!allocations) return 0;
 
-    const paymentsTotal = allocations.reduce((sum, paidInvoice) => {
+    const allocationsTotal = allocations.reduce((sum, paidInvoice) => {
       const amount = new BigNumber(paidInvoice.amount || 0);
 
       return sum.plus(amount);
     }, new BigNumber(0));
 
-    const paymentsTotalValue = paymentsTotal.dp(2).toNumber();
+    const allocationsTotalValue = allocationsTotal.dp(2).toNumber();
 
-    return paymentsTotalValue;
+    return allocationsTotalValue;
   }
 
   //----------------------------------------------------------------
@@ -422,168 +367,144 @@ export default class InvoicesPayments extends Accounts {
   //------------------------------------------------------------
 
   //----------------------------------------------------------------
-  static getPaymentsMapping(
-    currentAllocations: IPaymentAllocation[],
-    incomingAllocations: IPaymentAllocation[]
-  ) {
-    /**
-     * new array to hold all the different values
-     * no duplicates
-     */
-    const paymentsToDelete: IPaymentAllocationMapping[] = [];
-    const paymentsToUpdate: IPaymentAllocationMapping[] = [];
-    const paymentsToCreate: IPaymentAllocationMapping[] = [];
-    const similarPayments: IPaymentAllocationMapping[] = [];
-    /**
-     * are the Payment similar.
-     * traverse Payment and remove similar Payment from incomingIds arrays
-     * if incomingIds length is greater than zero(0)
-     * traverse incomingIds and add incoming payments to unique payments object
-     * keep track of current and incoming amounts in the uniquePayments array
-     */
-
-    const incomingAllocationsObject: Record<string, IPaymentAllocation> = {};
-    incomingAllocations.forEach(allocation => {
-      const { ref, amount } = allocation;
-
-      if (amount < 0) {
-        //cant have negative values
-        throw new Error(
-          `Only positive numbers for invoice payments allowed! ref: ${ref}`
-        );
-      }
-
-      incomingAllocationsObject[ref] = allocation;
-    });
-
-    const currentinvoiceIds = Object.keys(currentAllocations);
-    const incominginvoiceIds = Object.keys(incomingAllocations);
-
-    currentAllocations.forEach(allocation => {
-      const { ref, amount: current, transactionType } = allocation;
-      const incoming = incomingAllocationsObject[ref]?.amount || 0;
-
-      if (current < 0 || incoming < 0) {
-        //cant have negative values
-        throw new Error(
-          `Only positive numbers for invoice payments allowed! ref: ${ref}`
-        );
-      }
-
-      const dataMapping: IPaymentAllocationMapping = {
-        current,
-        incoming,
-        ref,
-        transactionType,
-      };
-
-      if (incoming === 0) {
-        /**
-         * booking not in incoming payments
-         * add it to paymentsToDelete
-         */
-        paymentsToDelete.push(dataMapping);
-      } else {
-        /**
-         * similar booking has been found-check if tha amounts are equal
-         * if equal, add to similars array-else add to paymentsToUpdate array
-         */
-        if (current === incoming) {
-          similarPayments.push(dataMapping);
-        } else {
-          paymentsToUpdate.push(dataMapping);
-        }
-        /**
-         * incoming invoice payment has been processed.
-         * delete from list to avoid duplicates
-         */
-        delete incomingAllocationsObject[ref];
-      }
-    });
-    /**
-     * process any remaining incoming invoices payments
-     */
-    Object.keys(incomingAllocationsObject).forEach(ref => {
-      const allocation = incomingAllocationsObject[ref];
-      const { transactionType, amount } = allocation;
-
-      const dataMapping: IPaymentAllocationMapping = {
-        current: 0,
-        incoming: amount,
-        ref,
-        transactionType,
-      };
-
-      paymentsToCreate.push(dataMapping);
-    });
-
-    const uniquePayments = [
-      ...paymentsToCreate,
-      ...paymentsToUpdate,
-      ...paymentsToDelete,
-      ...similarPayments,
-    ];
-
-    return {
-      uniquePayments,
-      similarPayments,
-      paymentsToCreate,
-      paymentsToUpdate,
-      paymentsToDelete,
-    };
-  }
 
   //------------------------------------------------------------
-  static validateInvoicesPayments(
+
+  //------------------------------------------------------------
+
+  static async validateInvoicesPayments(
+    orgId: string,
     paymentTotal: number,
-    userAllocations: IUserPaymentAllocation[]
+    incomingAllocations: IUserPaymentAllocation[],
+    currentPaymentAllocations?: IPaymentAllocation[],
+    session?: ClientSession | null
   ) {
-    let paymentsTotal = new BigNumber(0);
+    let allocationsTotal = new BigNumber(0);
+    let invoicesPaymentsTotal = 0;
+    let excess = 0;
     //
     const allocations: IPaymentAllocation[] = [];
 
-    userAllocations.forEach(userAllocation => {
-      const { amount, invoiceId } = userAllocation;
+    const pamInstance = new PaymentAllocationsMapping(
+      currentPaymentAllocations
+    );
 
-      if (amount > 0) {
-        paymentsTotal.plus(amount);
+    const isDeletion =
+      incomingAllocations?.length === 0 &&
+      Array.isArray(currentPaymentAllocations) &&
+      currentPaymentAllocations?.length > 0;
+    console.log({ isDeletion });
+
+    if (!isDeletion) {
+      function processIncomingAllocation(allocation: IPaymentAllocation) {
+        allocations.push(allocation);
+
         //
-        allocations.push({
-          amount,
-          ref: invoiceId,
-          transactionType: 'invoice_payment',
-        });
+        const allocationMapping =
+          pamInstance.appendIncomingAllocation(allocation);
+
+        return allocationMapping;
       }
-    });
 
-    const invoicesPaymentsTotal = paymentsTotal.dp(2).toNumber();
+      //
+      await Promise.all(
+        incomingAllocations.map(async incomingAllocation => {
+          const { amount, invoiceId } = incomingAllocation;
 
-    if (invoicesPaymentsTotal > paymentTotal) {
-      throw new Error(
-        'invoices payments cannot be more than customer payment!'
+          if (amount > 0) {
+            allocationsTotal.plus(amount);
+            //
+            const allocation: IPaymentAllocation = {
+              amount,
+              ref: invoiceId,
+              transactionType: 'invoice_payment',
+            };
+            //
+            const allocationMapping = processIncomingAllocation(allocation);
+
+            this.validateInvoicePaymentAllocation(
+              orgId,
+              allocationMapping,
+              session
+            );
+            //
+          }
+        })
       );
+
+      invoicesPaymentsTotal = allocationsTotal.dp(2).toNumber();
+
+      if (invoicesPaymentsTotal > paymentTotal) {
+        throw new Error(
+          'invoices payments cannot be more than customer payment!'
+        );
+      }
+
+      //
+
+      excess = new BigNumber(paymentTotal)
+        .minus(invoicesPaymentsTotal)
+        .dp(2)
+        .toNumber();
+
+      if (excess > 0) {
+        const excessAllocation: IPaymentAllocation = {
+          amount: excess,
+          ref: 'excess',
+          transactionType: 'customer_payment',
+        };
+        //
+        processIncomingAllocation(excessAllocation);
+      }
     }
 
-    const excess = new BigNumber(paymentTotal)
-      .minus(invoicesPaymentsTotal)
-      .dp(2)
-      .toNumber();
+    // generate payment allocations mapping
+    const allocationsMapping = pamInstance.generateMapping();
 
-    if (excess > 0) {
-      allocations.push({
-        amount: excess,
-        ref: 'excess',
-        transactionType: 'customer_payment',
-      });
+    console.log('allocations mapping', allocationsMapping);
+
+    return { invoicesPaymentsTotal, excess, allocations, allocationsMapping };
+  }
+
+  static async validateInvoicePaymentAllocation(
+    orgId: string,
+    allocationMapping: IPaymentAllocationMapping,
+    session?: ClientSession | null
+  ) {
+    const { ref, transactionType, incoming, current } = allocationMapping;
+
+    if (incoming === current) {
+      return;
     }
 
-    return { invoicesPaymentsTotal, excess, allocations };
+    if (transactionType === 'invoice_payment') {
+      const invoiceId = ref;
+
+      const { total: invoiceTotal, paymentsTotal } = await InvoiceSale.getById(
+        orgId,
+        invoiceId,
+        session
+      );
+
+      const incomingPaymentsTotal = new BigNumber(paymentsTotal)
+        .minus(current)
+        .plus(incoming)
+        .dp(2)
+        .toNumber();
+
+      if (incomingPaymentsTotal > invoiceTotal) {
+        throw new Error(
+          `The Incoming payments total (${incomingPaymentsTotal}) to invoice ${invoiceId} exceeds the invoice total amount (${invoiceTotal})!`
+        );
+      }
+    }
   }
 
   static async getInvoicePayments(
     orgId: string,
     invoiceId: string,
-    session?: ClientSession | null
+    session?: ClientSession | null,
+    idForPaymentToExclude?: string
   ) {
     // console.log({ orgId, invoiceId, session });
     const result = await PaymentReceivedModel.aggregate<IInvoicePaymentsResult>(

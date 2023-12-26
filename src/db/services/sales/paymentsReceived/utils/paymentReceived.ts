@@ -58,30 +58,18 @@ export default class PaymentReceived extends InvoicesPayments {
     // console.log({ data, orgId, userProfile });
     const { allocations: userAllocations, amount } = formData;
 
-    const { excess, allocations } = PaymentReceived.validateInvoicesPayments(
-      amount,
-      userAllocations
-    );
+    const { excess, allocations, allocationsMapping } =
+      await PaymentReceived.validateInvoicesPayments(
+        orgId,
+        amount,
+        userAllocations,
+        [],
+        session
+      );
 
     const incomingPayment: IPaymentReceivedForm = { ...formData, allocations };
 
     // console.log({ paymentsTotal, excess });
-
-    /**
-     * create the all inclusive payment data
-     */
-    // console.log({ paymentData });
-
-    /**
-     * create overpayment
-     */
-
-    const overpayCB = this.overpay;
-    function overpay() {
-      if (excess > 0) {
-        return overpayCB(excess, 0, incomingPayment);
-      }
-    }
 
     /**
      * create new payment
@@ -107,8 +95,8 @@ export default class PaymentReceived extends InvoicesPayments {
       /**
        * make the needed invoice payments
        */
-      this.makePayments(incomingPayment),
-      overpay(),
+      this.makePayments(allocationsMapping, incomingPayment),
+      // overpay(),
     ]);
 
     return result;
@@ -120,37 +108,25 @@ export default class PaymentReceived extends InvoicesPayments {
     currentPayment: IPaymentReceived
   ) {
     console.log({ formData, currentPayment });
-    const { session, userId, paymentId } = this;
+    const { session, userId, paymentId, orgId } = this;
     const { allocations: incomingUserAllocations, amount: incomingAmount } =
       formData;
 
-    const { allocations: incomingAllocations, excess: incomingExcess } =
-      PaymentReceived.validateInvoicesPayments(
-        incomingAmount,
-        incomingUserAllocations
-      );
+    const {
+      allocations: incomingAllocations,
+      excess: incomingExcess,
+      allocationsMapping,
+    } = await PaymentReceived.validateInvoicesPayments(
+      orgId,
+      incomingAmount,
+      incomingUserAllocations,
+      currentPayment.allocations,
+      session
+    );
     const incomingPayment: IPaymentReceivedForm = {
       ...formData,
       allocations: incomingAllocations,
     };
-
-    const { amount: currentAmount, allocations: currentUserAllocations } =
-      currentPayment;
-    // const { allocations: currentAllocations, excess: currentExcess } =
-    //   PaymentReceived.validateInvoicesPayments(
-    //     currentAmount,
-    //     currentUserAllocations
-    //   );
-
-    /**
-     * excess amount - credit account with the excess amount
-     */
-    // const overpayCB = this.overpay;
-    // function overpay() {
-    //   if (incomingExcess > 0 || currentExcess > 0) {
-    //     return overpayCB(incomingExcess, currentExcess, incomingPayment);
-    //   }
-    // }
 
     /**
      * update payment
@@ -163,7 +139,7 @@ export default class PaymentReceived extends InvoicesPayments {
       /**
        * update invoice payments
        */
-      this.makePayments(incomingPayment, currentPayment),
+      this.makePayments(allocationsMapping, incomingPayment, currentPayment),
       // overpay(),
     ]);
 
@@ -201,24 +177,23 @@ export default class PaymentReceived extends InvoicesPayments {
   //------------------------------------------------------------
   async delete(paymentData: IPaymentReceived) {
     const { allocations, amount } = paymentData;
-    // const paymentsTotal = PaymentReceived.getPaymentsTotal(allocations);
+    const currentPaymentAllocations = allocations;
 
-    // /**
-    //  * excess
-    //  */
-    // const excess = new BigNumber(amount - paymentsTotal).dp(2).toNumber();
+    const { orgId, session } = this;
 
-    // const overpayCB = this.overpay;
-    // function overpay() {
-    //   if (excess > 0) {
-    //     return overpayCB(0, excess, paymentData);
-    //   }
-    // }
+    const { allocationsMapping } =
+      await PaymentReceived.validateInvoicesPayments(
+        orgId,
+        amount,
+        [],
+        currentPaymentAllocations,
+        session
+      );
 
     /**
      * mark payment as deleted
      */
-    const { session, paymentId, userId } = this;
+    const { paymentId, userId } = this;
 
     const [result] = await Promise.all([
       PaymentReceivedModel.findByIdAndUpdate(
@@ -237,7 +212,7 @@ export default class PaymentReceived extends InvoicesPayments {
       /**
        * update invoice payments
        */
-      this.makePayments(null, paymentData),
+      this.makePayments(allocationsMapping, null, paymentData),
       // overpay(),
     ]);
 
@@ -343,7 +318,7 @@ export default class PaymentReceived extends InvoicesPayments {
     return paymentData;
   }
   //----------------------------------------------------------------
-  static reformatDates(data: IPaymentReceivedForm): IPaymentReceivedForm {
+  static reformatDates(data: IUserPaymentReceivedForm): IUserPaymentReceivedForm {
     const { paymentDate } = data;
     const formData = {
       ...data,

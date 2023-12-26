@@ -77,6 +77,14 @@ export interface IPaymentAllocationMapping
   current: number;
 }
 
+export interface IPaymentAllocationMappingResult {
+  allocationsToCreate: IPaymentAllocationMapping[];
+  allocationsToUpdate: IPaymentAllocationMapping[];
+  allocationsToDelete: IPaymentAllocationMapping[];
+  similarAllocations: IPaymentAllocationMapping[];
+  uniqueAllocations: IPaymentAllocationMapping[];
+}
+
 // export interface InvoicesPayments {
 //   [key: string]: number;
 // }

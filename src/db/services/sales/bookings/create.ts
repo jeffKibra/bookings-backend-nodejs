@@ -58,7 +58,10 @@ export default async function createBooking(
   try {
     await Bookings.validateFormData(orgId, formattedFormData, session);
 
-    const invoiceForm = await Bookings.createInvoiceFormFromBooking(orgId, formData);
+    const invoiceForm = await Bookings.createInvoiceFormFromBooking(
+      orgId,
+      formData
+    );
     console.log({ invoiceForm });
 
     const invoiceInstance = new Invoice(session, {
@@ -106,18 +109,18 @@ async function makeDownPayment(
     paymentId,
   });
 
-  const paymentAccount = await paymentInstance.getAccountData(
-    PaymentReceived.commonIds.UF
-  );
+  // const paymentAccount = await paymentInstance.getAccountData(
+  //   PaymentReceived.commonIds.UF
+  // );
 
   await paymentInstance.create({
-    account: paymentAccount,
+    // account: paymentAccount,
     amount,
     customer,
     paymentMode,
     reference,
     paymentDate: saleDate || new Date(),
-    paidInvoices: [
+    allocations: [
       {
         invoiceId,
         amount,
