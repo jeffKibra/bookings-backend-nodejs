@@ -12,7 +12,7 @@ export default function calculateBalanceStages(orgId: string) {
       $lookup: {
         from: 'received_payments',
         localField: '_id',
-        foreignField: 'paidInvoices.invoiceId',
+        foreignField: 'allocations.ref',
         let: { invoice_id: '$_id' },
         pipeline: [
           {
@@ -22,12 +22,12 @@ export default function calculateBalanceStages(orgId: string) {
             },
           },
           {
-            $unwind: '$paidInvoices',
+            $unwind: '$allocations',
           },
           {
             $match: {
               $expr: {
-                $eq: ['$paidInvoices.invoiceId', '$$invoice_id'],
+                $eq: ['$allocations.ref', '$$invoice_id'],
               },
             },
           },
@@ -35,7 +35,7 @@ export default function calculateBalanceStages(orgId: string) {
             $group: {
               _id: null,
               total: {
-                $sum: '$paidInvoices.amount',
+                $sum: '$allocations.amount',
               },
             },
           },
@@ -53,9 +53,13 @@ export default function calculateBalanceStages(orgId: string) {
     {
       $set: {
         balance: {
-          $subtract: ['$total', '$paymentsTotal.total'],
+          $subtract: [
+            '$total',
+            { $ifNull: ['$paymentsTotal.total', 0] },
+            // '$paymentsTotal.total',
+          ],
         },
-        paymentsTotal: '$paymentsTotal.total',
+        paymentsTotal: { $ifNull: ['$paymentsTotal.total', 0] },
       },
     },
   ];

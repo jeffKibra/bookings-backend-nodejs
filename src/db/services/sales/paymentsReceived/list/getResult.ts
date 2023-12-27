@@ -24,6 +24,7 @@ export default async function getResult(
   retrieveFacets?: boolean
 ) {
   const [sortByField, sortByDirection] = generateSortBy('', options?.sortBy);
+  console.log({ sortByField, sortByDirection, orgId });
 
   const pagination = options?.pagination;
   //   console.log('pagination', pagination);
@@ -105,7 +106,7 @@ export default async function getResult(
               excess: {
                 $toDouble: '$excess',
               },
-              paidInvoices: [],
+              allocations: [],
             },
           },
         ],

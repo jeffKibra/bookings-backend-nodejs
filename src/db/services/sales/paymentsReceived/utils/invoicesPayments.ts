@@ -22,6 +22,8 @@ import {
   IUserPaymentAllocation,
   IInvoicePayment,
   IInvoicePaymentsResult,
+  IJournalEntryTransactionId,
+  PaymentTransactionTypes,
 } from '../../../../../types';
 
 interface PaymentData {
@@ -136,14 +138,18 @@ export default class InvoicesPayments extends Accounts {
         const { ref, incoming, transactionType } = allocationMapping;
         console.log({ ref, incoming, paymentId });
 
-        const transactionId = `${paymentId}_${ref}`;
+        const transactionId: IJournalEntryTransactionId = {
+          primary: paymentId,
+          secondary: ref,
+        };
+        // `${paymentId}_${ref}`;
 
         if (incoming <= 0) {
           return;
         }
 
         const accountToCredit =
-          transactionType === 'invoice_payment' ? ARAccount : URAccount;
+          transactionType === 'customer_payment' ? URAccount : ARAccount;
 
         //update booking
         const result = await Promise.all([
@@ -198,7 +204,7 @@ export default class InvoicesPayments extends Accounts {
     return results;
   }
 
-  private async createPaymentAllocations(
+  private createPaymentAllocations(
     allocationsToCreate: IPaymentAllocationMapping[],
     formData?: IPaymentReceivedForm | null
   ) {
@@ -216,21 +222,18 @@ export default class InvoicesPayments extends Accounts {
 
     const contact = formData.customer;
 
-    this.writeToJournal(allocationsToCreate, contact);
+    return this.writeToJournal(allocationsToCreate, contact);
   }
 
   //----------------------------------------------------------------
   private updatePaymentAllocationDepositAccount(
     journalInstance: JournalEntry,
     data: {
-      transactionId: string;
+      transactionId: IJournalEntryTransactionId;
       contact?: IContactSummary;
       amount: number;
       account: IAccountSummary;
-      transactionType: keyof Pick<
-        TransactionTypes,
-        'customer_payment' | 'invoice_payment'
-      >;
+      transactionType: keyof PaymentTransactionTypes;
       // currentAccountId: string;
     }
   ) {
@@ -270,7 +273,7 @@ export default class InvoicesPayments extends Accounts {
   }
   //----------------------------------------------------------------
 
-  private async updatePaymentAllocations(
+  private updatePaymentAllocations(
     allocationsToUpdate: IPaymentAllocationMapping[],
     formData?: IPaymentReceivedForm | null,
     currentAccountId?: string
@@ -290,7 +293,7 @@ export default class InvoicesPayments extends Accounts {
 
     const contact = formData.customer;
 
-    this.writeToJournal(allocationsToUpdate, contact);
+    return this.writeToJournal(allocationsToUpdate, contact);
   }
 
   //---------------------------------------------------------------------
@@ -318,7 +321,10 @@ export default class InvoicesPayments extends Accounts {
       allocationsToDelete.map(async allocationMapping => {
         const { ref, transactionType } = allocationMapping;
 
-        const transactionId = `${paymentId}_${ref}`;
+        const transactionId: IJournalEntryTransactionId = {
+          primary: paymentId,
+          secondary: ref,
+        };
 
         const accountToCredit =
           transactionType === 'invoice_payment' ? ARAccountId : URAccountId;
@@ -409,25 +415,38 @@ export default class InvoicesPayments extends Accounts {
       //
       await Promise.all(
         incomingAllocations.map(async incomingAllocation => {
-          const { amount, invoiceId } = incomingAllocation;
+          const {
+            amount,
+            invoiceId,
+            transactionType: presetTransactionType,
+          } = incomingAllocation;
+          // console.log({ invoiceId, amount });
 
           if (amount > 0) {
-            allocationsTotal.plus(amount);
+            allocationsTotal = allocationsTotal.plus(amount);
             //
+
+            const transactionType: keyof PaymentTransactionTypes =
+              presetTransactionType || 'invoice_payment';
+
             const allocation: IPaymentAllocation = {
               amount,
               ref: invoiceId,
-              transactionType: 'invoice_payment',
+              transactionType,
             };
             //
             const allocationMapping = processIncomingAllocation(allocation);
 
-            this.validateInvoicePaymentAllocation(
-              orgId,
-              allocationMapping,
-              session
-            );
-            //
+            if (transactionType === 'invoice_payment') {
+              const validationResult =
+                await this.validateInvoicePaymentAllocation(
+                  orgId,
+                  allocationMapping,
+                  session
+                );
+              //
+              return validationResult;
+            }
           }
         })
       );
@@ -457,6 +476,9 @@ export default class InvoicesPayments extends Accounts {
         processIncomingAllocation(excessAllocation);
       }
     }
+
+    // console.log({ excess, invoicesPaymentsTotal });
+    // console.log('allocations total', allocationsTotal);
 
     // generate payment allocations mapping
     const allocationsMapping = pamInstance.generateMapping();

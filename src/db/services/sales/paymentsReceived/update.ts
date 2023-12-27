@@ -7,8 +7,8 @@ import { IUserPaymentReceivedForm } from '../../../../types';
 //------------------------------------------------------------
 
 async function update(
-  orgId: string,
   userUID: string,
+  orgId: string,
   paymentId: string,
   formData: IUserPaymentReceivedForm
 ) {

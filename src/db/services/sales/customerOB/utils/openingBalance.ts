@@ -96,7 +96,7 @@ export default class OpeningBalance extends InvoiceSale {
   }
 
   async createOBEntries(incomingOBInvoice: IInvoiceForm) {
-    const { orgId, session, userId } = this;
+    const { orgId, session, userId, invoiceId } = this;
 
     const salesAccount = await this.getAccountData('sales');
     const OBAAccount = await this.getAccountData(OBAAccountId);
@@ -117,7 +117,7 @@ export default class OpeningBalance extends InvoiceSale {
     journal.debitAccount({
       account: salesAccount,
       amount: total,
-      transactionId: customerId,
+      transactionId: { primary: invoiceId },
       transactionType: 'opening_balance',
       contact,
     });
@@ -128,7 +128,7 @@ export default class OpeningBalance extends InvoiceSale {
     journal.creditAccount({
       account: OBAAccount,
       amount: total,
-      transactionId: customerId,
+      transactionId: { primary: invoiceId },
       transactionType: 'opening_balance',
       contact,
     });
@@ -210,8 +210,8 @@ export default class OpeningBalance extends InvoiceSale {
     const journal = new JournalEntry(session, userId, orgId);
 
     await Promise.all([
-      journal.deleteEntry(invoiceId, 'sales'),
-      journal.deleteEntry(invoiceId, OBAAccountId),
+      journal.deleteEntry({ primary: invoiceId }, 'sales'),
+      journal.deleteEntry({ primary: invoiceId }, OBAAccountId),
     ]);
   }
 

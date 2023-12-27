@@ -22,13 +22,18 @@ interface IJournalEntryMetaData {
 
 export interface IMappedEntry extends IJournalEntry, IAccountMapping {}
 
+export interface IJournalEntryTransactionId {
+  primary: string;
+  secondary?: string;
+}
+
 export interface IJournalEntry {
   amount: number;
   entryType: 'credit' | 'debit';
   account: IAccountSummary;
   // date: DateDetails;
   date: Record<string, unknown>;
-  transactionId: string;
+  transactionId: IJournalEntryTransactionId;
   contact: IContactSummary;
   // contactsIds: string[];
   metaData: IJournalEntryMetaData;

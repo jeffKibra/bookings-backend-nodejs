@@ -16,32 +16,30 @@ const paymentReceivedInputFields = `
     allocations: [InvoicePaymentAllocationInput]
 `;
 
-//     payments: [PaidInvoice]
+//     payments: [PaymentAllocation]
 // account: SelectedAccount!;
 
 const paymentReceivedFields = `
     ${paymentReceivedSharedFields}
     customer:ContactSummary!
     paymentMode: PaymentMode!
-    allocations: [PaidInvoice]
+    allocations: [PaymentAllocation]
 
     _id:ID!
     excess:Int
     metaData:SaleMetaData!
 `;
 
-const allocationsFields = `
-    invoiceId: String!
-    amount: Int!
-`;
-
 const typeDefs = `#graphql
 
     input InvoicePaymentAllocationInput {
-        ${allocationsFields}
+        invoiceId: String!
+        amount: Int!
     }
-    type PaidInvoice {
-        ${allocationsFields}
+    type PaymentAllocation {
+        ref: String!
+        amount: Int!
+        transactionType: String!
     }
 
     input PaymentReceivedInput {

@@ -26,6 +26,8 @@ export * from './entries';
 export * from './paymentMode';
 export * from './paymentTerm';
 //
+export * from './transactionTypes';
+//
 // export type { UserProfile, LoginForm, SignupForm } from "./auth";
 // export type {} from
 // Customer,
@@ -43,12 +45,7 @@ export type {
   ExpenseFromDb,
   ExpenseSummary,
 } from './expense';
-export type {
-  TransactionTypes,
-  InvoiceTransactionTypes,
-  SaleTransactionTypes,
-  CustomerOpeningBalanceTransactionType,
-} from './transactionTypes';
+
 export type {
   CustomerOpeningBalanceForm,
   CustomerOpeningBalance,

@@ -5,6 +5,7 @@ import {
   IAccountSummary,
   PaymentMode,
   TransactionTypes,
+  PaymentTransactionTypes,
   IInvoice,
   IBooking,
   ISearchQueryOptions,
@@ -24,10 +25,7 @@ interface IMeta {
 export interface IPaymentAllocationFromDb {
   ref: string; //invoiceId or "excess"
   amount: Decimal128;
-  transactionType: keyof Pick<
-    TransactionTypes,
-    'customer_payment' | 'invoice_payment'
-  >;
+  transactionType: keyof PaymentTransactionTypes;
 }
 
 export interface IPaymentAllocation
@@ -38,6 +36,7 @@ export interface IPaymentAllocation
 export interface IUserPaymentAllocation {
   invoiceId: string;
   amount: number;
+  transactionType?: keyof PaymentTransactionTypes;
 }
 
 export interface IUserPaymentReceivedForm {
@@ -59,7 +58,7 @@ export interface IPaymentReceivedForm
 
 export interface IPaymentReceived extends IPaymentReceivedForm {
   _id: string;
-  // excess: number;
+  excess: number;
   metaData: IMeta;
 }
 
@@ -67,7 +66,7 @@ export interface IPaymentReceivedFromDb
   extends Omit<IPaymentReceived, '_id' | 'amount' | 'excess' | 'allocations'> {
   _id: ObjectId;
   amount: Decimal128;
-  // excess: Decimal128;
+  excess: Decimal128;
   allocations: IPaymentAllocationFromDb[];
 }
 

@@ -14,9 +14,10 @@ const PaymentMetaDataSchema = new Schema({
   transactionType: { type: String, required: true },
 });
 
-const PaidInvoiceSchema = new Schema({
-  invoiceId: { type: String, required: true },
+const PaymentAllocationSchema = new Schema({
+  ref: { type: String, required: true }, //invoiceId of "excess"
   amount: { type: Schema.Types.Decimal128, required: true },
+  transactionType: { type: String, required: true }, //customer_payment || invoice_payment
   // amount: { type: Number, required: true },
 });
 
@@ -26,9 +27,9 @@ const schema = new Schema({
   paymentDate: { type: Date, required: true },
   paymentMode: { type: PaymentModeSummarySchema, required: true },
   reference: String,
-  paidInvoices: { type: [PaidInvoiceSchema], required: true },
+  allocations: { type: [PaymentAllocationSchema], required: true },
   excess: { type: Schema.Types.Decimal128, required: true },
-  account: { type: AccountSummarySchema, required: true },
+  // account: { type: AccountSummarySchema, required: true },
   //
   metaData: { type: PaymentMetaDataSchema },
 });

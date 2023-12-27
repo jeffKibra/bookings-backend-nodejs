@@ -14,6 +14,7 @@ import {
   IGroupedEntries,
   IAccountSummary,
   IContactSummary,
+  IJournalEntryTransactionId,
 } from '../../../types';
 
 import {
@@ -27,7 +28,7 @@ import {
 //----------------------------------------------------------------
 
 type entryFnParams = {
-  transactionId: string;
+  transactionId: IJournalEntryTransactionId;
   account: IAccountSummary;
   amount: number;
   transactionType: keyof TransactionTypes;
@@ -62,7 +63,7 @@ export default class JournalEntry {
   }
 
   generateFindFilters(
-    transactionId: string,
+    transactionId: IJournalEntryTransactionId,
     accountId: string,
     // contactId?: string,
     details?: Record<string, unknown>
@@ -142,7 +143,7 @@ export default class JournalEntry {
 
   //------------------------------------------------------------
   createEntry(
-    transactionId: string,
+    transactionId: IJournalEntryTransactionId,
     account: IAccountSummary,
     amount: number,
     transactionType: keyof TransactionTypes,
@@ -175,7 +176,7 @@ export default class JournalEntry {
   }
 
   updateEntry(
-    transactionId: string,
+    transactionId: IJournalEntryTransactionId,
     transactionType: keyof TransactionTypes,
     account: IAccountSummary,
     amount: number,
@@ -214,7 +215,7 @@ export default class JournalEntry {
   }
 
   async deleteEntry(
-    transactionId: string,
+    transactionId: IJournalEntryTransactionId,
     accountId: string,
     details?: Record<string, unknown>,
     deletionType: 'delete' | 'mark' = 'mark'

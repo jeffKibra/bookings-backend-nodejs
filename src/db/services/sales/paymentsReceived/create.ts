@@ -3,15 +3,13 @@ import { ObjectId } from 'mongodb';
 //
 import { PaymentReceived } from './utils';
 
-import {
-  IUserPaymentReceivedForm,
-} from '../../../../types';
+import { IUserPaymentReceivedForm } from '../../../../types';
 
 //------------------------------------------------------------
 
 async function create(
-  orgId: string,
   userUID: string,
+  orgId: string,
   formData: IUserPaymentReceivedForm
 ) {
   const session = await startSession();

@@ -18,7 +18,7 @@ export default function generateSortBy(
       ? userSortByField
       : query
       ? 'searchScore'
-      : 'createdAt';
+      : 'metaData.createdAt';
 
   const sortBy: ISortBy = [field, direction];
 

@@ -124,6 +124,7 @@ async function makeDownPayment(
       {
         invoiceId,
         amount,
+        transactionType: 'invoice_down_payment',
       },
     ],
   });

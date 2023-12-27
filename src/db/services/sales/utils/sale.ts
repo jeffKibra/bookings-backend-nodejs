@@ -150,7 +150,7 @@ export default class Sale extends Accounts {
       result = await journalInstance.creditAccount({
         account,
         amount: incoming,
-        transactionId,
+        transactionId: { primary: transactionId },
         transactionType,
         contact,
       });
@@ -158,7 +158,7 @@ export default class Sale extends Accounts {
       result = await journalInstance.debitAccount({
         account,
         amount: incoming,
-        transactionId,
+        transactionId: { primary: transactionId },
         transactionType,
         contact,
       });
@@ -177,7 +177,7 @@ export default class Sale extends Accounts {
     const journal = new JournalEntry(session, userId, orgId);
     const result = await Promise.all(
       deletedAccounts.map(({ accountId }) =>
-        journal.deleteEntry(transactionId, accountId)
+        journal.deleteEntry({ primary: transactionId }, accountId)
       )
     );
 

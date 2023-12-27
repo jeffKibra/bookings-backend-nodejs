@@ -4,11 +4,7 @@ import { PaymentReceived } from './utils';
 
 //------------------------------------------------------------
 
-async function deletePayment(
-  orgId: string,
-  userUID: string,
-  paymentId: string
-) {
+async function archive(userUID: string, orgId: string, paymentId: string) {
   const session = await startSession();
   session.startTransaction();
 
@@ -35,4 +31,4 @@ async function deletePayment(
   }
 }
 
-export default deletePayment;
+export default archive;

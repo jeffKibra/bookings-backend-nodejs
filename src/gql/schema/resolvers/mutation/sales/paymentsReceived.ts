@@ -13,7 +13,7 @@ const mutationResolvers = {
     //
     const formData = args?.formData;
 
-    console.log('paymentReceived form Data', formData);
+    // console.log('paymentReceived form Data', formData);
 
     // await services.paymentsReceived.create(userUID, orgId, formData);
     await services.sales.paymentsReceived.create(userUID, orgId, formData);
@@ -30,6 +30,8 @@ const mutationResolvers = {
     const paymentReceivedId = args?.id;
     const formData = args?.formData;
 
+    console.log('update paymentReceived form Data', formData);
+
     const updatedInvoice = await services.sales.paymentsReceived.update(
       userUID,
       orgId,
@@ -39,6 +41,7 @@ const mutationResolvers = {
 
     return updatedInvoice;
   },
+  
   async deletePaymentReceived(
     parent: unknown,
     args: { id: string },

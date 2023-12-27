@@ -58,7 +58,7 @@ export default class PaymentReceived extends InvoicesPayments {
     // console.log({ data, orgId, userProfile });
     const { allocations: userAllocations, amount } = formData;
 
-    const { excess, allocations, allocationsMapping } =
+    const { allocations, allocationsMapping, excess } =
       await PaymentReceived.validateInvoicesPayments(
         orgId,
         amount,
@@ -69,8 +69,6 @@ export default class PaymentReceived extends InvoicesPayments {
 
     const incomingPayment: IPaymentReceivedForm = { ...formData, allocations };
 
-    // console.log({ paymentsTotal, excess });
-
     /**
      * create new payment
      */
@@ -78,7 +76,7 @@ export default class PaymentReceived extends InvoicesPayments {
     const instance = new PaymentReceivedModel({
       ...incomingPayment,
       _id: new ObjectId(paymentId),
-      // excess,
+      excess,
       metaData: {
         status: 0,
         orgId,
@@ -86,7 +84,7 @@ export default class PaymentReceived extends InvoicesPayments {
         createdAt: new Date(),
         modifiedBy: userId,
         modifiedAt: new Date(),
-        // transactionType,
+        transactionType,
       },
     });
 
@@ -108,7 +106,7 @@ export default class PaymentReceived extends InvoicesPayments {
     currentPayment: IPaymentReceived
   ) {
     console.log({ formData, currentPayment });
-    const { session, userId, paymentId, orgId } = this;
+    const { session, orgId } = this;
     const { allocations: incomingUserAllocations, amount: incomingAmount } =
       formData;
 
@@ -134,7 +132,7 @@ export default class PaymentReceived extends InvoicesPayments {
     const [updatedPayment] = await Promise.all([
       this._update({
         ...incomingPayment,
-        // excess: incomingExcess,
+        excess: incomingExcess,
       }),
       /**
        * update invoice payments
@@ -220,40 +218,6 @@ export default class PaymentReceived extends InvoicesPayments {
   }
 
   //----------------------------------------------------------------
-  async overpay(
-    incoming: number,
-    current: number,
-    formData?: IPaymentReceivedForm
-  ) {
-    const { session, orgId, userId, paymentId, transactionType } = this;
-
-    const URAccount = await this.getAccountData(Accounts.commonIds.UR);
-
-    const journalInstance = new JournalEntry(session, userId, orgId);
-
-    const isDelete = current > 0 && incoming === 0;
-    const isEqual = current === 0 && incoming === 0;
-
-    if (isEqual) {
-      return;
-    } else if (isDelete) {
-      await journalInstance.deleteEntry(paymentId, URAccount.accountId);
-    } else {
-      if (!formData) {
-        throw new Error('Payment form data is required!');
-      }
-
-      const contact = formData.customer;
-
-      await journalInstance.creditAccount({
-        transactionId: paymentId,
-        account: URAccount,
-        amount: incoming,
-        transactionType,
-        contact,
-      });
-    }
-  }
 
   //----------------------------------------------------------------
   //static functions
@@ -318,7 +282,9 @@ export default class PaymentReceived extends InvoicesPayments {
     return paymentData;
   }
   //----------------------------------------------------------------
-  static reformatDates(data: IUserPaymentReceivedForm): IUserPaymentReceivedForm {
+  static reformatDates(
+    data: IUserPaymentReceivedForm
+  ): IUserPaymentReceivedForm {
     const { paymentDate } = data;
     const formData = {
       ...data,

@@ -33,6 +33,7 @@ const queryResolvers = {
     context: Required<IGQLContext>
   ) {
     const orgId = context.orgId;
+    // console.log({ orgId });
     //
     const options = args?.options;
     console.log('list paymentsReceived options', options);
