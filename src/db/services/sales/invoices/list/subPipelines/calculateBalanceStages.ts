@@ -3,7 +3,13 @@ import { ObjectId } from 'mongodb';
 //
 // type FacetPipelineStage = PipelineStage.FacetPipelineStage;
 
-export default function calculateBalanceStages(orgId: string) {
+// type ppp = PipelineStage.Facet
+//
+
+export default function calculateBalanceStages(
+  orgId: string,
+  paymentId?: string
+) {
   // console.log('calculateBalanceStages fn', { selectedDates });
   let stages: PipelineStage[] = [];
 
@@ -12,6 +18,7 @@ export default function calculateBalanceStages(orgId: string) {
       $lookup: {
         from: 'received_payments',
         localField: '_id',
+        // localField: { $toString: '_id' },
         foreignField: 'allocations.ref',
         let: { invoice_id: '$_id' },
         pipeline: [
@@ -32,34 +39,108 @@ export default function calculateBalanceStages(orgId: string) {
             },
           },
           {
-            $group: {
-              _id: null,
+            $facet: {
+              total: [
+                {
+                  $group: {
+                    _id: null,
+                    value: {
+                      $sum: '$allocations.amount',
+                    },
+                  },
+                },
+              ],
+              paymentAllocation: [
+                {
+                  $match: {
+                    $expr: {
+                      $eq: [{ $toString: '$_id' }, paymentId],
+                    },
+                  },
+                },
+                {
+                  $limit: 1,
+                },
+                {
+                  $replaceWith: {
+                    $mergeObjects: [{ ref: '', amount: 0 }, '$allocations'],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $set: {
               total: {
-                $sum: '$allocations.amount',
+                $getField: {
+                  input: { $arrayElemAt: ['$total', 0] },
+                  field: 'value',
+                },
+              },
+              paymentAllocation: {
+                $getField: {
+                  input: { $arrayElemAt: ['$paymentAllocation', 0] },
+                  field: 'amount',
+                },
               },
             },
           },
         ],
-        as: 'paymentsTotal',
+        as: 'allocationsResult',
       },
     },
     {
       $set: {
-        paymentsTotal: {
-          $arrayElemAt: ['$paymentsTotal', 0],
+        allocationsResult: {
+          $arrayElemAt: ['$allocationsResult', 0],
         },
       },
     },
     {
       $set: {
+        totalTax: {
+          $toDouble: '$totalTax',
+        },
+        subTotal: {
+          $toDouble: '$subTotal',
+        },
+        total: {
+          $toDouble: '$total',
+        },
+        //
+        // balance: {
+        //   $toDouble: {
+        //     $subtract: [
+        //       '$total',
+        //       { $ifNull: ['$allocationsResult.total', 0] },
+        //       // '$allocationsResult.total',
+        //     ],
+        //   },
+        // },
         balance: {
-          $subtract: [
-            '$total',
-            { $ifNull: ['$paymentsTotal.total', 0] },
-            // '$paymentsTotal.total',
-          ],
+          $toDouble: {
+            $subtract: [
+              '$total',
+              {
+                $subtract: [
+                  { $ifNull: ['$allocationsResult.total', 0] },
+                  { $ifNull: ['$allocationsResult.paymentAllocation', 0] },
+                ],
+              },
+              // '$allocationsResult.total',
+            ],
+          },
         },
-        paymentsTotal: { $ifNull: ['$paymentsTotal.total', 0] },
+        allocationsTotal: {
+          $toDouble: {
+            $ifNull: ['$allocationsResult.total', 0],
+          },
+        },
+        paymentAllocation: {
+          $toDouble: {
+            $ifNull: ['$allocationsResult.paymentAllocation', 0],
+          },
+        },
       },
     },
   ];

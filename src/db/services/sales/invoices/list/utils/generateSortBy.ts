@@ -5,7 +5,7 @@ import {
 } from '../../../../../../types';
 
 export default function generateSortBy(
-  query: string | number,
+  paymentId: string,
   userSortBy?: IUserSortBy
 ) {
   let userSortByField = '';
@@ -20,9 +20,9 @@ export default function generateSortBy(
   const field =
     userSortByField && typeof userSortByField === 'string'
       ? userSortByField
-      : query
-      ? 'searchScore'
-      : 'createdAt';
+      : paymentId
+      ? 'paymentAllocation'
+      : 'metaData.createdAt';
 
   const sortBy: ISortBy = [field, direction];
 

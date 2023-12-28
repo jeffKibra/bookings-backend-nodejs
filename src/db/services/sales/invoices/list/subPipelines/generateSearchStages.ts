@@ -19,6 +19,14 @@ export default function generateSearchStages(
 
   const compoundOperators = {
     filter: [...filters],
+    // should: [
+    //   {
+    //     text: {
+    //       path: '',
+    //       query: '',
+    //     },
+    //   },
+    // ],
   };
 
   console.log('compound operators', compoundOperators);

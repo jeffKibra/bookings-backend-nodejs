@@ -99,4 +99,5 @@ export interface IInvoiceSummary
 
 export interface IInvoicesQueryOptions extends ISearchQueryOptions {
   customerId?: string;
+  paymentId?: string;
 }

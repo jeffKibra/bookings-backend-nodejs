@@ -59,9 +59,9 @@ const typeDefs = `#graphql
     }
 
     input PaymentsReceivedQueryOptions {
-        customerId:String
-        sortBy:[String!]
-        pagination:Pagination
+        customerId: String
+        sortBy: [String!]
+        pagination: Pagination
         filters: PaymentReceivedFilters
     }
 

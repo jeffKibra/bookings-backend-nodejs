@@ -53,15 +53,16 @@ const typeDefs = `#graphql
     }
 
     input InvoicesQueryOptions {
-        customerId:String
-        sortBy:[String!]
-        pagination:Pagination
-        filters:VehicleFilters
+        customerId: String
+        paymentId: String
+        sortBy: [String!]
+        pagination: Pagination
+        filters: VehicleFilters
     }
 
     type InvoicesResult {
         list: [Invoice]!
-        meta:ListInvoicesMetaData
+        meta: ListInvoicesMetaData
     }
 
     extend type Query {
