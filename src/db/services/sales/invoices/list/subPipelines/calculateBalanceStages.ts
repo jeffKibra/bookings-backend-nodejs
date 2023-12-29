@@ -19,7 +19,7 @@ export default function calculateBalanceStages(
         from: 'received_payments',
         localField: '_id',
         // localField: { $toString: '_id' },
-        foreignField: 'allocations.ref',
+        foreignField: 'allocations.invoiceId',
         let: { invoice_id: '$_id' },
         pipeline: [
           {
@@ -34,7 +34,7 @@ export default function calculateBalanceStages(
           {
             $match: {
               $expr: {
-                $eq: ['$allocations.ref', '$$invoice_id'],
+                $eq: ['$allocations.invoiceId', '$$invoice_id'],
               },
             },
           },
@@ -63,7 +63,10 @@ export default function calculateBalanceStages(
                 },
                 {
                   $replaceWith: {
-                    $mergeObjects: [{ ref: '', amount: 0 }, '$allocations'],
+                    $mergeObjects: [
+                      { invoiceId: '', amount: 0 },
+                      '$allocations',
+                    ],
                   },
                 },
               ],

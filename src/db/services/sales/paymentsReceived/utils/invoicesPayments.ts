@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import { ClientSession } from 'mongoose';
 
 import BigNumber from 'bignumber.js';
@@ -148,8 +149,10 @@ export default class InvoicesPayments extends Accounts {
           return;
         }
 
-        const accountToCredit =
-          transactionType === 'customer_payment' ? URAccount : ARAccount;
+        const isInvoicePayment =
+          InvoicesPayments.checkIfIsInvoicePayment(transactionType);
+
+        const accountToCredit = isInvoicePayment ? ARAccount : URAccount;
 
         //update booking
         const result = await Promise.all([
@@ -311,7 +314,7 @@ export default class InvoicesPayments extends Accounts {
       return;
     }
 
-    console.log('deleting payment allocations');
+    console.log('deleting payment allocations', allocationsToDelete);
 
     const { session, userId, orgId, paymentId } = this;
 
@@ -326,12 +329,16 @@ export default class InvoicesPayments extends Accounts {
           secondary: ref,
         };
 
-        const accountToCredit =
-          transactionType === 'invoice_payment' ? ARAccountId : URAccountId;
+        console.log('deleting journal entry transaction id', transactionId);
+
+        const isInvoicePayment =
+          InvoicesPayments.checkIfIsInvoicePayment(transactionType);
+
+        const accountIdToCredit = isInvoicePayment ? ARAccountId : URAccountId;
 
         await Promise.all([
           //delete accounts_receivable entry
-          journalInstance.deleteEntry(transactionId, accountToCredit),
+          journalInstance.deleteEntry(transactionId, accountIdToCredit),
           //delete paymentAccount entries
           journalInstance.deleteEntry(transactionId, paymentAccountId),
         ]);
@@ -382,18 +389,27 @@ export default class InvoicesPayments extends Accounts {
     orgId: string,
     paymentTotal: number,
     incomingAllocations: IUserPaymentAllocation[],
-    currentPaymentAllocations?: IPaymentAllocation[],
+    currentPayment?: IPaymentReceived | null,
     session?: ClientSession | null
   ) {
     let allocationsTotal = new BigNumber(0);
-    let invoicesPaymentsTotal = 0;
+    let allocationsToInvoicesTotal = 0;
     let excess = 0;
+    //
+
+    const currentPaymentAllocations = currentPayment?.allocations;
+    const currentExcess = currentPayment?.excess || 0;
+
     //
     const allocations: IPaymentAllocation[] = [];
 
     const pamInstance = new PaymentAllocationsMapping(
       currentPaymentAllocations
     );
+
+    if (currentExcess > 0) {
+      pamInstance.appendCurrentExcess(currentExcess);
+    }
 
     const isDeletion =
       incomingAllocations?.length === 0 &&
@@ -402,16 +418,6 @@ export default class InvoicesPayments extends Accounts {
     console.log({ isDeletion });
 
     if (!isDeletion) {
-      function processIncomingAllocation(allocation: IPaymentAllocation) {
-        allocations.push(allocation);
-
-        //
-        const allocationMapping =
-          pamInstance.appendIncomingAllocation(allocation);
-
-        return allocationMapping;
-      }
-
       //
       await Promise.all(
         incomingAllocations.map(async incomingAllocation => {
@@ -431,29 +437,38 @@ export default class InvoicesPayments extends Accounts {
 
             const allocation: IPaymentAllocation = {
               amount,
-              ref: invoiceId,
+              invoiceId,
               transactionType,
             };
             //
-            const allocationMapping = processIncomingAllocation(allocation);
+            allocations.push(allocation);
+            //
+            const allocationMapping =
+              pamInstance.appendIncomingAllocation(allocation);
+            //
 
             if (transactionType === 'invoice_payment') {
-              const validationResult =
-                await this.validateInvoicePaymentAllocation(
-                  orgId,
-                  allocationMapping,
-                  session
-                );
+              /**
+               * add check to prevent validation when creating down payment.
+               * transactionType for down payment=invoice_down_payment
+               */
+
+              await this.validateInvoicePaymentAllocation(
+                orgId,
+                allocationMapping,
+                session
+              );
               //
-              return validationResult;
             }
           }
+
+          return null;
         })
       );
 
-      invoicesPaymentsTotal = allocationsTotal.dp(2).toNumber();
+      allocationsToInvoicesTotal = allocationsTotal.dp(2).toNumber();
 
-      if (invoicesPaymentsTotal > paymentTotal) {
+      if (allocationsToInvoicesTotal > paymentTotal) {
         throw new Error(
           'invoices payments cannot be more than customer payment!'
         );
@@ -462,22 +477,16 @@ export default class InvoicesPayments extends Accounts {
       //
 
       excess = new BigNumber(paymentTotal)
-        .minus(invoicesPaymentsTotal)
+        .minus(allocationsToInvoicesTotal)
         .dp(2)
         .toNumber();
 
       if (excess > 0) {
-        const excessAllocation: IPaymentAllocation = {
-          amount: excess,
-          ref: 'excess',
-          transactionType: 'customer_payment',
-        };
-        //
-        processIncomingAllocation(excessAllocation);
+        pamInstance.appendIncomingExcess(excess);
       }
     }
 
-    // console.log({ excess, invoicesPaymentsTotal });
+    // console.log({ excess, allocationsToInvoicesTotal });
     // console.log('allocations total', allocationsTotal);
 
     // generate payment allocations mapping
@@ -485,7 +494,12 @@ export default class InvoicesPayments extends Accounts {
 
     console.log('allocations mapping', allocationsMapping);
 
-    return { invoicesPaymentsTotal, excess, allocations, allocationsMapping };
+    return {
+      allocationsToInvoicesTotal,
+      excess,
+      allocations,
+      allocationsMapping,
+    };
   }
 
   static async validateInvoicePaymentAllocation(
@@ -535,7 +549,7 @@ export default class InvoicesPayments extends Accounts {
           $match: {
             'metaData.orgId': orgId,
             'metaData.status': 0,
-            'allocations.ref': invoiceId,
+            'allocations.invoiceId': new ObjectId(invoiceId),
           },
         },
         {
@@ -543,7 +557,7 @@ export default class InvoicesPayments extends Accounts {
         },
         {
           $match: {
-            'allocations.ref': invoiceId,
+            'allocations.invoiceId': new ObjectId(invoiceId),
           },
         },
         {
@@ -597,6 +611,25 @@ export default class InvoicesPayments extends Accounts {
     const invoicePayments: IInvoicePaymentsResult = { list, total };
 
     return invoicePayments;
+  }
+
+  static checkIfIsInvoicePayment(
+    transactionType: keyof PaymentTransactionTypes
+  ) {
+    return (
+      transactionType === 'invoice_payment' ||
+      transactionType === 'invoice_down_payment'
+    );
+  }
+
+  static generateExcessAllocation(excessAmount: number) {
+    const excessAllocation: IPaymentAllocation = {
+      amount: excessAmount,
+      invoiceId: 'excess',
+      transactionType: 'customer_payment',
+    };
+
+    return excessAllocation;
   }
   //------------------------------------------------------------
   // static createContactFromCustomer(customer: IContactSummary) {

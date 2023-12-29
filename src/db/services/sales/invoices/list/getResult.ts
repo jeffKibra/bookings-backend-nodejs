@@ -59,13 +59,13 @@ export default async function getResult(
     //   },
     // },
 
-    {
-      $set: {
-        _id: {
-          $toString: '$_id',
-        },
-      },
-    },
+    // {
+    //   $set: {
+    //     _id: {
+    //       $toString: '$_id',
+    //     },
+    //   },
+    // },
 
     ...balanceStages,
 

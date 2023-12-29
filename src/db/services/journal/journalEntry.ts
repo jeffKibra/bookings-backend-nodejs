@@ -1,4 +1,4 @@
-import { ClientSession } from 'mongoose';
+import { ClientSession, ModifyResult } from 'mongoose';
 import { ObjectId } from 'mongodb';
 //
 
@@ -78,10 +78,19 @@ export default class JournalEntry {
       });
     }
 
+    const primaryTransactionId = transactionId.primary;
+    const secondaryTransactionId = transactionId.secondary;
+
     return {
       'account.accountId': accountId,
+      'metaData.status': 0,
       'metaData.orgId': orgId,
-      transactionId,
+      ...(primaryTransactionId
+        ? { 'transactionId.primary': primaryTransactionId }
+        : {}),
+      ...(secondaryTransactionId
+        ? { 'transactionId.secondary': secondaryTransactionId }
+        : {}),
       // ...(contactId ? { 'contact._id': contactId } : {}),
       ...detailsFilters,
     };
@@ -133,10 +142,13 @@ export default class JournalEntry {
           },
         },
       },
-      { new: true, session, upsert: true }
+      { new: true, session, upsert: true, includeResultMetadata: true }
     );
+    console.log(`set entry ${transactionId} result`, result);
 
-    const updatedEntry = result as unknown as IJournalEntry;
+    JournalEntry.verifyWrite(result);
+
+    const updatedEntry = result?.value as unknown as IJournalEntry;
 
     return updatedEntry;
   }
@@ -228,25 +240,41 @@ export default class JournalEntry {
       details
     );
 
+    console.log('deleting journal entry', findFilters);
+
+    let writeResult: ModifyResult<unknown> | null;
+
     if (deletionType === 'delete') {
-      await JournalEntryModel.findOneAndDelete({
-        ...findFilters,
-      });
+      writeResult = await JournalEntryModel.findOneAndDelete(
+        {
+          ...findFilters,
+        },
+        {
+          session,
+          includeResultMetadata: true,
+        }
+      );
     } else {
-      await JournalEntryModel.findOneAndUpdate(
+      writeResult = await JournalEntryModel.findOneAndUpdate(
         {
           ...findFilters,
         },
         {
           $set: {
-            status: -1,
+            'metaData.status': -1,
             'metaData.modifiedAt': new Date(),
             'metaData.modifiedBy': userId,
           },
         },
-        { session }
+        { session, includeResultMetadata: true, new: true }
       );
     }
+
+    console.log('deleteEntry write result', writeResult);
+
+    JournalEntry.verifyWrite(writeResult);
+
+    return writeResult;
   }
 
   //----------------------------------------------------------------
@@ -340,6 +368,22 @@ export default class JournalEntry {
         [accountId]: group ? [...group, entry] : [entry],
       };
     }, {});
+  }
+
+  //---------------------------------------------------------------
+  static verifyWrite(result?: ModifyResult<unknown> | null) {
+    const isModified =
+      result &&
+      (result.lastErrorObject?.updatedExisting ||
+        result.lastErrorObject?.upserted);
+
+    if (!isModified) {
+      throw new Error('One journal entry not updated!');
+    }
+
+    // const doc = result.value;
+
+    // return doc;
   }
 
   static isDebitOnIncrease(main: string) {

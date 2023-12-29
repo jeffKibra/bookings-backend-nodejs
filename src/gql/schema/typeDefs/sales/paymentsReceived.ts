@@ -37,7 +37,7 @@ const typeDefs = `#graphql
         amount: Int!
     }
     type PaymentAllocation {
-        ref: String!
+        invoiceId: String!
         amount: Int!
         transactionType: String!
     }

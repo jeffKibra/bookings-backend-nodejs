@@ -24,11 +24,19 @@ export default class PaymentAllocationsMapping {
         currentPaymentAllocations
       );
 
+    console.log('current allocations object', currentAllocationsObject);
     this.currentAllocationsObject = currentAllocationsObject;
   }
 
+  appendCurrentExcess(amount: number) {
+    const allocation =
+      PaymentAllocationsMapping.generateExcessAllocation(amount);
+
+    this.appendCurrentAllocation(allocation);
+  }
+
   private appendCurrentAllocation(allocation: IPaymentAllocation) {
-    const { ref, amount } = allocation;
+    const { invoiceId: ref, amount } = allocation;
 
     if (amount < 0) {
       //cant have negative values
@@ -38,8 +46,15 @@ export default class PaymentAllocationsMapping {
     this.currentAllocationsObject[ref] = allocation;
   }
 
+  appendIncomingExcess(amount: number) {
+    const allocation =
+      PaymentAllocationsMapping.generateExcessAllocation(amount);
+
+    this.appendIncomingAllocation(allocation);
+  }
+
   appendIncomingAllocation(allocation: IPaymentAllocation) {
-    const { ref, amount: incoming, transactionType } = allocation;
+    const { amount: incoming, transactionType, invoiceId: ref } = allocation;
 
     const { currentAllocationsObject } = this;
 
@@ -109,8 +124,8 @@ export default class PaymentAllocationsMapping {
       const { transactionType, amount } = allocation;
 
       const dataMapping: IPaymentAllocationMapping = {
-        current: 0,
-        incoming: amount,
+        current: amount,
+        incoming: 0,
         ref,
         transactionType,
       };
@@ -163,12 +178,24 @@ export default class PaymentAllocationsMapping {
   }
 
   //-------------------------------------------------------------------
+
+  static generateExcessAllocation(excessAmount: number) {
+    const excessAllocation: IPaymentAllocation = {
+      amount: excessAmount,
+      invoiceId: 'excess',
+      transactionType: 'customer_payment',
+    };
+
+    return excessAllocation;
+  }
+
+  //-------------------------------------------------------------------
   static convertAllocationsArrayToObject(allocations?: IPaymentAllocation[]) {
     const allocationsObject: Record<string, IPaymentAllocation> = {};
 
     if (Array.isArray(allocations)) {
       allocations.forEach(allocation => {
-        const { ref, amount } = allocation;
+        const { invoiceId: ref, amount } = allocation;
 
         if (amount < 0) {
           //cant have negative values

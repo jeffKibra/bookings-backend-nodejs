@@ -22,21 +22,17 @@ interface IMeta {
   // allocationsIds: string[];
 }
 
-export interface IPaymentAllocationFromDb {
-  ref: string; //invoiceId or "excess"
-  amount: Decimal128;
-  transactionType: keyof PaymentTransactionTypes;
-}
-
-export interface IPaymentAllocation
-  extends Omit<IPaymentAllocationFromDb, 'amount'> {
-  amount: number;
-}
-
 export interface IUserPaymentAllocation {
   invoiceId: string;
   amount: number;
   transactionType?: keyof PaymentTransactionTypes;
+}
+
+export interface IPaymentAllocation extends Required<IUserPaymentAllocation> {}
+
+export interface IPaymentAllocationFromDb
+  extends Omit<IPaymentAllocation, 'amount'> {
+  amount: Decimal128;
 }
 
 export interface IUserPaymentReceivedForm {
@@ -71,7 +67,8 @@ export interface IPaymentReceivedFromDb
 }
 
 export interface IPaymentAllocationMapping
-  extends Omit<IPaymentAllocation, 'amount'> {
+  extends Pick<IPaymentAllocation, 'transactionType'> {
+  ref: string; //invoiceId or 'excess'
   incoming: number;
   current: number;
 }

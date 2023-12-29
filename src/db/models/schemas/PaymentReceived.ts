@@ -15,7 +15,7 @@ const PaymentMetaDataSchema = new Schema({
 });
 
 const PaymentAllocationSchema = new Schema({
-  ref: { type: String, required: true }, //invoiceId of "excess"
+  invoiceId: { type: Schema.Types.ObjectId, required: true, ref: 'Invoice' },
   amount: { type: Schema.Types.Decimal128, required: true },
   transactionType: { type: String, required: true }, //customer_payment || invoice_payment
   // amount: { type: Number, required: true },

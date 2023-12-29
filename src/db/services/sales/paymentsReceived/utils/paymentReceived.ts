@@ -63,7 +63,7 @@ export default class PaymentReceived extends InvoicesPayments {
         orgId,
         amount,
         userAllocations,
-        [],
+        null,
         session
       );
 
@@ -118,7 +118,7 @@ export default class PaymentReceived extends InvoicesPayments {
       orgId,
       incomingAmount,
       incomingUserAllocations,
-      currentPayment.allocations,
+      currentPayment,
       session
     );
     const incomingPayment: IPaymentReceivedForm = {
@@ -184,9 +184,11 @@ export default class PaymentReceived extends InvoicesPayments {
         orgId,
         amount,
         [],
-        currentPaymentAllocations,
+        paymentData,
         session
       );
+
+    console.log('allocations mapping', allocationsMapping);
 
     /**
      * mark payment as deleted
