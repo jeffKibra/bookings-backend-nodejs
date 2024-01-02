@@ -21,7 +21,7 @@ export * from './accounts';
 export * from './address';
 export * from './org';
 export * from './tax';
-export * from './entries';
+export * from './journalEntry';
 //
 export * from './paymentMode';
 export * from './paymentTerm';

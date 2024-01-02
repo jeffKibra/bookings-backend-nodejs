@@ -14,7 +14,6 @@ import {
   IGroupedEntries,
   IAccountSummary,
   IContactSummary,
-  IJournalEntryTransactionId,
 } from '../../../types';
 
 import {
@@ -27,14 +26,15 @@ import {
 
 //----------------------------------------------------------------
 
-type entryFnParams = {
-  transactionId: IJournalEntryTransactionId;
+export interface IEntryFnParams {
+  transactionId: string;
+  entryId: string;
   account: IAccountSummary;
   amount: number;
   transactionType: keyof TransactionTypes;
   contact?: IContactSummary;
   details?: Record<string, unknown>;
-};
+}
 
 export default class JournalEntry {
   protected session: ClientSession | null;
@@ -53,19 +53,20 @@ export default class JournalEntry {
   }
 
   //------------------------------- -----------------------------
-  debitAccount(entryParams: entryFnParams) {
+  debitAccount(entryParams: IEntryFnParams) {
     return this.setEntry(entryParams, 'debit');
   }
 
   //------------------------------------------------------------
-  creditAccount(entryParams: entryFnParams) {
+  creditAccount(entryParams: IEntryFnParams) {
     return this.setEntry(entryParams, 'credit');
   }
 
   generateFindFilters(
-    transactionId: IJournalEntryTransactionId,
+    transactionId: string,
+    entryId: string,
     accountId: string,
-    // contactId?: string,
+    contactId?: string,
     details?: Record<string, unknown>
   ) {
     const { orgId } = this;
@@ -78,28 +79,22 @@ export default class JournalEntry {
       });
     }
 
-    const primaryTransactionId = transactionId.primary;
-    const secondaryTransactionId = transactionId.secondary;
-
     return {
       'account.accountId': accountId,
       'metaData.status': 0,
       'metaData.orgId': orgId,
-      ...(primaryTransactionId
-        ? { 'transactionId.primary': primaryTransactionId }
-        : {}),
-      ...(secondaryTransactionId
-        ? { 'transactionId.secondary': secondaryTransactionId }
-        : {}),
-      // ...(contactId ? { 'contact._id': contactId } : {}),
+      transactionId,
+      ...(entryId ? { entryId } : {}),
+      ...(contactId ? { 'contact._id': contactId } : {}),
       ...detailsFilters,
     };
   }
 
-  async setEntry(entryParams: entryFnParams, entryType: 'credit' | 'debit') {
+  async setEntry(entryParams: IEntryFnParams, entryType: 'credit' | 'debit') {
     const {
       account,
       transactionId,
+      entryId,
       amount,
       transactionType,
       contact,
@@ -111,12 +106,13 @@ export default class JournalEntry {
     const { orgId, userId, session } = this;
     //
     const { accountId } = account;
-    // const contactId = contact?._id || '';
+    const contactId = contact?._id || '';
 
     const findFilters = this.generateFindFilters(
       transactionId,
+      entryId,
       accountId,
-      // contactId,
+      contactId,
       details
     );
 
@@ -128,6 +124,7 @@ export default class JournalEntry {
           entryType,
           account,
           transactionId,
+          entryId,
           contact: contact || {},
           // transactionType,
           ...(details ? { details } : {}),
@@ -135,9 +132,9 @@ export default class JournalEntry {
             transactionType,
             status: 0,
             orgId,
-            createdAt: new Date(),
+            createdAt: '$$NOW',
             createdBy: userId,
-            modifiedAt: new Date(),
+            modifiedAt: '$$NOW',
             modifiedBy: userId,
           },
         },
@@ -154,81 +151,12 @@ export default class JournalEntry {
   }
 
   //------------------------------------------------------------
-  createEntry(
-    transactionId: IJournalEntryTransactionId,
-    account: IAccountSummary,
-    amount: number,
-    transactionType: keyof TransactionTypes,
-    contact: IContactSummary,
-    details?: Record<string, unknown>
-  ) {
-    const { accountType } = account;
-    /**
-     * determine whether value is a debit or a credit
-     */
-    const { credit, debit } = JournalEntry.createDebitAndCredit(
-      accountType,
-      amount
-    );
-
-    const entryAmount = credit || debit;
-    const entryType = credit > 0 ? 'credit' : 'debit';
-
-    return this.setEntry(
-      {
-        transactionId,
-        account,
-        amount: entryAmount,
-        transactionType,
-        contact,
-        details,
-      },
-      entryType
-    );
-  }
-
-  updateEntry(
-    transactionId: IJournalEntryTransactionId,
-    transactionType: keyof TransactionTypes,
-    account: IAccountSummary,
-    amount: number,
-    contact?: IContactSummary,
-    details?: Record<string, unknown>
-  ) {
-    const { accountType, accountId } = account;
-    const { userId } = this;
-
-    /**
-     * determine whether value is a debit or a credit
-     */
-    const { credit, debit } = JournalEntry.createDebitAndCredit(
-      accountType,
-      amount
-    );
-
-    const entryType = credit > 0 ? 'credit' : 'debit';
-
-    // console.log({ accountId, entryId });
-    /**
-     * update entry
-     */
-
-    return this.setEntry(
-      {
-        account,
-        amount: credit || debit,
-        contact,
-        transactionId,
-        transactionType,
-        details,
-      },
-      entryType
-    );
-  }
 
   async deleteEntry(
-    transactionId: IJournalEntryTransactionId,
+    transactionId: string,
     accountId: string,
+    contactId: string,
+    entryId: string,
     details?: Record<string, unknown>,
     deletionType: 'delete' | 'mark' = 'mark'
   ) {
@@ -236,7 +164,9 @@ export default class JournalEntry {
 
     const findFilters = this.generateFindFilters(
       transactionId,
+      entryId,
       accountId,
+      contactId,
       details
     );
 
@@ -353,6 +283,69 @@ export default class JournalEntry {
 
   //   return entries;
   // }
+
+  //----------------------------------------------------------------
+
+  static generateEntryData(
+    entryParams: IEntryFnParams,
+    entryType: 'credit' | 'debit'
+  ) {
+    const {
+      transactionId,
+      entryId,
+      account,
+      amount,
+      transactionType,
+      contact,
+      details,
+    } = entryParams;
+
+    console.log('set entry account', account);
+
+    const entryData: Omit<IJournalEntry, 'metaData'> = {
+      transactionId,
+      entryId,
+      account,
+      amount,
+      entryType,
+      contact: contact || { _id: '', displayName: '' },
+      // transactionType,
+      // ...(details ? { details } : {}),
+    };
+
+    return entryData;
+  }
+
+  //----------------------------------------------------------------
+
+  static generateFindFilters(
+    orgId: string,
+    transactionId: string,
+    entryId: string,
+    accountId: string,
+    contactId?: string,
+    details?: Record<string, unknown>
+  ) {
+    const detailsFilters: Record<string, unknown> = {};
+
+    if (details && typeof details === 'object') {
+      Object.keys(details).forEach(detailKey => {
+        detailsFilters[`details.${detailKey}`] = details[detailKey];
+      });
+    }
+
+    return {
+      'account.accountId': accountId,
+      'metaData.status': 0,
+      'metaData.orgId': orgId,
+      transactionId,
+      ...(entryId ? { entryId } : {}),
+      ...(contactId ? { 'contact._id': contactId } : {}),
+      ...detailsFilters,
+    };
+  }
+
+  //----------------------------------------------------------------
 
   groupEntriesBasedOnAccounts(entries: IJournalEntry[]) {
     return entries.reduce<IGroupedEntries>((groupedEntries, entry) => {

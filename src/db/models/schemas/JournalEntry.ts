@@ -12,19 +12,24 @@ const JournalEntryMetaDataSchema = new Schema({
   transactionType: { type: String, required: true },
 });
 
-const JournalEntryTransactionTypeSchema = new Schema({
-  primary: { type: String, required: true },
-  secondary: { type: String, default: '' },
+const LastProcessedValue = new Schema({
+  org: { type: Schema.Types.Decimal128, default: 0 },
+  contact: { type: Schema.Types.Decimal128, default: 0 },
 });
 
 const schema = new Schema({
+  transactionId: { type: String, required: true },
+  entryId: { type: String, default: '' },
+  //
   amount: { type: Schema.Types.Decimal128, required: true },
   entryType: { type: String, required: true },
   account: { type: AccountSummarySchema, required: true },
   contact: { type: ContactSummarySchema },
-  transactionType: { type: String, required: true },
-  transactionId: { type: JournalEntryTransactionTypeSchema, required: true },
+  lastProcessedValue: {
+    type: LastProcessedValue,
+  },
   metaData: { type: JournalEntryMetaDataSchema },
+  // transactionType: String,
 });
 
 initSchema(schema);
