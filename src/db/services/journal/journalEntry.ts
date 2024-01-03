@@ -9,7 +9,6 @@ import {
   IAccountType,
   IJournalEntry,
   TransactionTypes,
-  IMappedEntry,
   IAccountMapping,
   IGroupedEntries,
   IAccountSummary,
@@ -297,6 +296,7 @@ export default class JournalEntry {
       amount,
       transactionType,
       contact,
+
       details,
     } = entryParams;
 
@@ -308,7 +308,9 @@ export default class JournalEntry {
       account,
       amount,
       entryType,
+      transactionType,
       contact: contact || { _id: '', displayName: '' },
+
       // transactionType,
       // ...(details ? { details } : {}),
     };

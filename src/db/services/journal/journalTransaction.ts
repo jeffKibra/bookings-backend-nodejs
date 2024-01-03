@@ -15,21 +15,14 @@ import {
   IAccountType,
   IJournalEntry,
   TransactionTypes,
-  IMappedEntry,
   IAccountMapping,
   IGroupedEntries,
   IAccountSummary,
   IContactSummary,
   IJournalEntryType,
+  IJournalEntryMapping,
+  IJournalEntryFormData,
 } from '../../../types';
-
-import {
-  ASSET,
-  EQUITY,
-  INCOME,
-  EXPENSE,
-  LIABILITY,
-} from '../../../constants/ledgers';
 
 //----------------------------------------------------------------
 
@@ -61,14 +54,11 @@ export default class JournalTransaction {
   }
 
   //------------------------------------------------------------
-  private addToNew(
-    entryData: Omit<IJournalEntry, 'metaData'>,
-    transactionType: keyof TransactionTypes
-  ) {
-    const { userId, orgId } = this;
+  private addToNew(entryData: IJournalEntryFormData) {
+    const { userId, orgId, transactionId } = this;
 
     const metaData: IJournalEntry['metaData'] = {
-      transactionType,
+      //   transactionType,
       status: 0,
       orgId,
       createdAt: '$$NOW',
@@ -80,6 +70,7 @@ export default class JournalTransaction {
     return this.entries.push({
       insertOne: {
         document: {
+          transactionId,
           ...entryData,
           metaData,
         },
@@ -87,41 +78,41 @@ export default class JournalTransaction {
     });
   }
 
-  //------------------------------- -----------------------------
-  debitAccount(entryParams: IEntryFnParams) {
-    const { transactionType } = entryParams;
-
-    const entryData = JournalEntry.generateEntryData(entryParams, 'debit');
-
-    return this.addToNew(entryData, transactionType);
-  }
-
-  //------------------------------------------------------------
-  creditAccount(entryParams: IEntryFnParams) {
-    const { transactionType } = entryParams;
-
-    const entryData = JournalEntry.generateEntryData(entryParams, 'credit');
-
-    return this.addToNew(entryData, transactionType);
+  addNewEntry(entryFormData: IJournalEntryFormData) {
+    return this.addToNew(entryFormData);
   }
 
   //------------------------------- -----------------------------
+  //   debitAccount(entryFormData: IJournalEntryFormData) {
+  //     const { transactionType } = entryFormData;
 
-  private addToModified(
-    entryData: Omit<IJournalEntry, 'metaData'>,
-    entryParams: IEntryFnParams
-  ) {
+  //     const entryData = JournalEntry.generateEntryData(entryFormData, 'debit');
+
+  //     return this.addToNew(entryData, transactionType);
+  //   }
+
+  //   //------------------------------------------------------------
+  //   creditAccount(entryFormData: IJournalEntryFormData) {
+  //     const { transactionType } = entryFormData;
+
+  //     const entryData = JournalEntry.generateEntryData(entryFormData, 'credit');
+
+  //     return this.addToNew(entryData, transactionType);
+  //   }
+
+  //------------------------------- -----------------------------
+
+  private addToModified(entryData: IJournalEntryFormData) {
+    //
+
+    const { userId, orgId, transactionId } = this;
+
     const {
-      transactionId,
       entryId,
       account: { accountId },
       contact,
-      transactionType,
-    } = entryParams;
-    //
+    } = entryData;
     const contactId = contact?._id || '';
-
-    const { userId, orgId } = this;
 
     const filters = JournalEntry.generateFindFilters(
       orgId,
@@ -136,6 +127,7 @@ export default class JournalTransaction {
         filter: { ...filters },
         update: {
           $set: {
+            transactionId,
             ...entryData,
             'metaData.modifiedAt': '$$NOW',
             'metaData.modifiedBy': userId,
@@ -146,42 +138,24 @@ export default class JournalTransaction {
   }
 
   //------------------------------- -----------------------------
-
-  updateAccountDebit(entryParams: IEntryFnParams) {
-    const entryData = JournalEntry.generateEntryData(entryParams, 'debit');
-
-    return this.addToModified(entryData, entryParams);
+  updateEntry(entryData: IJournalEntryFormData) {
+    return this.addToModified(entryData);
   }
+  //------------------------------- -----------------------------
 
-  //------------------------------------------------------------
-  updateAccountCredit(entryParams: IEntryFnParams) {
-    const entryData = JournalEntry.generateEntryData(entryParams, 'credit');
+  //   updateAccountDebit(entryParams: IEntryFnParams) {
+  //     const entryData = JournalEntry.generateEntryData(entryParams, 'debit');
 
-    return this.addToModified(entryData, entryParams);
-  }
+  //     return this.addToModified(entryData, entryParams);
+  //   }
 
-  //------------------------------------------------------------
-  async commit() {
-    const { session, entries } = this;
-    const entriesCount = entries.length;
+  //   //------------------------------------------------------------
+  //   updateAccountCredit(entryParams: IEntryFnParams) {
+  //     const entryData = JournalEntry.generateEntryData(entryParams, 'credit');
 
-    const writeResult = await JournalEntryModel.bulkWrite([...entries], {
-      session: session || undefined,
-    });
+  //     return this.addToModified(entryData, entryParams);
+  //   }
 
-    const { modifiedCount, insertedCount } = writeResult;
-
-    const allModified = modifiedCount + insertedCount;
-    console.log({ modifiedCount, insertedCount, allModified, entriesCount });
-
-    if (allModified !== entriesCount) {
-      throw new Error(
-        'Error updating journal entries. Some entries not updated!'
-      );
-    }
-
-    return writeResult;
-  }
   //------------------------------------------------------------
 
   deleteEntry(
@@ -227,6 +201,29 @@ export default class JournalTransaction {
   }
 
   //------------------------------------------------------------
+  async commit() {
+    const { session, entries } = this;
+    const entriesCount = entries.length;
+
+    const writeResult = await JournalEntryModel.bulkWrite([...entries], {
+      session: session || undefined,
+    });
+
+    const { modifiedCount, insertedCount } = writeResult;
+
+    const allModified = modifiedCount + insertedCount;
+    console.log({ modifiedCount, insertedCount, allModified, entriesCount });
+
+    if (allModified !== entriesCount) {
+      throw new Error(
+        'Error updating journal entries. Some entries not updated!'
+      );
+    }
+
+    return writeResult;
+  }
+
+  //------------------------------------------------------------
 
   //------------------------------------------------------------
 
@@ -236,9 +233,5 @@ export default class JournalTransaction {
   //static methods
   //----------------------------------------------------------------
 
-  
   //---------------------------------------------------------------
-  
-
-  
 }
