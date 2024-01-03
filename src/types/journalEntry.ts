@@ -1,7 +1,6 @@
 import {
   IAccountSummary,
   // DateDetails,
-  IAccountMapping,
   TransactionTypes,
   IContactSummary,
 } from '.';
@@ -17,7 +16,7 @@ interface IJournalEntryMetaData {
   modifiedBy: string;
   status: number;
   orgId: string;
-  transactionType: keyof TransactionTypes;
+  // transactionType: keyof TransactionTypes;
 }
 
 interface ILastValueProcessed {
@@ -25,7 +24,7 @@ interface ILastValueProcessed {
   contact: number;
 }
 
-export interface IMappedEntry extends IJournalEntry, IAccountMapping {}
+// export interface IMappedEntry extends IJournalEntry, IAccountMapping {}
 
 export type IJournalEntryType = 'credit' | 'debit';
 
@@ -38,19 +37,6 @@ export type IJournalEntryType = 'credit' | 'debit';
 //   accountId: string;
 //   entryType: IJournalEntryType;
 // }
-
-export interface IJournalEntry {
-  transactionId: string;
-  entryId: string;
-  amount: number;
-  entryType: IJournalEntryType;
-  account: IAccountSummary;
-  // date: Record<string, unknown>;
-  contact: IContactSummary;
-  lastValueProcessed?: ILastValueProcessed;
-  // transactionType: keyof TransactionTypes;
-  metaData: IJournalEntryMetaData;
-}
 
 // export interface IInvoicePaymentEntry {
 //   current: number;
@@ -68,3 +54,33 @@ export interface IJournalEntry {
 //   action: IJournalEntryActionType;
 //   entriesMapping: [];
 // }
+
+export interface IJournalEntryFormData {
+  account: IAccountSummary;
+  entryId: string; //secondary id
+  amount: number;
+  contact?: IContactSummary;
+  entryType: IJournalEntryType;
+  transactionType: keyof TransactionTypes;
+}
+
+export interface IJournalEntry extends IJournalEntryFormData {
+  transactionId: string;
+  lastValueProcessed?: ILastValueProcessed;
+  // transactionType: keyof TransactionTypes;
+  metaData: IJournalEntryMetaData;
+}
+
+export interface IJournalEntryMapping
+  extends Omit<IJournalEntryFormData, 'amount'> {
+  incoming: number;
+  current: number;
+}
+
+export interface IJournalEntryMappingResult {
+  entriesToCreate: IJournalEntryMapping[];
+  entriesToUpdate: IJournalEntryMapping[];
+  entriesToDelete: IJournalEntryMapping[];
+  similarEntries: IJournalEntryMapping[];
+  uniqueEntries: IJournalEntryMapping[];
+}
