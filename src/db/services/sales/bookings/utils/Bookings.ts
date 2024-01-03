@@ -118,18 +118,22 @@ export default class Bookings {
           taxType: 'inclusive',
         },
       },
-      {
-        itemId: 'transfer_fee',
-        name: 'Transfer Fee',
-        rate: transferFee,
-        qty: 1,
-        subTotal,
-        tax: 0,
-        total: transferFee,
-        description: '',
-        salesAccountId: 'transfer_charge',
-        details: { taxType: 'inclusive' },
-      },
+      ...(transferFee > 0
+        ? [
+            {
+              itemId: 'transfer_fee',
+              name: 'Transfer Fee',
+              rate: transferFee,
+              qty: 1,
+              subTotal,
+              tax: 0,
+              total: transferFee,
+              description: '',
+              salesAccountId: 'transfer_charge',
+              // details: { taxType: 'inclusive' },
+            },
+          ]
+        : []),
     ];
 
     const invoiceForm: IInvoiceForm = {

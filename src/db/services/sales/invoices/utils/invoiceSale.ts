@@ -66,21 +66,21 @@ export default class InvoiceSale extends Sale {
     // this.ARAccount = ARAccount;
   }
 
-  async getARAccount() {
-    const { ARAccount } = this;
-    if (ARAccount) {
-      return ARAccount;
-    }
+  // async getARAccount() {
+  //   const { ARAccount } = this;
+  //   if (ARAccount) {
+  //     return ARAccount;
+  //   }
 
-    const accountId = 'accounts_receivable';
-    // console.log({ accountId });
-    const account = await this.getAccountData(accountId);
-    // console.log({ account });
+  //   const accountId = 'accounts_receivable';
+  //   // console.log({ accountId });
+  //   const account = await this.getAccountData(accountId);
+  //   // console.log({ account });
 
-    this.ARAccount = account;
+  //   this.ARAccount = account;
 
-    return account;
-  }
+  //   return account;
+  // }
 
   getCurrentInvoice() {
     const { orgId, session, invoiceId } = this;
@@ -88,11 +88,7 @@ export default class InvoiceSale extends Sale {
     return InvoiceSale.getById(orgId, invoiceId, session);
   }
 
-  async createInvoice(
-    incomingInvoice: IInvoiceForm,
-    creditAccountsMapping: IAccountsMapping,
-    debitAccountsMapping: IAccountsMapping
-  ) {
+  async createInvoice(incomingInvoice: IInvoiceForm) {
     const { session, userId, orgId, transactionType, saleType, invoiceId } =
       this;
 
@@ -119,11 +115,7 @@ export default class InvoiceSale extends Sale {
     });
 
     await Promise.all([
-      this.createSale(
-        incomingInvoice,
-        creditAccountsMapping,
-        debitAccountsMapping
-      ),
+      this.updateSaleJournal(incomingInvoice),
       instance.save({ session }),
     ]);
 
@@ -137,19 +129,15 @@ export default class InvoiceSale extends Sale {
     // });
   }
 
-  async updateInvoice(
-    incomingInvoice: IInvoiceForm,
-    currentInvoice: IInvoice,
-    creditAccountsMapping: IAccountsMapping,
-    debitAccountsMapping: IAccountsMapping,
-    currentTotal: number
-  ) {
+  async updateInvoice(incomingInvoice: IInvoiceForm, currentInvoice: IInvoice) {
     // update invoice
     const { session, userId, invoiceId, orgId } = this;
 
     InvoiceSale.validateUpdate(currentInvoice, incomingInvoice);
 
     const { total } = incomingInvoice;
+
+    const { total: currentTotal } = currentInvoice;
 
     /**
      * calculate balance adjustment
@@ -168,7 +156,7 @@ export default class InvoiceSale extends Sale {
         {
           $set: {
             ...incomingInvoice,
-            'metaData.modifiedAt': new Date(),
+            'metaData.modifiedAt': '$$NOW',
             'metaData.modifiedBy': userId,
             // balance: increment(balanceAdjustment) as unknown as number
           },
@@ -178,12 +166,7 @@ export default class InvoiceSale extends Sale {
           session,
         }
       ),
-      this.updateSale(
-        incomingInvoice,
-        currentInvoice,
-        creditAccountsMapping,
-        debitAccountsMapping
-      ),
+      this.updateSaleJournal(incomingInvoice, currentInvoice),
     ]);
 
     const invoiceJSON = result?.toJSON() as IInvoiceFromDb;
@@ -209,27 +192,15 @@ export default class InvoiceSale extends Sale {
     return processedInvoice;
   }
 
-  async deleteInvoice(
-    currentInvoice: IInvoice,
-    deletedCreditAccounts: IAccountMapping[],
-    deletedDebitAccounts: IAccountMapping[]
-  ) {
-    const { session, userId, invoiceId, orgId } = this;
+  async deleteInvoice(currentInvoice: IInvoice) {
+    const { session, userId, invoiceId } = this;
 
     InvoiceSale.validateDelete(currentInvoice);
 
     // console.log("deleted accounts", deletedAccounts);
 
-    /**
-     *
-     */
-
     await Promise.all([
-      this.deleteSale(
-        currentInvoice,
-        deletedCreditAccounts,
-        deletedDebitAccounts
-      ),
+      this.updateSaleJournal(null, currentInvoice),
       // mark invoice as deleted
       InvoiceModel.findByIdAndUpdate(
         invoiceId,
@@ -296,6 +267,12 @@ export default class InvoiceSale extends Sale {
       paymentsTotal,
     } = currentInvoice;
     const currentCustomerId = currentCustomer?._id || '';
+    //
+    // const paymentsResult = await InvoicesPayments.getInvoicePayments(
+    //   orgId,
+    //   invoiceId
+    // );
+    //
     /**
      * check to ensure the new total balance is not less than payments made.
      */
@@ -389,31 +366,7 @@ export default class InvoiceSale extends Sale {
 
   //----------------------------------------------------------------
 
-  // static retrieveInvoiceFromSnap(snap: DocumentSnapshot<IInvoiceFromDb>) {
-  //   const data = snap.data();
-  //   const id = snap.id;
-
-  //   if (!snap.exists || data?.status === -1 || data === undefined) {
-  //     throw new Error(`Invoice with id ${id} not found!`);
-  //   }
-
-  //   const invoice: Invoice = {
-  //     ...data,
-  //     id,
-  //   };
-
-  //   return invoice;
-  // }
-
   //------------------------------------------------------------------
-  // static getInvoicePayments(payments: InvoicePayments) {
-  //   const total = Object.keys(payments).reduce((sum, key) => {
-  //     const payment = new BigNumber(payments[key]);
-  //     return sum.plus(payment);
-  //   }, new BigNumber(0));
-
-  //   return total.dp(2).toNumber();
-  // }
 
   static processRawInvoiceResult(invoiceFromDb: IInvoiceFromDb) {
     const subTotal = +invoiceFromDb.subTotal.toString();

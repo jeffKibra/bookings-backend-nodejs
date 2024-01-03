@@ -56,6 +56,10 @@ export default class Accounts {
 
     if (!account) {
       const rawAccount = await Accounts.getAccount(accountId, orgId);
+      if (!rawAccount) {
+        throw new Error(`Account with accountId: ${accountId} not found!`);
+      }
+      
       // console.log('getAccountData rawAccount', rawAccount);
       account = Accounts.formatAccount(rawAccount);
       // console.log('getAccountData account', account);

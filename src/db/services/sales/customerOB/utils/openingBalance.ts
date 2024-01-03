@@ -8,6 +8,8 @@ import { PaymentReceived } from '../../paymentsReceived/utils';
 import { JournalEntry } from '../../../journal';
 import { InvoiceSale } from '../../invoices/utils';
 import { getPaymentTermByValue } from '../../../paymentTerms';
+import { Accounts } from '../../../accounts';
+import { SaleJournal } from '../../utils';
 
 import {
   IAccount,
@@ -15,7 +17,9 @@ import {
   IContactSummary,
   IInvoice,
   IPaymentTermSummary,
+  IAccountSummary,
 } from '../../../../../types';
+import getResult from '../../bookings/search/getResult';
 
 interface OpeningBalanceData {
   orgId: string;
@@ -26,13 +30,15 @@ interface OpeningBalanceData {
 
 //------------------------------------------------------------------------------
 
-const OBAAccountId = 'opening_balance_adjustments';
+const { OBA: OBAAccountId, sales: salesAccountId } = Accounts.commonIds;
 //------------------------------------------------------------------------------
 
 export default class OpeningBalance extends InvoiceSale {
   // OBAAccount: Account;
   // salesAccount: Account;
   customerId: string;
+  //
+  accountsInstance: Accounts;
 
   constructor(session: ClientSession | null, data: OpeningBalanceData) {
     const { orgId, userId, invoiceId, customerId } = data;
@@ -47,18 +53,7 @@ export default class OpeningBalance extends InvoiceSale {
 
     this.customerId = customerId;
 
-    // const salesAccount = getAccountData('sales', accounts);
-    // const OBAAccount = getAccountData('opening_balance_adjustments', accounts);
-
-    // if (!salesAccount) {
-    //   throw new Error('Sales account not found!');
-    // }
-    // if (!OBAAccount) {
-    //   throw new Error('Opening balance adjustments account not found!');
-    // }
-
-    // this.salesAccount = salesAccount;
-    // this.OBAAccount = OBAAccount;
+    this.accountsInstance = new Accounts(session, orgId);
   }
 
   async generateInvoice(openingBalance: number, customer: IContactSummary) {
@@ -82,53 +77,124 @@ export default class OpeningBalance extends InvoiceSale {
   }
 
   async _create(obInvoice: IInvoiceForm) {
-    const creditAccountsMapping = InvoiceSale.generateCreditAccounts(obInvoice);
-    const debitAccountsMapping = InvoiceSale.generateDebitAccounts(obInvoice);
-
-    await Promise.all([
-      this.createInvoice(
-        obInvoice,
-        creditAccountsMapping,
-        debitAccountsMapping
-      ),
-      this.createOBEntries(obInvoice),
+    return Promise.all([
+      this.createInvoice(obInvoice),
+      this.updateOBEntries(obInvoice),
     ]);
   }
 
-  async createOBEntries(incomingOBInvoice: IInvoiceForm) {
-    const { orgId, session, userId, invoiceId } = this;
-
-    const salesAccount = await this.getAccountData('sales');
-    const OBAAccount = await this.getAccountData(OBAAccountId);
-
+  async updateOBEntries(
+    incomingOBInvoice: IInvoiceForm | null,
+    currentOBInvoice?: IInvoice
+  ) {
     const {
-      customer: { _id: customerId },
-      total,
-    } = incomingOBInvoice;
+      orgId,
+      session,
+      userId,
+      invoiceId,
+      saleType,
+      transactionId,
+      transactionType,
+      accountsInstance,
+    } = this;
 
-    const contact = InvoiceSale.createContactFromCustomer(
-      incomingOBInvoice.customer
-    );
+    const [salesAccount, OBAAccount] = await Promise.all([
+      accountsInstance.getAccountData(salesAccountId),
+      accountsInstance.getAccountData(OBAAccountId),
+    ]);
 
+    const saleJournalInstance = new SaleJournal(session, {
+      orgId,
+      saleType,
+      transactionId,
+      transactionType,
+      userId,
+    });
+
+    if (currentOBInvoice) {
+      this.appendCurrentOB(
+        saleJournalInstance,
+        currentOBInvoice,
+        salesAccount,
+        OBAAccount
+      );
+    }
+
+    if (incomingOBInvoice) {
+      this.appendIncomingOB(
+        saleJournalInstance,
+        incomingOBInvoice,
+        salesAccount,
+        OBAAccount
+      );
+    }
+
+    const result = await saleJournalInstance.updateEntries();
+
+    return result;
+  }
+
+  appendCurrentOB(
+    saleJournalInstance: SaleJournal,
+    currentInvoice: IInvoice,
+    salesAccount: IAccountSummary,
+    OBAAccount: IAccountSummary
+  ) {
+    const { customer, total } = currentInvoice;
+
+    const contact = InvoiceSale.createContactFromCustomer(customer);
     /**
      * 1. debit sales
      */
-    const journal = new JournalEntry(session, userId, orgId);
-    journal.debitAccount({
+    saleJournalInstance.appendCurrentEntry({
       account: salesAccount,
       amount: total,
-      transactionId: { primary: invoiceId },
+      entryId: '',
+      entryType: 'debit',
       transactionType: 'opening_balance',
       contact,
     });
-
     /**
      * 2. credit opening_balance_adjustments entry for customer opening balance
      */
-    journal.creditAccount({
+    saleJournalInstance.appendCurrentEntry({
       account: OBAAccount,
       amount: total,
-      transactionId: { primary: invoiceId },
+      entryId: '',
+      entryType: 'credit',
+      transactionType: 'opening_balance',
+      contact,
+    });
+  }
+
+  appendIncomingOB(
+    saleJournalInstance: SaleJournal,
+    incomingInvoice: IInvoiceForm,
+    salesAccount: IAccountSummary,
+    OBAAccount: IAccountSummary
+  ) {
+    const { customer, total } = incomingInvoice;
+
+    const contact = InvoiceSale.createContactFromCustomer(customer);
+    /**
+     * 1. debit sales
+     */
+    saleJournalInstance.appendIncomingEntry({
+      account: salesAccount,
+      amount: total,
+      entryId: '',
+      entryType: 'debit',
+      transactionType: 'opening_balance',
+      contact,
+    });
+    /**
+     * 2. credit opening_balance_adjustments entry for customer opening balance
+     */
+    saleJournalInstance.appendIncomingEntry({
+      account: OBAAccount,
+      amount: total,
+      entryId: '',
+      entryType: 'credit',
       transactionType: 'opening_balance',
       contact,
     });
@@ -152,25 +218,10 @@ export default class OpeningBalance extends InvoiceSale {
     /**
      * update invoice
      */
-    const creditAccountsMapping = InvoiceSale.generateCreditAccounts(
-      incomingOBInvoice,
-      currentOBInvoice
-    );
-
-    const debitAccountsMapping = InvoiceSale.generateDebitAccounts(
-      incomingOBInvoice,
-      currentOBInvoice
-    );
 
     await Promise.all([
-      this.updateInvoice(
-        incomingOBInvoice,
-        currentOBInvoice,
-        creditAccountsMapping,
-        debitAccountsMapping,
-        currentTotal
-      ),
-      this.createOBEntries(incomingOBInvoice),
+      this.updateInvoice(incomingOBInvoice, currentOBInvoice),
+      this.updateOBEntries(incomingOBInvoice, currentOBInvoice),
     ]);
 
     // const adjustment = new BigNumber(incomingTotal - currentTotal)
@@ -180,39 +231,17 @@ export default class OpeningBalance extends InvoiceSale {
   }
 
   async delete(currentOBInvoice: IInvoice) {
-    const { orgId } = this;
-
-    const { deletedAccounts: deletedCreditAccounts } =
-      InvoiceSale.generateCreditAccounts(null, currentOBInvoice);
-    const { deletedAccounts: deletedDebitAccounts } =
-      InvoiceSale.generateDebitAccounts(null, currentOBInvoice);
-
     /**
      * delete invoice
      */
-    await Promise.all([
-      this.deleteInvoice(
-        currentOBInvoice,
-        deletedCreditAccounts,
-        deletedDebitAccounts
-      ),
-      this.deleteOBEntries(),
+    return Promise.all([
+      this.deleteInvoice(currentOBInvoice),
+      this.updateOBEntries(null, currentOBInvoice),
     ]);
 
     // const { total } = currentOBInvoice;
 
     // const adjustment = new BigNumber(0 - total).dp(2).toNumber();
-  }
-
-  async deleteOBEntries() {
-    const { session, invoiceId, userId, orgId } = this;
-
-    const journal = new JournalEntry(session, userId, orgId);
-
-    await Promise.all([
-      journal.deleteEntry({ primary: invoiceId }, 'sales'),
-      journal.deleteEntry({ primary: invoiceId }, OBAAccountId),
-    ]);
   }
 
   //------------------------------------------------------------

@@ -43,52 +43,21 @@ export default class Invoice extends InvoiceSale {
   }
 
   async create(incomingInvoice: IInvoiceForm) {
-    await this.getARAccount();
-
-    const { creditAccountsMapping, debitAccountsMapping } =
-      this.initCreateSale(incomingInvoice);
-
-    //create invoice
-    await this.createInvoice(
-      incomingInvoice,
-      creditAccountsMapping,
-      debitAccountsMapping
-    );
+    return this.createInvoice(incomingInvoice);
   }
 
   async update(incomingInvoice: IInvoiceForm) {
-    const ARAccount = await this.getARAccount();
-    const { invoiceId, orgId } = this;
-
     const currentInvoice = await this.getCurrentInvoice();
 
     InvoiceSale.validateUpdate(currentInvoice, incomingInvoice);
     /**
      * initialize sale update-happens after fetching current invoice
      */
-    const incomingInvoiceAndAccount: SaleDataAndAccount = {
-      saleDetails: incomingInvoice,
-      debitAccount: ARAccount,
-    };
-    const currentInvoiceAndAccount: SaleDataAndAccount = {
-      saleDetails: currentInvoice,
-      debitAccount: ARAccount,
-    };
-
-    const { creditAccountsMapping, debitAccountsMapping } =
-      this.generateAccountsMapping(incomingInvoice, currentInvoice);
-
-    // console.log({ accountsSummary, accountsMapping });
-
-    const { total: currentTotal } = currentInvoice;
 
     //update invoice
     const updatedInvoice = await this.updateInvoice(
       incomingInvoice,
-      currentInvoice,
-      creditAccountsMapping,
-      debitAccountsMapping,
-      currentTotal
+      currentInvoice
     );
 
     // const adjustment = new BigNumber(incomingTotal - currentTotal)
@@ -103,18 +72,11 @@ export default class Invoice extends InvoiceSale {
 
     InvoiceSale.validateDelete(currentInvoice);
 
-    const { creditAccountsMapping, debitAccountsMapping } =
-      this.generateAccountsMapping(null, currentInvoice);
-
     /**
      * delete invoice
      */
 
-    const result = await this.deleteInvoice(
-      currentInvoice,
-      creditAccountsMapping.deletedAccounts,
-      debitAccountsMapping.deletedAccounts
-    );
+    const result = await this.deleteInvoice(currentInvoice);
 
     return result;
   }
