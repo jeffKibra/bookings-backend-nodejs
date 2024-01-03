@@ -21,7 +21,7 @@ import {
   InvoicePayments,
   ISaleType,
 } from '../../../../../types';
-import InvoicesPayments from '../../paymentsReceived/utils/invoicesPayments';
+import InvoicesPayments from '../../paymentsReceived/utils/paymentAllocations';
 
 // ----------------------------------------------------------------
 
