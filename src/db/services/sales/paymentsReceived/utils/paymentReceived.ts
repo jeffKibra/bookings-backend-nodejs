@@ -7,7 +7,7 @@ import { PaymentReceivedModel } from '../../../../models';
 
 import { JournalEntry } from '../../../journal';
 
-import InvoicesPayments from './invoicesPayments';
+import PaymentAllocations from './paymentAllocations';
 import { Accounts } from '../../../accounts';
 
 import {
@@ -28,7 +28,7 @@ interface PaymentData {
 
 //-------------------------------------------------------------
 
-export default class PaymentReceived extends InvoicesPayments {
+export default class PaymentReceived extends PaymentAllocations {
   transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
 
   constructor(session: ClientSession | null, paymentData: PaymentData) {
@@ -58,14 +58,9 @@ export default class PaymentReceived extends InvoicesPayments {
     // console.log({ data, orgId, userProfile });
     const { allocations: userAllocations, amount } = formData;
 
-    const { allocations, allocationsMapping, excess } =
-      await PaymentReceived.validateInvoicesPayments(
-        orgId,
-        amount,
-        userAllocations,
-        null,
-        session
-      );
+    const { allocations, excess } = await this.validatePaymentAllocations(
+      formData
+    );
 
     const incomingPayment: IPaymentReceivedForm = { ...formData, allocations };
 
@@ -88,14 +83,7 @@ export default class PaymentReceived extends InvoicesPayments {
       },
     });
 
-    const [result] = await Promise.all([
-      instance.save({ session }),
-      /**
-       * make the needed invoice payments
-       */
-      this.makePayments(allocationsMapping, incomingPayment),
-      // overpay(),
-    ]);
+    const [result] = await Promise.all([instance.save({ session })]);
 
     return result;
   }
@@ -110,17 +98,9 @@ export default class PaymentReceived extends InvoicesPayments {
     const { allocations: incomingUserAllocations, amount: incomingAmount } =
       formData;
 
-    const {
-      allocations: incomingAllocations,
-      excess: incomingExcess,
-      allocationsMapping,
-    } = await PaymentReceived.validateInvoicesPayments(
-      orgId,
-      incomingAmount,
-      incomingUserAllocations,
-      currentPayment,
-      session
-    );
+    const { allocations: incomingAllocations, excess: incomingExcess } =
+      await this.validatePaymentAllocations(formData, currentPayment);
+
     const incomingPayment: IPaymentReceivedForm = {
       ...formData,
       allocations: incomingAllocations,
@@ -134,11 +114,6 @@ export default class PaymentReceived extends InvoicesPayments {
         ...incomingPayment,
         excess: incomingExcess,
       }),
-      /**
-       * update invoice payments
-       */
-      this.makePayments(allocationsMapping, incomingPayment, currentPayment),
-      // overpay(),
     ]);
 
     // console.log({ transactionDetails });
@@ -179,16 +154,7 @@ export default class PaymentReceived extends InvoicesPayments {
 
     const { orgId, session } = this;
 
-    const { allocationsMapping } =
-      await PaymentReceived.validateInvoicesPayments(
-        orgId,
-        amount,
-        [],
-        paymentData,
-        session
-      );
-
-    console.log('allocations mapping', allocationsMapping);
+    await this.validatePaymentAllocations(null, paymentData);
 
     /**
      * mark payment as deleted
@@ -209,11 +175,6 @@ export default class PaymentReceived extends InvoicesPayments {
           session,
         }
       ).exec(),
-      /**
-       * update invoice payments
-       */
-      this.makePayments(allocationsMapping, null, paymentData),
-      // overpay(),
     ]);
 
     return result;

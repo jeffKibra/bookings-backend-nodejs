@@ -7,7 +7,7 @@ import BigNumber from 'bignumber.js';
 //   ContactSummary,
 // } from "../../../utils/summaries";
 
-import BookingsPayments from './invoicesPayments';
+import BookingsPayments from './paymentAllocations';
 
 // import {
 //   Account,
