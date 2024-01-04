@@ -116,7 +116,7 @@ export default class SaleJournal extends TxJournalEntries {
       account: ARAccount,
       amount: total,
       entryId: '',
-      entryType: 'credit',
+      entryType: 'debit',
       transactionType,
       contact,
     });
@@ -145,11 +145,13 @@ export default class SaleJournal extends TxJournalEntries {
     }
 
     const { items, customer, total } = incomingSale;
+    console.log('incoming sale items', items);
     const contact = SaleJournal.createContactFromCustomer(customer);
 
     const incomingItemsAccounts = SaleJournal.groupItemsIntoAccounts(
       items || []
     );
+    console.log('incoming items accounts', incomingItemsAccounts);
 
     const { accountsInstance, transactionType } = this;
     /**
@@ -166,7 +168,7 @@ export default class SaleJournal extends TxJournalEntries {
         /**
          * credit income accounts
          */
-        this.appendCurrentEntry({
+        this.appendIncomingEntry({
           account,
           amount,
           entryId: '',
@@ -180,11 +182,11 @@ export default class SaleJournal extends TxJournalEntries {
     /**
      * debit accounts_receivable account
      */
-    this.appendCurrentEntry({
+    this.appendIncomingEntry({
       account: ARAccount,
       amount: total,
       entryId: '',
-      entryType: 'credit',
+      entryType: 'debit',
       transactionType,
       contact,
     });
@@ -217,15 +219,12 @@ export default class SaleJournal extends TxJournalEntries {
   static groupItemsIntoAccounts(items: ISaleItem[]) {
     const accountsMap: Record<string, number> = {};
 
-    const summaryObject = items.forEach(item => {
+    items.forEach(item => {
       const { total, salesAccountId } = item;
 
-      const currentTotal = accountsMap[salesAccountId];
+      const currentTotal = accountsMap[salesAccountId] || 0;
 
-      return {
-        ...accountsMap,
-        [salesAccountId]: currentTotal ? currentTotal + total : total,
-      };
+      accountsMap[salesAccountId] = currentTotal + total;
     });
 
     console.log('items accounts map', accountsMap);

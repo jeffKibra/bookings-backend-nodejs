@@ -54,32 +54,32 @@ export default class JournalTransaction {
   }
 
   //------------------------------------------------------------
-  private addToNew(entryData: IJournalEntryFormData) {
-    const { userId, orgId, transactionId } = this;
+  // private addToNew(entryData: IJournalEntryFormData) {
+  //   const { userId, orgId, transactionId } = this;
 
-    const metaData: IJournalEntry['metaData'] = {
-      //   transactionType,
-      status: 0,
-      orgId,
-      createdAt: '$$NOW',
-      createdBy: userId,
-      modifiedAt: '$$NOW',
-      modifiedBy: userId,
-    };
+  //   const metaData: IJournalEntry['metaData'] = {
+  //     //   transactionType,
+  //     status: 0,
+  //     orgId,
+  //     createdAt: new Date(),
+  //     createdBy: userId,
+  //     modifiedAt: new Date(),
+  //     modifiedBy: userId,
+  //   };
 
-    return this.entries.push({
-      insertOne: {
-        document: {
-          transactionId,
-          ...entryData,
-          metaData,
-        },
-      },
-    });
-  }
+  //   return this.entries.push({
+  //     insertOne: {
+  //       document: {
+  //         transactionId,
+  //         ...entryData,
+  //         metaData,
+  //       },
+  //     },
+  //   });
+  // }
 
   addNewEntry(entryFormData: IJournalEntryFormData) {
-    return this.addToNew(entryFormData);
+    return this.addToModified(entryFormData);
   }
 
   //------------------------------- -----------------------------
@@ -126,13 +126,20 @@ export default class JournalTransaction {
       updateOne: {
         filter: { ...filters },
         update: {
+          $setOnInsert: {
+            'metaData.createdAt': new Date(),
+            'metaData.createdBy': userId,
+            orgId,
+          },
           $set: {
             transactionId,
             ...entryData,
-            'metaData.modifiedAt': '$$NOW',
+            'metaData.modifiedAt': new Date(),
             'metaData.modifiedBy': userId,
+            'metaData.status': 0,
           },
         },
+        upsert: true,
       },
     });
   }
@@ -184,14 +191,18 @@ export default class JournalTransaction {
       contactId
     );
 
-    //mark entry as deleted
+    /**
+     * mark entry as deleted
+     * set amount to zero(0)
+     * set metaData.status to -1
+     */
     return this.entries.push({
       updateOne: {
         filter: { ...filters },
         update: {
           $set: {
             amount: 0,
-            'metaData.modifiedAt': '$$NOW',
+            'metaData.modifiedAt': new Date(),
             'metaData.modifiedBy': userId,
             'metaData.status': -1,
           },
@@ -205,14 +216,24 @@ export default class JournalTransaction {
     const { session, entries } = this;
     const entriesCount = entries.length;
 
+    console.log('entries', entries);
+
     const writeResult = await JournalEntryModel.bulkWrite([...entries], {
       session: session || undefined,
     });
 
-    const { modifiedCount, insertedCount } = writeResult;
+    console.log('write result', writeResult);
 
-    const allModified = modifiedCount + insertedCount;
-    console.log({ modifiedCount, insertedCount, allModified, entriesCount });
+    const { modifiedCount, insertedCount, upsertedCount } = writeResult;
+
+    const allModified = modifiedCount + insertedCount + upsertedCount;
+    console.log({
+      modifiedCount,
+      insertedCount,
+      upsertedCount,
+      allModified,
+      entriesCount,
+    });
 
     if (allModified !== entriesCount) {
       throw new Error(

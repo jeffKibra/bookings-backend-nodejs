@@ -82,8 +82,18 @@ export default class TxJournalEntries extends JournalTransaction {
     );
 
     const { currentEntriesObject } = this;
+    console.log(
+      'appending incoming entry currentEntriesObject ',
+      currentEntriesObject
+    );
 
     const current = currentEntriesObject[entryRef]?.amount || 0;
+
+    console.log('appending incoming entry', {
+      entryRef,
+      current,
+      incoming,
+    });
 
     if (incoming < 0 || current < 0) {
       //cant have negative values
@@ -101,11 +111,12 @@ export default class TxJournalEntries extends JournalTransaction {
     //   entryType,
     // };
 
-    if (incoming > 0 && current === 0) {
+    if (+incoming > 0 && current === 0) {
       /**
        * booking not in current payments
        * add it to entryDatasToCreate
        */
+      console.log('adding to new entries');
       this.addNewEntry(entryData);
       // this.entriesToCreate.push(dataMapping);
     } else {
@@ -113,10 +124,11 @@ export default class TxJournalEntries extends JournalTransaction {
        * similar booking has been found-check if the amounts are equal
        * if equal, add to similars array-else add to entriesToUpdate array
        */
-      if (incoming === current) {
+      if (+incoming === current) {
         // this.similarEntries.push(dataMapping);
         console.log('unchanged entry found: ', entryData);
       } else {
+        console.log('adding to updated entries');
         this.updateEntry(entryData);
         // this.entriesToUpdate.push(dataMapping);
       }
@@ -235,8 +247,8 @@ export default class TxJournalEntries extends JournalTransaction {
     entryId: string = '',
     contactId: string = ''
   ) {
-    const secondField = entryId ? `_${entryId}` : '';
-    const thirdField = contactId ? `_${contactId}` : '';
+    const secondField = entryId ? `:${entryId}` : '';
+    const thirdField = contactId ? `:${contactId}` : '';
 
     return `${accountId}${secondField}${thirdField}`;
   }

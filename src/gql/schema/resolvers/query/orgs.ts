@@ -23,6 +23,7 @@ const queryResolvers = {
     context: Required<IGQLContext>
   ) => {
     const userUID = context.auth?.uid || '';
+    // console.log('fetching user org resolver. userUID', userUID);
 
     const org = await services.orgs.getUserOrg(userUID);
 

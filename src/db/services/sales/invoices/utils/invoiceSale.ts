@@ -10,15 +10,11 @@ import { PaymentReceived } from '../../paymentsReceived/utils';
 import { Sale } from '../../utils';
 
 import {
-  IAccount,
   IAccountSummary,
   IInvoiceForm,
   IInvoiceFromDb,
   InvoiceTransactionTypes,
   IInvoice,
-  IAccountsMapping,
-  IAccountMapping,
-  InvoicePayments,
   ISaleType,
 } from '../../../../../types';
 import InvoicesPayments from '../../paymentsReceived/utils/paymentAllocations';
@@ -156,7 +152,7 @@ export default class InvoiceSale extends Sale {
         {
           $set: {
             ...incomingInvoice,
-            'metaData.modifiedAt': '$$NOW',
+            'metaData.modifiedAt': new Date(),
             'metaData.modifiedBy': userId,
             // balance: increment(balanceAdjustment) as unknown as number
           },

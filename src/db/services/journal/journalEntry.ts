@@ -131,9 +131,9 @@ export default class JournalEntry {
             transactionType,
             status: 0,
             orgId,
-            createdAt: '$$NOW',
+            createdAt: new Date(),
             createdBy: userId,
-            modifiedAt: '$$NOW',
+            modifiedAt: new Date(),
             modifiedBy: userId,
           },
         },
@@ -336,15 +336,21 @@ export default class JournalEntry {
       });
     }
 
-    return {
+    const filters = {
       'account.accountId': accountId,
-      'metaData.status': 0,
+      /**
+       * disable status check for now to avoid duplicate entries
+       * incase the entry is to be recreated in the future
+       */
+      // 'metaData.status': 0,
       'metaData.orgId': orgId,
       transactionId,
-      ...(entryId ? { entryId } : {}),
-      ...(contactId ? { 'contact._id': contactId } : {}),
+      entryId: entryId || '',
+      'contact._id': contactId || '',
       ...detailsFilters,
     };
+
+    return filters;
   }
 
   //----------------------------------------------------------------

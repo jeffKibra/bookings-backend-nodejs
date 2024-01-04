@@ -11,6 +11,7 @@ export default function generateSearchStages(
   retrieveFacets?: false
   // sortOptions?: ISortOptions
 ) {
+  console.log('generate contacts search stages orgId', orgId);
   const filters = generateFilters(orgId, userFilters);
   console.log('filters', filters);
 

@@ -107,6 +107,7 @@ async function makeDownPayment(
     orgId,
     userId: userUID,
     paymentId,
+    transactionType: 'invoice_down_payment',
   });
 
   // const paymentAccount = await paymentInstance.getAccountData(

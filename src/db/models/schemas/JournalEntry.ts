@@ -9,7 +9,6 @@ import { initSchema } from './utils';
 
 const JournalEntryMetaDataSchema = new Schema({
   ...metaDataFields,
-  transactionType: { type: String, required: true },
 });
 
 const LastProcessedValue = new Schema({
@@ -28,6 +27,7 @@ const schema = new Schema({
   lastProcessedValue: {
     type: LastProcessedValue,
   },
+  transactionType: { type: String, required: true },
   metaData: { type: JournalEntryMetaDataSchema },
   // transactionType: String,
 });
