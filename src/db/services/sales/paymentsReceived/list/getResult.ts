@@ -60,6 +60,7 @@ export default async function getResult(
       $match: {
         'metaData.status': 0,
         'metaData.orgId': orgId,
+        'metaData.transactionType': 'customer_payment',
       },
     },
 

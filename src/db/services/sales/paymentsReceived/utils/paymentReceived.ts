@@ -7,7 +7,7 @@ import { PaymentReceivedModel } from '../../../../models';
 
 import { JournalEntry } from '../../../journal';
 
-import PaymentAllocations from './paymentAllocations';
+import PaymentAllocations, { IPaymentData } from './paymentAllocations';
 import { Accounts } from '../../../accounts';
 
 import {
@@ -16,27 +16,16 @@ import {
   IUserPaymentReceivedForm,
   IPaymentReceivedFromDb,
   TransactionTypes,
+  PaymentTransactionTypes,
   IPaymentReceived,
   IPaymentAllocation,
 } from '../../../../../types';
 
-interface PaymentData {
-  orgId: string;
-  userId: string;
-  paymentId: string;
-}
-
 //-------------------------------------------------------------
 
 export default class PaymentReceived extends PaymentAllocations {
-  transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
-
-  constructor(session: ClientSession | null, paymentData: PaymentData) {
-    const { orgId, userId, paymentId } = paymentData;
-
-    super(session, { orgId, userId, paymentId });
-
-    this.transactionType = 'customer_payment';
+  constructor(session: ClientSession | null, paymentData: IPaymentData) {
+    super(session, paymentData);
   }
 
   async fetchCurrentPayment() {
@@ -55,12 +44,7 @@ export default class PaymentReceived extends PaymentAllocations {
     const { session, orgId, userId, transactionType, paymentId } = this;
     console.log({ formData });
 
-    // console.log({ data, orgId, userProfile });
-    const { allocations: userAllocations, amount } = formData;
-
-    const { allocations, excess } = await this.validatePaymentAllocations(
-      formData
-    );
+    const { allocations, excess } = await this.updatePaymentJournal(formData);
 
     const incomingPayment: IPaymentReceivedForm = { ...formData, allocations };
 
@@ -94,12 +78,9 @@ export default class PaymentReceived extends PaymentAllocations {
     currentPayment: IPaymentReceived
   ) {
     console.log({ formData, currentPayment });
-    const { session, orgId } = this;
-    const { allocations: incomingUserAllocations, amount: incomingAmount } =
-      formData;
 
     const { allocations: incomingAllocations, excess: incomingExcess } =
-      await this.validatePaymentAllocations(formData, currentPayment);
+      await this.updatePaymentJournal(formData, currentPayment);
 
     const incomingPayment: IPaymentReceivedForm = {
       ...formData,
@@ -149,12 +130,9 @@ export default class PaymentReceived extends PaymentAllocations {
 
   //------------------------------------------------------------
   async delete(paymentData: IPaymentReceived) {
-    const { allocations, amount } = paymentData;
-    const currentPaymentAllocations = allocations;
+    const { session } = this;
 
-    const { orgId, session } = this;
-
-    await this.validatePaymentAllocations(null, paymentData);
+    await this.updatePaymentJournal(null, paymentData);
 
     /**
      * mark payment as deleted

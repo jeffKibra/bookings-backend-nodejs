@@ -27,10 +27,13 @@ import {
   PaymentTransactionTypes,
 } from '../../../../../types';
 
-interface PaymentData {
+export type ITransactionType = keyof PaymentTransactionTypes;
+
+export interface IPaymentData {
   orgId: string;
   userId: string;
   paymentId: string;
+  transactionType?: ITransactionType;
 }
 
 //-------------------------------------------------------------
@@ -45,10 +48,11 @@ export default class PaymentAllocations extends Accounts {
   orgId: string;
   userId: string;
   paymentId: string;
-  transactionType: keyof Pick<TransactionTypes, 'customer_payment'>;
+  //
+  transactionType: ITransactionType;
 
-  constructor(session: ClientSession | null, paymentData: PaymentData) {
-    const { orgId, userId, paymentId } = paymentData;
+  constructor(session: ClientSession | null, paymentData: IPaymentData) {
+    const { orgId, userId, paymentId, transactionType } = paymentData;
 
     super(session, orgId);
 
@@ -58,22 +62,20 @@ export default class PaymentAllocations extends Accounts {
     this.userId = userId;
     this.paymentId = paymentId;
 
-    this.transactionType = 'customer_payment';
+    this.transactionType = transactionType || 'customer_payment';
   }
 
-  async validatePaymentAllocations(
+  async updatePaymentJournal(
     incomingPayment: IUserPaymentReceivedForm | null,
     currentPayment?: IPaymentReceived | null
   ) {
-    const { session, orgId, userId, paymentId } = this;
+    const { userId, orgId, paymentId, session } = this;
 
-    let allocationsTotal = new BigNumber(0);
-    let allocationsToInvoicesTotal = 0;
+    let allocationsTotal = 0;
     let excess = 0;
     //
-
-    //
     const allocations: IPaymentAllocation[] = [];
+    //
 
     const prjInstance = new PaymentReceivedJournal(session, {
       userId,
@@ -83,90 +85,15 @@ export default class PaymentAllocations extends Accounts {
     });
 
     if (currentPayment && typeof currentPayment === 'object') {
-      prjInstance.appendCurrentPayment(currentPayment);
+      await prjInstance.appendCurrentPayment(currentPayment);
     }
 
-    /**
-     * enter branch if its not a deletion
-     */
-    if (incomingPayment) {
-      const {
-        customer,
-        amount: paymentTotal,
-        allocations: incomingAllocations,
-      } = incomingPayment;
+    if (incomingPayment && typeof incomingPayment === 'object') {
+      const result = await prjInstance.appendIncomingPayment(incomingPayment);
 
-      //
-      await Promise.all(
-        incomingAllocations.map(async incomingAllocation => {
-          const {
-            amount,
-            invoiceId,
-            transactionType: presetTransactionType,
-          } = incomingAllocation;
-          // console.log({ invoiceId, amount });
-
-          if (amount > 0) {
-            allocationsTotal = allocationsTotal.plus(amount);
-            //
-
-            const transactionType: keyof PaymentTransactionTypes =
-              presetTransactionType || 'invoice_payment';
-
-            const allocation: IPaymentAllocation = {
-              amount,
-              invoiceId,
-              transactionType,
-            };
-            //
-            allocations.push(allocation);
-            //
-            const {
-              creditResult: { current: currentAllocatedAmount },
-            } = await prjInstance.appendIncomingAllocation(
-              customer,
-              allocation
-            );
-            //
-
-            if (transactionType === 'invoice_payment') {
-              /**
-               * add check to prevent validation when creating down payment.
-               * transactionType for down payment=invoice_down_payment
-               */
-
-              await PaymentAllocations.validateInvoicePaymentAllocation(
-                orgId,
-                allocation,
-                currentAllocatedAmount,
-                session
-              );
-              //
-            }
-          }
-
-          return null;
-        })
-      );
-
-      allocationsToInvoicesTotal = allocationsTotal.dp(2).toNumber();
-
-      if (allocationsToInvoicesTotal > paymentTotal) {
-        throw new Error(
-          'invoices payments cannot be more than customer payment!'
-        );
-      }
-
-      //
-
-      excess = new BigNumber(paymentTotal)
-        .minus(allocationsToInvoicesTotal)
-        .dp(2)
-        .toNumber();
-
-      if (excess > 0) {
-        prjInstance.appendIncomingExcess(customer, excess);
-      }
+      allocations.push(...(result.allocations || []));
+      allocationsTotal = result.allocationsTotal || 0;
+      excess = result.excess || 0;
     }
 
     // console.log({ excess, allocationsToInvoicesTotal });
@@ -176,7 +103,7 @@ export default class PaymentAllocations extends Accounts {
     const writeResult = await prjInstance.updateEntries();
 
     return {
-      allocationsToInvoicesTotal,
+      allocationsTotal,
       excess,
       allocations,
       writeResult,
