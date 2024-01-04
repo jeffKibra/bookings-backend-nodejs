@@ -21,13 +21,12 @@ const paymentReceivedInputFields = `
 
 const paymentReceivedFields = `
     ${paymentReceivedSharedFields}
-    customer:ContactSummary!
+    customer: ContactSummary!
     paymentMode: PaymentMode!
-    allocations: [PaymentAllocation]
 
-    _id:ID!
-    excess:Int
-    metaData:SaleMetaData!
+    _id: ID!
+    excess: Int
+    metaData: SaleMetaData!
 `;
 
 const typeDefs = `#graphql
@@ -48,6 +47,12 @@ const typeDefs = `#graphql
 
     type PaymentReceived {
         ${paymentReceivedFields}
+        allocations: [PaymentAllocation]
+    }
+
+    type PopulatedPaymentReceived {
+        ${paymentReceivedFields}
+        allocations: [InvoicePaymentAllocation]
     }
 
     type ListPaymentsReceivedMetaData {
@@ -72,6 +77,7 @@ const typeDefs = `#graphql
 
     extend type Query {
         paymentReceived(id:ID): PaymentReceived
+        populatedPaymentReceived(id:ID): PopulatedPaymentReceived
         paymentsReceived(options: PaymentsReceivedQueryOptions): PaymentsReceivedResult
     }
    

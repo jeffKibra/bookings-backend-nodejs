@@ -15,10 +15,32 @@ const queryResolvers = {
     //
     const paymentReceivedId = args?.id;
     console.log({ paymentReceivedId });
+    //
 
     const paymentReceived = await services.sales.paymentsReceived.getById(
       orgId,
       paymentReceivedId
+    );
+    console.log({ paymentReceived });
+
+    return paymentReceived;
+  },
+
+  populatedPaymentReceived: async (
+    parent: unknown,
+    args: { id: string },
+    context: Required<IGQLContext>
+  ) => {
+    const orgId = context.orgId;
+    //
+    const paymentReceivedId = args?.id;
+    console.log({ paymentReceivedId });
+    //
+
+    const paymentReceived = await services.sales.paymentsReceived.getById(
+      orgId,
+      paymentReceivedId,
+      true
     );
     console.log({ paymentReceived });
 

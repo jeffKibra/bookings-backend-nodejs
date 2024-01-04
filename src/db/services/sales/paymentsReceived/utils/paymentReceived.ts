@@ -165,21 +165,65 @@ export default class PaymentReceived extends PaymentAllocations {
   //----------------------------------------------------------------
 
   //------------------------------------------------------------
-  static async fetchPaymentData(paymentId: string) {
+  static async fetchPaymentData(
+    paymentId: string,
+    populateInvoices: boolean = false
+  ) {
     const result = await PaymentReceivedModel.aggregate([
       {
         $match: {
           _id: new ObjectId(paymentId),
         },
       },
+
       {
         $unwind: '$allocations',
       },
+      ...(populateInvoices
+        ? [
+            {
+              $lookup: {
+                from: 'invoices',
+                localField: 'allocations.invoiceId',
+                foreignField: '_id',
+                pipeline: [
+                  {
+                    $set: {
+                      subTotal: {
+                        $toDouble: '$subTotal',
+                      },
+                      totalTax: {
+                        $toDouble: '$totalTax',
+                      },
+                      total: {
+                        $toDouble: '$total',
+                      },
+                    },
+                  },
+                ],
+                as: 'invoiceData',
+              },
+            },
+          ]
+        : []),
       {
         $set: {
-          'allocations.amount': {
-            $toDouble: '$allocations.amount',
+          allocations: {
+            $mergeObjects: [
+              '$allocations',
+              ...(populateInvoices
+                ? [{ $arrayElemAt: ['$invoiceData', 0] }]
+                : []),
+              {
+                amount: {
+                  $toDouble: '$allocations.amount',
+                },
+              },
+            ],
           },
+          // 'allocations.amount': {
+          //   $toDouble: '$allocations.amount',
+          // },
         },
       },
       {
@@ -219,6 +263,7 @@ export default class PaymentReceived extends PaymentAllocations {
     }
 
     const paymentData = result[0] as IPaymentReceived;
+    // console.log('paymentData', paymentData);
 
     return paymentData;
   }

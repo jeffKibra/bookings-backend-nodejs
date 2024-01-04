@@ -13,8 +13,15 @@ import { PaymentReceived } from './utils';
 //   return formattedInvoice;
 // }
 
-export async function getById(orgId: string, paymentId: string) {
-  const paymentData = await PaymentReceived.fetchPaymentData(paymentId);
+export async function getById(
+  orgId: string,
+  paymentId: string,
+  populateInvoices?: boolean
+) {
+  const paymentData = await PaymentReceived.fetchPaymentData(
+    paymentId,
+    populateInvoices
+  );
 
   console.log('get payment received by id Result', paymentData);
 

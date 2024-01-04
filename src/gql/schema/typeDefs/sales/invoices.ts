@@ -5,8 +5,8 @@ import { saleFields, saleInputFields } from './templates';
 import { VehicleInputFields } from '../vehicles';
 
 const invoiceSharedFields = `
-    customerNotes:String
-    dueDate:String!
+    customerNotes: String
+    dueDate: String!
 `;
 
 const invoiceInputFields = `
@@ -17,7 +17,7 @@ const invoiceInputFields = `
 `;
 
 //     payments: [InvoicePayment]
-const invoiceFields = `
+export const invoiceFields = `
     ${saleFields}
     ${invoiceSharedFields}
     _id:ID!
@@ -37,7 +37,6 @@ const typeDefs = `#graphql
     input InvoiceVehicleInput {
         _id:ID!
         ${VehicleInputFields}
-    
     }
 
     input InvoiceInput {
@@ -46,6 +45,13 @@ const typeDefs = `#graphql
 
     type Invoice {
         ${invoiceFields}
+    }
+
+    type InvoicePaymentAllocation {
+        ${invoiceFields}
+        amount: Int!
+        invoiceId: String!
+        transactionType: String
     }
 
     type ListInvoicesMetaData {
