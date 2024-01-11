@@ -71,7 +71,7 @@ export default class Bookings {
       customerNotes,
       vehicle,
       transferFee,
-      // startDate,
+      startDate,
       endDate,
       bookingRate,
       bookingTotal,
@@ -79,7 +79,6 @@ export default class Bookings {
       subTotal,
       total,
       // downPayment,
-      startDate,
     } = bookingForm;
 
     const bookedDaysCount = selectedDates?.length || 0;
@@ -99,16 +98,22 @@ export default class Bookings {
       _id: vehicleId,
     } = vehicle;
 
+    const startDateString = new Date(startDate).toDateString();
+    const endDateString = new Date(endDate).toDateString();
+    console.log({ startDateString, endDateString });
+
     const items: ISaleItem[] = [
       {
         itemId: vehicleId,
         name: vehicle.registration,
         qty: bookedDaysCount,
+        unit: 'day(s)',
         rate: bookingRate,
         subTotal: vehicleBookingSubTotal,
         tax: vehicleBookingTaxAmount,
         total: bookingTotal,
-        description: `${color} ${make} ${model}`,
+        // description: `${color} ${make} ${model}`,
+        description: `${startDateString} - ${endDateString}`,
         salesAccountId: vehicleBookingsAccountId,
         details: {
           item: vehicle,
@@ -125,6 +130,7 @@ export default class Bookings {
               name: 'Transfer Fee',
               rate: transferFee,
               qty: 1,
+              unit: '',
               subTotal,
               tax: 0,
               total: transferFee,

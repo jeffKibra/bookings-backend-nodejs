@@ -38,6 +38,7 @@ export interface ISaleItem {
   subTotal: number;
   tax: number;
   total: number;
+  unit?: string;
   //
   // salesAccount: IAccountSummary;
   salesAccountId: string;

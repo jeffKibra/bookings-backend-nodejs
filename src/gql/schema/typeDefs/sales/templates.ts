@@ -30,6 +30,7 @@ export const saleItemSharedFields = `
     description: String
     rate: Int!
     qty: Int!
+    unit: String
     subTotal: Int!
     tax: Int
     total: Int!

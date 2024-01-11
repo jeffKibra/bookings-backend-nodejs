@@ -8,7 +8,7 @@ import { VehicleSchemaForBookingForm } from './Vehicle';
 const SaleItemDetailsSchema = new Schema({
   // _id: { type: String, required: true },
   //   salesAccount: { type: AccountSummarySchema, required: true },
-  units: String,
+  unit: String,
   taxType: String,
   item: VehicleSchemaForBookingForm,
   selectedDates: [String],
@@ -22,6 +22,7 @@ export const SaleItemSchema = new Schema({
   name: { type: String, required: true },
   rate: { type: Number, required: true },
   qty: { type: Number, required: true },
+  unit: { type: String, default: '' },
   total: { type: Number, required: true },
   description: String,
   salesAccountId: { type: String, required: true },

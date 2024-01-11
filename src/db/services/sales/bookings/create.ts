@@ -62,7 +62,7 @@ export default async function createBooking(
       orgId,
       formData
     );
-    console.log({ invoiceForm });
+    console.log('invoice form', invoiceForm);
 
     const invoiceInstance = new Invoice(session, {
       invoiceId,
