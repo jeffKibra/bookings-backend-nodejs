@@ -46,7 +46,9 @@ export default function generateFilters(
         } else {
           let fieldPrefix = '';
 
-          const isModelField = field === 'model' || field === 'type';
+          const isModelField =
+            field === 'make' || field === 'model' || field === 'type';
+
           if (isModelField) {
             fieldPrefix = 'model.';
           }
