@@ -1,45 +1,72 @@
 {
-  "dynamic": false,
-  "fields": {
-    "color": {
-      "type": "stringFacet"
-    },
-    "description": {
-      "type": "string"
-    },
-    "metaData": {
-      "fields": {
-        "orgId": {
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "color": [
+        {
+          "type": "stringFacet"
+        },
+        {
           "type": "string"
-        },
-        "status": {
-          "type": "number"
         }
+      ],
+      "description": {
+        "type": "string"
       },
-      "type": "document"
-    },
-    "model": {
-      "fields": {
-        "make": {
+      "metaData": {
+        "fields": {
+          "orgId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "number"
+          }
+        },
+        "type": "document"
+      },
+      "model": {
+        "fields": {
+          "make": [
+            {
+              "type": "stringFacet"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "model": [
+            {
+              "type": "stringFacet"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "type": [
+            {
+              "type": "stringFacet"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": "document"
+      },
+      "rate": {
+        "type": "number"
+      },
+      "registration": {
+        "type": "string"
+      },
+      "year": [
+        {
           "type": "stringFacet"
         },
-        "model": {
-          "type": "stringFacet"
-        },
-        "type": {
-          "type": "stringFacet"
+        {
+          "type": "string"
         }
-      },
-      "type": "document"
-    },
-    "rate": {
-      "type": "number"
-    },
-    "registration": {
-      "type": "string"
-    },
-    "year": {
-      "type": "stringFacet"
+      ]
     }
   }
 }
