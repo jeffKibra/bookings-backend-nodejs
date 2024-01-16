@@ -39,8 +39,8 @@ export default function generateSearchStages(
               text: {
                 path: [
                   'registration',
-                  // 'make',
-                  // 'model.model',
+                  // 'model.make',
+                  // 'model.name',
                   // 'color',
                   // 'description',
                 ],
@@ -72,7 +72,7 @@ export default function generateSearchStages(
                   // },
                   modelsFacet: {
                     type: 'string',
-                    path: 'model.model',
+                    path: 'model.name',
                   },
                   typesFacet: {
                     type: 'string',

@@ -1,4 +1,5 @@
 import orgsTypeDefs from './orgs';
+import vehicleMakesAndModelsTypeDefs from './vehicleMakesAndModels';
 import vehiclesTypeDefs from './vehicles';
 import salesTypeDefs from './sales';
 import contactsTypeDefs from './contacts';
@@ -143,6 +144,7 @@ const mainTypeDefs = `#graphql
 const typeDefs = [
   mainTypeDefs,
   orgsTypeDefs,
+  vehicleMakesAndModelsTypeDefs,
   vehiclesTypeDefs,
   contactsTypeDefs,
   ...salesTypeDefs,

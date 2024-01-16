@@ -4,11 +4,9 @@ import { startSession } from 'mongoose';
 import { Bookings } from './utils';
 import { Invoice } from '../invoices/utils';
 //
-import { BookingModel } from '../../../models';
 //
 import { IBookingForm, IInvoice } from '../../../../types';
 //
-import { getById } from './getOne';
 import { handleDBError } from '../../utils';
 
 export default async function updateBooking(

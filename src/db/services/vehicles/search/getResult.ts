@@ -98,7 +98,7 @@ export default async function getResult(
               _id: '$make',
               count: { $sum: 1 },
               models: {
-                $addToSet: '$model.model',
+                $addToSet: '$model.name',
               },
               years: {
                 $addToSet: '$year',

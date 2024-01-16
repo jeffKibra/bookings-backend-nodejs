@@ -5,3 +5,6 @@ export { default as search } from './search';
 
 export * from './getOne';
 export * from './getList';
+
+//
+export * as makes from './makes';

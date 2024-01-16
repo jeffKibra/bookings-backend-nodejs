@@ -3,33 +3,33 @@ import { services } from '../../../../../db';
 import { IGQLContext, ISearchBookingsQueryOptions } from '../../../../../types';
 
 const queryResolvers = {
-  booking: async (
-    parent: unknown,
-    args: { id: string },
-    context: Required<IGQLContext>
-  ) => {
-    const orgId = context.orgId;
-    //
-    const bookingId = args?.id;
+  // booking: async (
+  //   parent: unknown,
+  //   args: { id: string },
+  //   context: Required<IGQLContext>
+  // ) => {
+  //   const orgId = context.orgId;
+  //   //
+  //   const bookingId = args?.id;
 
-    const vehicle = await services.sales.bookings.getById(orgId, bookingId);
-    // console.log({ vehicle });
+  //   const vehicle = await services.sales.bookings.getById(orgId, bookingId);
+  //   // console.log({ vehicle });
 
-    return vehicle;
-  },
-  bookings: async (
-    parent: unknown,
-    args: unknown,
-    context: Required<IGQLContext>
-  ) => {
-    const orgId = context.orgId;
+  //   return vehicle;
+  // },
+  // bookings: async (
+  //   parent: unknown,
+  //   args: unknown,
+  //   context: Required<IGQLContext>
+  // ) => {
+  //   const orgId = context.orgId;
 
-    const bookings = await services.sales.bookings.getList(orgId);
+  //   const bookings = await services.sales.bookings.getList(orgId);
 
-    // console.log('bookings: ', bookings);
+  //   // console.log('bookings: ', bookings);
 
-    return bookings;
-  },
+  //   return bookings;
+  // },
   searchBookings(
     parent: unknown,
     args: {
@@ -47,31 +47,31 @@ const queryResolvers = {
     return services.sales.bookings.search(orgId, query, options);
   },
 
-  async findBookingWithAtleastOneOfTheSelectedDates(
-    parent: unknown,
-    args: { dates: string[]; vehicleId: string },
-    context: Required<IGQLContext>
-  ) {
-    const orgId = context.orgId;
-    //
-    const argsIsValid = args && typeof args === 'object';
-    if (!argsIsValid) {
-      throw new Error('Invalid arguments received!');
-    }
+  // async findBookingWithAtleastOneOfTheSelectedDates(
+  //   parent: unknown,
+  //   args: { dates: string[]; vehicleId: string },
+  //   context: Required<IGQLContext>
+  // ) {
+  //   const orgId = context.orgId;
+  //   //
+  //   const argsIsValid = args && typeof args === 'object';
+  //   if (!argsIsValid) {
+  //     throw new Error('Invalid arguments received!');
+  //   }
 
-    const { dates, vehicleId } = args;
+  //   const { dates, vehicleId } = args;
 
-    const bookings =
-      await services.bookings.findVehicleBookingWithAtleastOneOfTheSelectedDates(
-        orgId,
-        vehicleId,
-        dates
-      );
+  //   const bookings =
+  //     await services.bookings.findVehicleBookingWithAtleastOneOfTheSelectedDates(
+  //       orgId,
+  //       vehicleId,
+  //       dates
+  //     );
 
-    // console.log('bookings: ', bookings);
+  //   // console.log('bookings: ', bookings);
 
-    return bookings;
-  },
+  //   return bookings;
+  // },
 };
 
 export default queryResolvers;

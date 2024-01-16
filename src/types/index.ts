@@ -10,6 +10,9 @@ export * from './search';
 export * from './sortBy';
 
 export * from './vehicles';
+export * from './vehicleMake';
+export * from './vehicleModel';
+//
 export * from './bookings';
 export * from './pagination';
 

@@ -6,7 +6,6 @@ import { formatBookingFormData, Bookings } from './utils';
 import { Invoice } from '../invoices/utils';
 //
 import { handleDBError } from '../../utils';
-import { BookingModel, InvoiceModel } from '../../../models';
 //
 //
 import { IBookingForm } from '../../../../types';

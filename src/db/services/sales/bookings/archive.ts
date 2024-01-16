@@ -1,7 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { startSession } from 'mongoose';
 //
-import { BookingModel } from '../../../models';
 import { handleDBError } from '../../utils';
 import { Invoice } from '../invoices/utils';
 //

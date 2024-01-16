@@ -12,10 +12,11 @@ const queryResolvers = {
     //
     const bookingId = args?.id;
 
-    const vehicle = await services.bookings.getById(orgId, bookingId);
+    // const vehicle = await services.bookings.getById(orgId, bookingId);
     // console.log({ vehicle });
 
-    return vehicle;
+    // return vehicle;
+    return null;
   },
   userOrg: async (
     parent: unknown,

@@ -8,7 +8,6 @@ import { paymentTerms } from '../../../../../constants';
 //
 import { getPaymentTermByValue } from '../../../paymentTerms';
 //
-import { getById } from '../getOne';
 import { formatBookingFormData } from '.';
 
 //
@@ -280,86 +279,86 @@ export default class Bookings {
 
   //------------------------------------------------------------
 
-  static async validateUpdate(
-    orgId: string,
-    bookingId: string,
-    formData: IBookingForm | null,
-    session?: ClientSession
-  ) {
-    if (!formData) {
-      throw new Error('Invalid Booking Form Data Received!.');
-    }
+  // static async validateUpdate(
+  //   orgId: string,
+  //   bookingId: string,
+  //   formData: IBookingForm | null,
+  //   session?: ClientSession
+  // ) {
+  //   if (!formData) {
+  //     throw new Error('Invalid Booking Form Data Received!.');
+  //   }
 
-    const incomingBooking = formatBookingFormData(formData);
+  //   const incomingBooking = formatBookingFormData(formData);
 
-    const currentBooking = await getById(orgId, bookingId);
-    if (!currentBooking) {
-      throw new Error(
-        'Booking not found! Make sure the booking exists before editing.'
-      );
-    }
+  //   const currentBooking = await getById(orgId, bookingId);
+  //   if (!currentBooking) {
+  //     throw new Error(
+  //       'Booking not found! Make sure the booking exists before editing.'
+  //     );
+  //   }
 
-    await this.validateUpdateFormData(
-      orgId,
-      currentBooking,
-      incomingBooking,
-      session
-    );
+  //   await this.validateUpdateFormData(
+  //     orgId,
+  //     currentBooking,
+  //     incomingBooking,
+  //     session
+  //   );
 
-    const {
-      total,
-      customer: { _id: customerId },
-      downPayment: { amount: downPayment },
-      selectedDates: incomingSelectedDates,
-    } = incomingBooking;
-    const {
-      customer: { _id: currentCustomerId },
-      payments,
-      vehicle: { _id: vehicleId },
-    } = currentBooking;
-    const paymentsReceived = payments?.amounts || {};
-    //
+  //   const {
+  //     total,
+  //     customer: { _id: customerId },
+  //     downPayment: { amount: downPayment },
+  //     selectedDates: incomingSelectedDates,
+  //   } = incomingBooking;
+  //   const {
+  //     customer: { _id: currentCustomerId },
+  //     payments,
+  //     vehicle: { _id: vehicleId },
+  //   } = currentBooking;
+  //   const paymentsReceived = payments?.amounts || {};
+  //   //
 
-    /**
-     * check to ensure the new total balance is not less than payments made.
-     */
-    const paymentsTotal = Bookings.getPaymentsTotal(
-      downPayment,
-      paymentsReceived
-    );
-    console.log({ paymentsTotal, total });
-    /**
-     * trying to update Booking total with an amount less than paymentsTotal
-     * throw an error
-     */
-    if (paymentsTotal > total) {
-      throw new Error(
-        `Booking Update Failed! The new Booking Total is less than the Booking payments. If you are sure you want to edit, delete the associated payments or adjust them to be less than or equal to the new Booking total`
-      );
-    }
+  //   /**
+  //    * check to ensure the new total balance is not less than payments made.
+  //    */
+  //   const paymentsTotal = Bookings.getPaymentsTotal(
+  //     downPayment,
+  //     paymentsReceived
+  //   );
+  //   console.log({ paymentsTotal, total });
+  //   /**
+  //    * trying to update Booking total with an amount less than paymentsTotal
+  //    * throw an error
+  //    */
+  //   if (paymentsTotal > total) {
+  //     throw new Error(
+  //       `Booking Update Failed! The new Booking Total is less than the Booking payments. If you are sure you want to edit, delete the associated payments or adjust them to be less than or equal to the new Booking total`
+  //     );
+  //   }
 
-    const paymentsExcludingDownPayment = new BigNumber(paymentsTotal)
-      .minus(downPayment)
-      .dp(2)
-      .toNumber();
-    /**
-     * check if customer has been changed
-     */
-    const customerHasChanged = currentCustomerId !== customerId;
-    /**
-     * customer cannot be changed if the Booking has some payments made to it
-     */
-    if (paymentsExcludingDownPayment > 0 && customerHasChanged) {
-      throw new Error(
-        `CUSTOMER cannot be changed in a Booking that has payments! This is because all the payments are from the PREVIOUS customer. If you are sure you want to change the customer, DELETE the associated payments first!`
-      );
-    }
+  //   const paymentsExcludingDownPayment = new BigNumber(paymentsTotal)
+  //     .minus(downPayment)
+  //     .dp(2)
+  //     .toNumber();
+  //   /**
+  //    * check if customer has been changed
+  //    */
+  //   const customerHasChanged = currentCustomerId !== customerId;
+  //   /**
+  //    * customer cannot be changed if the Booking has some payments made to it
+  //    */
+  //   if (paymentsExcludingDownPayment > 0 && customerHasChanged) {
+  //     throw new Error(
+  //       `CUSTOMER cannot be changed in a Booking that has payments! This is because all the payments are from the PREVIOUS customer. If you are sure you want to change the customer, DELETE the associated payments first!`
+  //     );
+  //   }
 
-    return {
-      incomingBooking,
-      currentBooking,
-    };
-  }
+  //   return {
+  //     incomingBooking,
+  //     currentBooking,
+  //   };
+  // }
 
   //------------------------------------------------------------
   static validateDelete(booking: IBooking) {

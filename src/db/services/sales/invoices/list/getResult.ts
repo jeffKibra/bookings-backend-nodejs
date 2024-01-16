@@ -1,5 +1,5 @@
 import { PipelineStage } from 'mongoose';
-import { BookingModel, InvoiceModel } from '../../../../models';
+import { InvoiceModel } from '../../../../models';
 //
 import { generateSearchStages, calculateBalanceStages } from './subPipelines';
 import { pagination, sort } from '../../../utils';

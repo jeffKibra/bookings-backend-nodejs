@@ -1,5 +1,6 @@
 import { IPaginationParams } from './pagination';
 import { ISearchQueryOptions } from './search';
+import { IVehicleModelSummary } from './vehicleModel';
 
 // export type IVehicleType = 'Ivehicle' | 'opening_balance';
 
@@ -9,11 +10,7 @@ export interface IVehicleFormData {
   // sku: string;
   make: string;
   color: string;
-  model: {
-    model: string;
-    make: string;
-    type: string;
-  };
+  model: IVehicleModelSummary;
   year: number;
   description: string;
   // salesAccount: Account;
@@ -33,7 +30,7 @@ interface Meta {
   modifiedBy: string;
   unit: 'days';
   orgId: string;
-  status: string;
+  status: number;
 }
 
 export interface IVehicleFromDb extends IVehicleFormData {

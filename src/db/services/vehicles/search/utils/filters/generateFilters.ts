@@ -44,16 +44,18 @@ export default function generateFilters(
             filter = tempFilter;
           }
         } else {
-          let fieldPrefix = '';
+          let fieldPath = field;
 
+          const isModelNameField = field === 'model';
           const isModelField =
-            field === 'make' || field === 'model' || field === 'type';
+            isModelNameField || field === 'make' || field === 'type';
 
           if (isModelField) {
-            fieldPrefix = 'model.';
+            const evaluatedField = isModelNameField ? 'name' : field;
+            fieldPath = `model.${evaluatedField}`;
           }
 
-          filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
+          filter = generateQueryStringFilter(fieldPath, values);
         }
 
         filters.push(filter);

@@ -4,20 +4,15 @@ import { Schema } from 'mongoose';
 import { initSchema } from './utils';
 //
 import { metaDataFields } from './Generals';
+import { VehicleModelSummarySchema } from './VehicleModel';
 
 const VehicleMetaDataSchema = new Schema({ ...metaDataFields });
-
-export const VehicleModelSchema = new Schema({
-  model: { type: String, required: true },
-  type: { type: String, required: true },
-  make: { type: String, required: true },
-});
 
 export const VehicleSchemaSharedFields = {
   color: { type: String, required: true },
   description: { type: String },
   make: { type: String, required: true },
-  model: { type: VehicleModelSchema, required: true },
+  model: { type: VehicleModelSummarySchema, required: true },
   year: { type: Number },
   // type: { type: String, required: true },
   rate: { type: Number, required: true },
