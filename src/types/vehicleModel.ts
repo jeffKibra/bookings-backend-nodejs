@@ -15,6 +15,7 @@ export interface IVehicleModelForm {
   name: string;
   make: string;
   type: string;
+  years: string;
 }
 
 // export interface IVehicleSummary extends IVehicleFormData {
@@ -23,7 +24,6 @@ export interface IVehicleModelForm {
 
 export interface IVehicleModelFromDb extends IVehicleModelForm {
   _id: ObjectId;
-  years: string[];
   metaData: IMeta;
 }
 
@@ -32,7 +32,12 @@ export interface IVehicleModel extends Omit<IVehicleModelFromDb, '_id'> {
 }
 
 export interface IVehicleModelFromFile
-  extends Pick<IVehicleModel, 'make' | 'name' | 'type' | 'years'> {}
+  extends Pick<IVehicleModel, 'make' | 'type'> {
+  model: string;
+  years: string[];
+}
 
 export interface IVehicleModelSummary
-  extends Pick<IVehicleModel, 'make' | 'name' | 'type'> {}
+  extends Pick<IVehicleModel, 'make' | 'name' | 'type'> {
+  year: number;
+}

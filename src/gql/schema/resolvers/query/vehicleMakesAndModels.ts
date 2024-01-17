@@ -9,11 +9,11 @@ const queryResolvers = {
     args: unknown,
     context: Required<IGQLContext>
   ) => {
-    const orgId = context.orgId;
+    // const orgId = context.orgId;
 
-    const vehicleMakes = await services.vehicles.makes.list(orgId);
+    const vehicleMakes = await services.vehicles.makes.list();
 
-    // console.log('vehicles: ', vehicles);
+    console.log('vehicle makes: ', vehicleMakes);
 
     return vehicleMakes;
   },
@@ -27,13 +27,13 @@ const queryResolvers = {
     //
     const makeId = args?.id;
 
-    const vehicle = await services.vehicles.makes.one(orgId, makeId).get();
+    const vehicleMake = await services.vehicles.makes.one(orgId, makeId).get();
     // console.log({ vehicle });
 
-    return vehicle;
+    return vehicleMake;
   },
 
-  vehicleModel(
+  async vehicleModel(
     parent: unknown,
     args: {
       makeId: string;
@@ -47,7 +47,11 @@ const queryResolvers = {
     const modelId = args?.id || '';
     console.log({ modelId, makeId });
 
-    return services.vehicles.makes.one(orgId, makeId).models.get(modelId);
+    const model = await services.vehicles.makes
+      .one(orgId, makeId)
+      .models.get(modelId);
+
+    return model;
   },
 };
 

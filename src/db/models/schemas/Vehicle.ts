@@ -11,9 +11,8 @@ const VehicleMetaDataSchema = new Schema({ ...metaDataFields });
 export const VehicleSchemaSharedFields = {
   color: { type: String, required: true },
   description: { type: String },
-  make: { type: String, required: true },
+  // make: { type: String, required: true },
   model: { type: VehicleModelSummarySchema, required: true },
-  year: { type: Number },
   // type: { type: String, required: true },
   rate: { type: Number, required: true },
 };

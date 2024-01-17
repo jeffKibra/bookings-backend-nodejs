@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { IVehicleModel } from './vehicleModel';
+import { IVehicleModel, IVehicleModelFromFile } from './vehicleModel';
 
 // export type IVehicleType = 'Ivehicle' | 'opening_balance';
 

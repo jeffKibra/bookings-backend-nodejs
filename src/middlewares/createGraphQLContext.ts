@@ -41,7 +41,7 @@ export default async function createGraphQLContext(
     const contextAuth = await getAuthForContext(token);
     //
     const orgId = req.get('org-id') || '';
-    console.log({ orgId });
+    console.log({ orgId, contextAuth });
 
     const currentContext = req.appContext || {};
     req.appContext = { ...currentContext, orgId, auth: contextAuth };

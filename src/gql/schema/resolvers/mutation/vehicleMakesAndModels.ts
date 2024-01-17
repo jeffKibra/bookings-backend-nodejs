@@ -13,8 +13,9 @@ const mutationResolvers = {
     //
     const makeId = args?.makeId || '';
     const formData = args?.formData;
+    console.log({ makeId, formData, userUID });
 
-    await services.vehicles.makes
+    return services.vehicles.makes
       .one(orgId, makeId)
       .models.create(userUID, formData);
   },
@@ -31,11 +32,11 @@ const mutationResolvers = {
     const modelId = args?.id;
     const formData = args?.formData;
 
-    const updatedVehicle = await services.vehicles.makes
+    const updatedVehicleMake = await services.vehicles.makes
       .one(orgId, makeId)
       .models.update(userUID, modelId, formData);
 
-    return updatedVehicle;
+    return updatedVehicleMake;
   },
 
   async deleteVehicleModel(

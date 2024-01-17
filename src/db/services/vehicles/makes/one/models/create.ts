@@ -1,28 +1,40 @@
 import { ObjectId } from 'mongodb';
 
 import { VehicleMakeModel } from '../../../../../models';
+
+import { checkModelName } from './utils';
+
+//
 import { IVehicleModelForm } from '../../../../../../types';
 
 export interface ICustomThis {
   makeId: string;
+  orgId: string;
 }
 
-const orgId = '';
-
 export default async function create(
+  this: ICustomThis,
   userUID: string,
-  modelFormData: IVehicleModelForm
+  formData: IVehicleModelForm
 ) {
+  const { makeId, orgId } = this;
+  console.log({ makeId, orgId, userUID });
+
+  await checkModelName(makeId, formData.name);
+
   const result = await VehicleMakeModel.findOneAndUpdate(
-    { _id: new ObjectId(), 'metaData.status': 0, 'metaData.orgId': orgId },
+    {
+      _id: new ObjectId(makeId),
+      'metaData.status': 0,
+    },
     {
       $set: {
         'metaData.modifiedBy': userUID,
-        'metaData.modifiedAt': userUID,
+        'metaData.modifiedAt': new Date(),
       },
-      $push: {
+      $addToSet: {
         models: {
-          ...modelFormData,
+          ...formData,
           metaData: {
             orgId,
             status: 0,
@@ -36,5 +48,7 @@ export default async function create(
     }
   );
 
-  return result;
+  // console.log('create model result', result);
+
+  // return result;
 }

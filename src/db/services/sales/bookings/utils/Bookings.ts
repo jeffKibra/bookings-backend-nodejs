@@ -92,7 +92,7 @@ export default class Bookings {
     //   .toNumber();
 
     const {
-      model: { make, model },
+      model: { make, name: modelName },
       color,
       _id: vehicleId,
     } = vehicle;

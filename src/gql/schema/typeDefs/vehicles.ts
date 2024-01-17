@@ -1,38 +1,25 @@
 import { MetaDataSharedFields, SearchMetaCommonFields } from './templates';
 
 //
-const VehicleModelFields = `
-    model:String!
-    make:String!
-    type:String!
-`;
+
 //
 export const VehicleSharedFields = `
     registration: String! 
     rate: Int!
-    make: String! 
-    year: String
     color: String! 
     description: String
 `;
 export const VehicleFields = `
     ${VehicleSharedFields}
-    model: VehicleModel! 
+    model: SelectedVehicleModel! 
 `;
 export const VehicleInputFields = `
     ${VehicleSharedFields}
-    model: VehicleModelInput! 
+    model: SelectedVehicleModelAsInput! 
 `;
 
 //
 const typeDefs = `#graphql
-
-    type VehicleModel {
-        ${VehicleModelFields}
-    } 
-    input VehicleModelInput {
-        ${VehicleModelFields}
-    } 
 
     type VehicleMetaData {
        ${MetaDataSharedFields}
@@ -76,14 +63,6 @@ const typeDefs = `#graphql
         color:[String]
         rate:[Int]
     }
-
-    input VehicleModelInput{
-        model:String!
-        make:String!
-        type:String!
-    } 
-
-    
 
     input VehiclesQueryOptions {
         bookingId:String

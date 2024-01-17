@@ -15,10 +15,12 @@ const vehicleModelFields = {
 
 export const VehicleModelSummarySchema = new Schema({
   ...vehicleModelFields,
+  year: { type: Number, required: true },
 });
 
 const schema = new Schema({
   ...vehicleModelFields,
+  years: { type: String, required: true, default: '' },
   metaData: { type: VehicleMetaDataSchema, required: true },
 });
 

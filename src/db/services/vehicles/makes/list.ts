@@ -1,11 +1,12 @@
 import { VehicleMakeModel } from '../../../models';
 
-export default async function getList(orgId: string) {
-  return VehicleMakeModel.aggregate([
+import { IVehicleMake } from '../../../../types';
+
+export default async function getList() {
+  return VehicleMakeModel.aggregate<IVehicleMake>([
     {
       $match: {
         'metaData.status': 0,
-        'metaData.orgId': { $or: ['all', orgId] },
       },
     },
     {

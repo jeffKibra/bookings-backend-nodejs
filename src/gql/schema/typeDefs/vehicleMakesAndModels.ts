@@ -1,33 +1,50 @@
 import { MetaDataSharedFields } from './templates';
 
 //
-const VehicleModelSharedFields = `
+export const vehicleModelSharedFields = `
     name: String!
     make: String!
     type: String!
+`;
+
+export const vehicleModelSummaryFields = `
+    ${vehicleModelSharedFields}
+    year: Int!
+`;
+
+const vehicleModelFields = `
+    ${vehicleModelSharedFields}
+    years: String!
 `;
 //
 
 //
 const typeDefs = `#graphql
 
-    
+    input SelectedVehicleModelAsInput {
+        ${vehicleModelSummaryFields}
+    }
 
-    input VehicleModelInput {
-        ${VehicleModelSharedFields}
-    } 
+    type SelectedVehicleModel {
+        ${vehicleModelSharedFields}
+    }
 
     type VehicleModelMetaData {
        ${MetaDataSharedFields}
     }
 
+    input VehicleModelInput {
+        ${vehicleModelFields}
+    } 
+
     type VehicleModel {
-        ${VehicleModelSharedFields}
+        ${vehicleModelFields}
         _id: ID! 
         metaData: VehicleModelMetaData! 
     } 
     
     type VehicleMake {
+        _id: ID!
         name: String!
         models: [VehicleModel]!
         metaData: VehicleModelMetaData
@@ -36,13 +53,13 @@ const typeDefs = `#graphql
     extend type Query {
         vehicleMakes: [VehicleMake]
         vehicleMake(id: ID!): VehicleMake
-        vehicleModel(id: ID!): VehicleModel
+        vehicleModel(makeId: ID!, id: ID!): VehicleModel
     }
    
     extend type Mutation {
-        createVehicleModel(make: String!, formData: VehicleModelInput!):String
-        updateVehicleModel(make: String!, id: ID!, formData: VehicleModelInput!):VehicleModel
-        deleteVehicleModel(make: String!, id: ID!): String
+        createVehicleModel(makeId: ID!, formData: VehicleModelInput!):String
+        updateVehicleModel(makeId: ID!, id: ID!, formData: VehicleModelInput!):VehicleMake
+        deleteVehicleModel(makeId: ID!, id: ID!): String
     }
 `;
 
