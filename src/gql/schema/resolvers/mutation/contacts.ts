@@ -3,7 +3,7 @@ import { services } from '../../../../db';
 import { IGQLContext, IContactForm, IContactGroup } from '../../../../types';
 
 const mutationResolvers = {
-  async createContact(
+  createContact(
     parent: unknown,
     args: { formData: IContactForm; contactGroup: IContactGroup },
     context: Required<IGQLContext>
@@ -14,10 +14,10 @@ const mutationResolvers = {
     const formData = args?.formData;
     const contactGroup = args?.contactGroup;
 
-    await services.contacts.create(userUID, orgId, formData, contactGroup);
+    return services.contacts.create(userUID, orgId, formData, contactGroup);
   },
 
-  async createCustomer(
+  createCustomer(
     parent: unknown,
     args: { formData: IContactForm; contactGroup: IContactGroup },
     context: Required<IGQLContext>
@@ -28,7 +28,7 @@ const mutationResolvers = {
     //
     const formData = args?.formData;
 
-    await services.contacts.create(userUID, orgId, formData, 'customer');
+    return services.contacts.create(userUID, orgId, formData, 'customer');
   },
 
   async updateContact(

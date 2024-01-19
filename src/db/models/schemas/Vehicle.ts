@@ -25,12 +25,15 @@ export const VehicleSchemaForBookingForm = new Schema({
   // sku: { type: String, required: true },
 });
 
-const schema = new Schema({
-  ...VehicleSchemaSharedFields,
-  registration: { type: String, required: true, unique: true },
-  sku: { type: String, required: true, unique: true },
-  metaData: { type: VehicleMetaDataSchema, required: true },
-});
+const schema = new Schema(
+  {
+    ...VehicleSchemaSharedFields,
+    registration: { type: String, required: true, unique: true },
+    sku: { type: String, required: true, unique: true },
+    metaData: { type: VehicleMetaDataSchema, required: true },
+  },
+  { writeConcern: { w: 'majority', journal: true }, read: 'primary' }
+);
 
 // schema.index(
 //   {

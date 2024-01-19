@@ -51,10 +51,10 @@ export default async function createBooking(
   const session = await startSession();
   session.startTransaction();
 
-  const invoiceId = new ObjectId().toString();
-  console.log({ invoiceId });
-
   try {
+    const invoiceId = new ObjectId().toString();
+    console.log({ invoiceId });
+
     await Bookings.validateFormData(orgId, formattedFormData, session);
 
     const invoiceForm = await Bookings.createInvoiceFormFromBooking(
@@ -78,6 +78,8 @@ export default async function createBooking(
     console.log('result', result);
 
     await session.commitTransaction();
+
+    return invoiceId;
   } catch (error) {
     await session.abortTransaction();
     //handle errors

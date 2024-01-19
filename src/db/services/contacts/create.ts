@@ -32,6 +32,8 @@ async function create(
 
     //create contact
     await session.commitTransaction();
+
+    return contactId;
   } catch (err) {
     await session.abortTransaction();
 

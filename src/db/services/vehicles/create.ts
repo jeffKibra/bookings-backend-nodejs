@@ -51,6 +51,8 @@ export default async function createVehicle(
 
     const savedDoc = await instance.save();
     console.log({ savedDoc });
+
+    return savedDoc._id.toString();
   } catch (error) {
     console.log('create vehicle', error);
 

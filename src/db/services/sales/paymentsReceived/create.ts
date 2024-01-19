@@ -29,6 +29,8 @@ async function create(
     await paymentInstance.create(formattedData);
 
     await session.commitTransaction();
+
+    return paymentId;
   } catch (err) {
     await session.abortTransaction();
 

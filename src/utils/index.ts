@@ -4,3 +4,6 @@ export { default as createSKU } from './createSKU';
 
 export * as dates from './dates';
 export * as bookings from './bookings';
+
+//
+export { default as wait } from './wait';

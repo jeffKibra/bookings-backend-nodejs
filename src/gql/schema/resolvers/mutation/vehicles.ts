@@ -1,4 +1,7 @@
 import { services } from '../../../../db';
+
+//
+import { wait } from '../../../../utils';
 //
 import { IGQLContext, IVehicleFormData } from '../../../../types';
 
@@ -13,7 +16,11 @@ const mutationResolvers = {
     //
     const formData = args?.formData;
 
-    await services.vehicles.create(userUID, orgId, formData);
+    const docId = await services.vehicles.create(userUID, orgId, formData);
+
+    return docId
+
+    // await wait(1000 * 1.4);
   },
   async updateVehicle(
     parent: unknown,
