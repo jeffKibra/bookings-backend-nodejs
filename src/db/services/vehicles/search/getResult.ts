@@ -95,7 +95,7 @@ export default async function getResult(
         makes: [
           {
             $group: {
-              _id: '$make',
+              _id: '$model.make',
               count: { $sum: 1 },
               models: {
                 $addToSet: '$model.name',

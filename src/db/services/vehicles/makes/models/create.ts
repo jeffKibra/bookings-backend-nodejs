@@ -1,14 +1,14 @@
 import { ObjectId } from 'mongodb';
 
-import { VehicleMakeModel } from '../../../../../models';
+import { VehicleMakeModel } from '../../../../models';
 
 import { checkModelName } from './utils';
 
 //
-import { IVehicleModelForm } from '../../../../../../types';
+import { IVehicleModelForm } from '../../../../../types';
 
 export interface ICustomThis {
-  makeId: string;
+  make: string;
   orgId: string;
 }
 
@@ -17,14 +17,14 @@ export default async function create(
   userUID: string,
   formData: IVehicleModelForm
 ) {
-  const { makeId, orgId } = this;
-  console.log({ makeId, orgId, userUID });
+  const { make, orgId } = this;
+  console.log({ make, orgId, userUID });
 
-  await checkModelName(makeId, formData.name);
+  await checkModelName(make, formData.name);
 
   const result = await VehicleMakeModel.findOneAndUpdate(
     {
-      _id: new ObjectId(makeId),
+      name: make,
       'metaData.status': 0,
     },
     {

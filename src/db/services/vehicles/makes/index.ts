@@ -1,3 +1,5 @@
 export { default as list } from './list';
 //
-export { default as one } from './one';
+export { default as get } from './get';
+//
+export { default as models } from './models';

@@ -34,12 +34,12 @@
               "type": "string"
             }
           ],
-          "model": [
-            {
-              "type": "stringFacet"
-            },
+          "name": [
             {
               "type": "string"
+            },
+            {
+              "type": "stringFacet"
             }
           ],
           "type": [
@@ -48,6 +48,14 @@
             },
             {
               "type": "string"
+            }
+          ],
+          "year": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "numberFacet"
             }
           ]
         },
@@ -58,15 +66,7 @@
       },
       "registration": {
         "type": "string"
-      },
-      "year": [
-        {
-          "type": "stringFacet"
-        },
-        {
-          "type": "string"
-        }
-      ]
+      }
     }
   }
 }

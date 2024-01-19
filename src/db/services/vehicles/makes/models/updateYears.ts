@@ -1,10 +1,10 @@
 import { ObjectId } from 'mongodb';
 
-import { VehicleMakeModel } from '../../../../../models';
+import { VehicleMakeModel } from '../../../../models';
 
 import { checkModelName } from './utils';
 
-import { IVehicleModelForm, IVehicleModel } from '../../../../../../types';
+import { IVehicleModelForm, IVehicleModel } from '../../../../../types';
 import { ICustomThis } from './create';
 
 export default async function update(
@@ -13,11 +13,11 @@ export default async function update(
   id: string,
   years: string
 ) {
-  const { makeId, orgId } = this;
+  const { make, orgId } = this;
 
   const result = await VehicleMakeModel.findOneAndUpdate(
     {
-      _id: new ObjectId(makeId),
+      name: make,
       'models._id': new ObjectId(id),
       'metaData.status': 0,
       'metaData.orgId': orgId,

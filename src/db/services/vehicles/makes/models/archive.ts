@@ -7,6 +7,6 @@ export default async function archive(
   userUID: string,
   id: string
 ) {
-  const { makeId, orgId } = this;
+  const { make, orgId } = this;
   // const { makeId } = this as unknown as ICustomThis;
 }

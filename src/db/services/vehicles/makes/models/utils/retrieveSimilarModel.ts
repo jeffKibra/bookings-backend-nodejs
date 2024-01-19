@@ -1,21 +1,18 @@
 import { ObjectId } from 'mongodb';
 
-import { ICustomThis } from './create';
-
 import { VehicleMakeModel } from '../../../../../models';
-
 import { IVehicleModel } from '../../../../../../types';
 
-export default async function get(this: ICustomThis, id: string) {
-  const { makeId, orgId } = this;
-
-  const modelId = new ObjectId(id);
-
+export default async function retrieveSimilarModel(
+  make: string,
+  modelName: string,
+  modelId: string = ''
+) {
   const result = await VehicleMakeModel.aggregate<IVehicleModel>([
     {
       $match: {
-        _id: new ObjectId(makeId),
-        'models._id': modelId,
+        name: make,
+        'models.name': modelName,
       },
     },
     {
@@ -23,9 +20,15 @@ export default async function get(this: ICustomThis, id: string) {
     },
     {
       $match: {
-        'models._id': modelId,
-        'metaData.status': 0,
-        // 'metaData.orgId': { $or: ['all', orgId] },
+        'models.name': modelName,
+        'models.metaData.status': 0,
+        ...(modelId
+          ? {
+              'models._id': {
+                $ne: new ObjectId(modelId),
+              },
+            }
+          : {}),
       },
     },
     {
@@ -40,5 +43,4 @@ export default async function get(this: ICustomThis, id: string) {
   console.log('model data', modelData);
 
   return modelData;
-
 }

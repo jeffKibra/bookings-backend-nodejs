@@ -26,7 +26,7 @@ export interface IVehicleMake extends IVehicleMakeForm {
   metaData: IMeta;
 }
 
-export interface IVehicleMakeDBModel
+export interface IVehicleMakeFromModel
   extends Omit<IVehicleMake, '_id' | 'models'> {
   models: Omit<IVehicleModel, '_id'>[];
 }

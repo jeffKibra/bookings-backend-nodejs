@@ -26,7 +26,7 @@ const typeDefs = `#graphql
     }
 
     type SelectedVehicleModel {
-        ${vehicleModelSharedFields}
+        ${vehicleModelSummaryFields}
     }
 
     type VehicleModelMetaData {
@@ -52,14 +52,14 @@ const typeDefs = `#graphql
 
     extend type Query {
         vehicleMakes: [VehicleMake]
-        vehicleMake(id: ID!): VehicleMake
-        vehicleModel(makeId: ID!, id: ID!): VehicleModel
+        vehicleMake(name: String!): VehicleMake
+        vehicleModel(make: String!, id: ID!): VehicleModel
     }
    
     extend type Mutation {
-        createVehicleModel(makeId: ID!, formData: VehicleModelInput!):String
-        updateVehicleModel(makeId: ID!, id: ID!, formData: VehicleModelInput!):VehicleMake
-        deleteVehicleModel(makeId: ID!, id: ID!): String
+        createVehicleModel(formData: VehicleModelInput!):String
+        updateVehicleModel(id: ID!, formData: VehicleModelInput!):VehicleMake
+        deleteVehicleModel(make: String!, id: ID!): String
     }
 `;
 

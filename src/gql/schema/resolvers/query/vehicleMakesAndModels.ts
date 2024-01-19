@@ -20,14 +20,14 @@ const queryResolvers = {
 
   vehicleMake: async (
     parent: unknown,
-    args: { id: string },
+    args: { name: string },
     context: Required<IGQLContext>
   ) => {
     const orgId = context.orgId;
     //
-    const makeId = args?.id;
+    const name = args?.name;
 
-    const vehicleMake = await services.vehicles.makes.one(orgId, makeId).get();
+    const vehicleMake = await services.vehicles.makes.get(name);
     // console.log({ vehicle });
 
     return vehicleMake;
@@ -36,20 +36,20 @@ const queryResolvers = {
   async vehicleModel(
     parent: unknown,
     args: {
-      makeId: string;
+      make: string;
       id: string;
     },
     context: Required<IGQLContext>
   ) {
     const orgId = context.orgId;
     //
-    const makeId = args?.makeId || '';
+    const make = args?.make || '';
     const modelId = args?.id || '';
-    console.log({ modelId, makeId });
+    console.log({ modelId, make });
 
     const model = await services.vehicles.makes
-      .one(orgId, makeId)
-      .models.get(modelId);
+      .models(orgId, make)
+      .get(modelId);
 
     return model;
   },

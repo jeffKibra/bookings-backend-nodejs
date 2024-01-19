@@ -1,10 +1,10 @@
 import { ObjectId } from 'mongodb';
 
-import { VehicleMakeModel } from '../../../../../models';
+import { VehicleMakeModel } from '../../../../models';
 
-import { checkModelName } from './utils';
+import { checkModelName, validateUpdate } from './utils';
 
-import { IVehicleModelForm, IVehicleMake } from '../../../../../../types';
+import { IVehicleModelForm, IVehicleMake } from '../../../../../types';
 import { ICustomThis } from './create';
 
 export default async function update(
@@ -13,16 +13,19 @@ export default async function update(
   id: string,
   formData: IVehicleModelForm
 ) {
-  const { makeId, orgId } = this;
+  const { make, orgId } = this;
 
-  console.log({ modelId: id, makeId });
+  console.log({ modelId: id, make });
   const { name: modelName, type, years } = formData;
 
-  await checkModelName(makeId, modelName, id);
+  await Promise.all([
+    checkModelName(make, modelName, id),
+    validateUpdate(orgId, id, formData),
+  ]);
 
   const result = await VehicleMakeModel.findOneAndUpdate(
     {
-      _id: new ObjectId(makeId),
+      name: make,
       models: {
         $elemMatch: {
           _id: new ObjectId(id),
@@ -35,7 +38,7 @@ export default async function update(
       $set: {
         //make fields
         'metaData.modifiedBy': userUID,
-        'metaData.modifiedAt': userUID,
+        'metaData.modifiedAt': new Date(),
         //model fields-never change make field
         'models.$.name': modelName,
         'models.$.type': type,
