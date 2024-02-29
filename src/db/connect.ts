@@ -32,6 +32,8 @@ export default async function connect() {
     // console.log({ dbURI,  });
     const connection = await mongoose.connect(dbURI);
 
+    console.log('successfully connected to db!', connection);
+
     // mongoose.Collection.
 
     await initProjectDB();

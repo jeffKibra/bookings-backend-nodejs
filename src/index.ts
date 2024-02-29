@@ -18,8 +18,6 @@ const PORT = process.env.PORT;
 const app = express();
 //================================================================
 
-connect();
-
 //================================================================
 
 //cors settings
@@ -55,10 +53,15 @@ app.use(
 
 //================================================================
 
-app.listen(PORT, () => {
-  // connect();
-  console.log(`Listening on port ${PORT}`);
-});
+connect()
+  .then(() => {
+    return app.listen(PORT, () => {
+      console.log(`Listening on port ${PORT}`);
+    });
+  })
+  .catch(error => {
+    console.error('Error connecting to db', error);
+  });
 
 /**
  * live url:
