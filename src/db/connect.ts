@@ -37,5 +37,6 @@ export default async function connect() {
     await initProjectDB();
   } catch (error) {
     console.error(error);
+    throw error;
   }
 }
