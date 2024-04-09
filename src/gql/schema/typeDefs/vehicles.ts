@@ -79,6 +79,7 @@ const typeDefs = `#graphql
     extend type Query {
         vehicles: [Vehicle]
         vehicle(id:ID): Vehicle
+        vehicleFacets: VehicleFacets
         searchVehicles(query:ID, queryOptions:VehiclesQueryOptions):VehiclesSearchResult
         findVehiclesNotBookedInSelectedDates(selectedDates:[String!]!):[Vehicle]
     }

@@ -64,29 +64,13 @@ export default class Filters {
   generateStaticFilters() {
     const { query, orgId } = this;
 
-    const orgIdPath = fieldPaths.orgId;
-    const statusPath = fieldPaths.status;
+    const { matchFilters, searchFilters } =
+      Filters.generateStaticFilters(orgId);
 
     if (query) {
-      this.searchFilters = [
-        {
-          text: {
-            path: orgIdPath,
-            query: orgId,
-          },
-        },
-        {
-          equals: {
-            path: statusPath,
-            value: 0,
-          },
-        },
-      ];
+      this.searchFilters = searchFilters;
     } else {
-      this.matchFilters = {
-        [orgIdPath]: orgId,
-        [statusPath]: Filters.status,
-      };
+      this.matchFilters = matchFilters;
     }
   }
 
@@ -128,7 +112,7 @@ export default class Filters {
       } else {
         //append to match filters
         const { gte, lte } = filter.range;
-        this.appendMatchFilter(fieldPath, { gte, lte });
+        this.appendMatchFilter(fieldPath, { $gte: gte, $lte: lte });
       }
     }
   }
@@ -156,5 +140,38 @@ export default class Filters {
 
   appendSearchFilter(filter: {}) {
     return this.searchFilters.push(filter);
+  }
+
+  //-------------------------------------------------------------------------
+  //static methods
+  //-------------------------------------------------------------------------
+  static generateStaticFilters(orgId: string) {
+    const orgIdPath = fieldPaths.orgId;
+    const statusPath = fieldPaths.status;
+
+    const searchFilters = [
+      {
+        text: {
+          path: orgIdPath,
+          query: orgId,
+        },
+      },
+      {
+        equals: {
+          path: statusPath,
+          value: 0,
+        },
+      },
+    ];
+
+    const matchFilters = {
+      [orgIdPath]: orgId,
+      [statusPath]: Filters.status,
+    };
+
+    return {
+      searchFilters,
+      matchFilters,
+    };
   }
 }

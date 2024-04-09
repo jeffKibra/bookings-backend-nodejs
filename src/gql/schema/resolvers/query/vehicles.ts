@@ -31,6 +31,15 @@ const queryResolvers = {
 
     return vehicles;
   },
+  vehicleFacets(
+    parent: unknown,
+    args: unknown,
+    context: Required<IGQLContext>
+  ) {
+    const orgId = context.orgId;
+
+    return services.vehicles.facets.list(orgId);
+  },
   searchVehicles(
     parent: unknown,
     args: {

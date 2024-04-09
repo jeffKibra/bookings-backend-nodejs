@@ -8,3 +8,5 @@ export * from './getList';
 
 //
 export * as makes from './makes';
+//
+export * as facets from './facets';
