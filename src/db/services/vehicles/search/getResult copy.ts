@@ -63,12 +63,6 @@ function generateOptions(
     ? generateSearchStages(orgId, query, searchFilters, retrieveFacets)
     : [];
 
-  const matchPipelineStage: FacetPipelineStage = {
-    $match: {
-      ...matchFilters,
-    },
-  };
-
   const availableVehiclesPipelineStages = generateAvailableVehiclesStages(
     orgId,
     options?.selectedDates || [],
@@ -91,7 +85,6 @@ function generateOptions(
     offset,
     availableVehiclesPipelineStages,
     searchPipelineStages,
-    matchPipelineStage,
     sortByField,
     sortByDirection,
   };
@@ -108,7 +101,6 @@ export default async function getResult(
   const {
     availableVehiclesPipelineStages,
     searchPipelineStages,
-    matchPipelineStage,
     limit,
     offset,
     page,
@@ -122,7 +114,7 @@ export default async function getResult(
     meta: IVehicleSearchAggregationMeta;
     count: Record<string, unknown>;
   }>([
-    ...(query ? searchPipelineStages : [matchPipelineStage]),
+    ...searchPipelineStages,
     {
       $sort: {
         [sortByField]: sortByDirection,
@@ -134,8 +126,47 @@ export default async function getResult(
     // },
     {
       $facet: {
+        availableVehicles: [...availableVehiclesPipelineStages],
+        makes: [
+          {
+            $group: {
+              _id: '$model.make',
+              count: { $sum: 1 },
+              models: {
+                $addToSet: '$model.name',
+              },
+              years: {
+                $addToSet: '$year',
+              },
+            },
+          },
+        ],
+        ratesRange: [
+          {
+            $group: {
+              _id: null,
+              max: { $max: '$rate' },
+              min: { $min: '$rate' },
+            },
+          },
+        ],
+        meta: [
+          {
+            //must be used before a lookup
+            $replaceWith: {
+              $mergeObjects: '$$SEARCH_META',
+            },
+          },
+          {
+            $limit: 1,
+          },
+        ],
+      },
+    },
+    {
+      $facet: {
         vehicles: [
-          ...availableVehiclesPipelineStages,
+          ...unwindAvailableVehiclesStages,
           {
             $skip: offset,
           },
@@ -144,17 +175,69 @@ export default async function getResult(
             $limit: limit,
           },
         ],
-        meta: [
+        info: [
           {
-            $count: 'count',
+            $project: {
+              count: {
+                $size: '$availableVehicles',
+              },
+              makes: 1,
+              ratesRange: 1,
+              meta: 1,
+            },
           },
         ],
+      },
+    },
+    {
+      //restructure for all fields to be in root doc
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: [{ $arrayElemAt: ['$info', 0] }, '$$ROOT'],
+        },
+      },
+    },
+    {
+      $project: {
+        info: 0,
       },
     },
     {
       //change meta field from array to object
       $set: {
         meta: { $arrayElemAt: ['$meta', 0] },
+      },
+    },
+    {
+      //format metadata
+      $project: {
+        vehicles: 1,
+        meta: {
+          countForSearches: '$meta.count.lowerBound',
+          count: '$count',
+          facets: {
+            $mergeObjects: [
+              {
+                makes: [],
+                models: [],
+                types: [],
+                colors: [],
+                ratesRange: {},
+              },
+              {
+                // makes: '$meta.facet.makesFacet.buckets',
+                // models: '$meta.facet.modelsFacet.buckets',
+                makes: '$makes',
+                models: '$meta.facet.modelsFacet.buckets',
+                types: '$meta.facet.typesFacet.buckets',
+                colors: '$meta.facet.colorsFacet.buckets',
+                ratesRange: {
+                  $arrayElemAt: ['$ratesRange', 0],
+                },
+              },
+            ],
+          },
+        },
       },
     },
   ]);

@@ -1,1 +1,1 @@
-export { default as generateFilters } from './generateFilters';
+export { default as Filters } from './Filters';

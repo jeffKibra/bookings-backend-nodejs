@@ -48,7 +48,6 @@ const typeDefs = `#graphql
 
     type SearchVehicleMetaData {
         ${SearchMetaCommonFields}
-        facets:VehicleFacets
     }
 
     type VehiclesSearchResult {
