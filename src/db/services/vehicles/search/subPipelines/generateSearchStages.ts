@@ -22,11 +22,9 @@ import {
 // }
 
 export default function generateSearchStages(
-  orgId: string,
   query: string | number,
-  filters: Record<string, unknown>[],
+  filters: Record<string, unknown>[]
   // userFilters?: Record<string, (string | number | Date)[]>,
-  retrieveFacets = false
   // sortOptions?: ISortOptions
 ) {
   // const filtersInstance = new Filters(orgId, String(query), userFilters);
@@ -34,61 +32,31 @@ export default function generateSearchStages(
 
   console.log('filters', filters);
 
-  const compoundOperators = {
-    must: [
-      ...(query
-        ? [
-            {
-              text: {
-                path: [
-                  'registration',
-                  // 'model.make',
-                  // 'model.name',
-                  // 'color',
-                  // 'description',
-                ],
-                query,
-                fuzzy: {},
-              },
-            },
-          ]
-        : []),
-    ],
-    filter: [...filters],
-  };
-
-  console.log('compound operators', compoundOperators);
-
   const stages: PipelineStage[] = [
     {
       $search: {
-        ...(retrieveFacets
-          ? {
-              facet: {
-                operator: {
-                  compound: compoundOperators,
-                },
-                facets: {
-                  // makesFacet: {
-                  //   type: 'string',
-                  //   path: 'make',
-                  // },
-                  modelsFacet: {
-                    type: 'string',
-                    path: 'model.name',
+        compound: {
+          must: [
+            ...(query
+              ? [
+                  {
+                    text: {
+                      path: [
+                        'registration',
+                        // 'model.make',
+                        // 'model.name',
+                        // 'color',
+                        // 'description',
+                      ],
+                      query,
+                      fuzzy: {},
+                    },
                   },
-                  typesFacet: {
-                    type: 'string',
-                    path: 'model.type',
-                  },
-                  colorsFacet: {
-                    type: 'string',
-                    path: 'color',
-                  },
-                },
-              },
-            }
-          : { compound: compoundOperators }),
+                ]
+              : []),
+          ],
+          filter: [...filters],
+        },
 
         // sort: {
         //   // unused: { $meta: 'searchScore' }, //defaults to desc add order:1 for asc

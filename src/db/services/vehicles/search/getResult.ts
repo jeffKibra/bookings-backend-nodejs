@@ -60,7 +60,7 @@ function generateOptions(
   ).generateFilters();
 
   const searchPipelineStages = query
-    ? generateSearchStages(orgId, query, searchFilters, retrieveFacets)
+    ? generateSearchStages(query, searchFilters)
     : [];
 
   const matchPipelineStage: FacetPipelineStage = {
