@@ -4,6 +4,7 @@ import DynamicFieldPathAndValidValues, {
   IUserFilterValues,
   IUserFilters,
 } from './DynamicFieldPathAndValidValues';
+import DynamicFilters from './DynamicFilters';
 
 type IUserFilterValue = IUserFilterValues[0];
 
@@ -22,66 +23,36 @@ interface IMatchRangeFilter {
 //
 //
 
-export default class DynamicMatchFilters extends DynamicFieldPathAndValidValues {
+export default class DynamicMatchFilters {
   filters: Record<string, IMatchQueryStringFilter | IMatchRangeFilter> = {};
+
+  fieldsMap: DynamicFieldPathAndValidValues['fieldsMap'];
+  userFilters?: DynamicFieldPathAndValidValues['userFilters'];
 
   constructor(
     fieldsMap: DynamicMatchFilters['fieldsMap'],
     userFilters?: DynamicMatchFilters['userFilters']
   ) {
-    super(fieldsMap, userFilters);
+    // super(fieldsMap, userFilters);
+
+    this.fieldsMap = fieldsMap;
+    this.userFilters = userFilters;
   }
 
   // generateDynamicFilters;
 
   generateFilters() {
-    const { userFilters, fieldsMap } = this;
+    const { fieldsMap, userFilters } = this;
+    const { formatRangeFilter, formatQueryStringFilter } = DynamicMatchFilters;
 
-    console.log('generating userFilters', userFilters);
+    const filters = new DynamicFilters(
+      formatRangeFilter,
+      formatQueryStringFilter,
+      fieldsMap,
+      userFilters
+    ).generateFilters();
 
-    if (userFilters && typeof userFilters === 'object') {
-      const fields = Object.keys(fieldsMap);
-
-      const { appendRangeFilter, appendQueryStringFilter } = this;
-
-      fields.forEach(field => {
-        // console.log({ field });
-        this.appendValues(field, appendRangeFilter, appendQueryStringFilter);
-
-        // if (Array.isArray(values) && values.length > 0) {
-        //   this.appendFilter(field, values);
-        // }
-      });
-    }
-
-    return this.filters;
-  }
-
-  appendRangeFilter(fieldPath: string, values: IRangeFilterValues) {
-    const { formatRangeFilter } = DynamicMatchFilters;
-
-    this.appendMatchFilter(formatRangeFilter, fieldPath, values);
-  }
-
-  appendQueryStringFilter(fieldPath: string, values: IUserFilterValues) {
-    //append to match filters
-    const { formatQueryStringFilter } = DynamicMatchFilters;
-
-    this.appendMatchFilter(formatQueryStringFilter, fieldPath, values);
-  }
-
-  appendMatchFilter<
-    T extends (
-      values: any
-    ) => IMatchRangeFilter | IMatchQueryStringFilter | null
-  >(formatValuesCB: T, fieldPath: string, values: Parameters<T>[0]) {
-    const filter = formatValuesCB(values);
-
-    if (filter) {
-      this.filters[fieldPath] = filter;
-    } else {
-      console.warn('Invalid formatted match filter' + JSON.stringify(filter));
-    }
+    return filters;
   }
 
   //-------------------------------------------------------------------------
@@ -95,12 +66,10 @@ export default class DynamicMatchFilters extends DynamicFieldPathAndValidValues 
   }
   //--------------------------------------------------------------------
 
-  static formatRangeFilter(
-    values: IRangeFilterValues
-  ): IMatchRangeFilter | null {
-    if (!Array.isArray(values) || values.length !== 2) {
-      return null;
-    }
+  static formatRangeFilter(values: IRangeFilterValues): IMatchRangeFilter {
+    // if (!Array.isArray(values) || values.length !== 2) {
+    //   return null;
+    // }
 
     const min = +values[0];
     const max = +values[1];

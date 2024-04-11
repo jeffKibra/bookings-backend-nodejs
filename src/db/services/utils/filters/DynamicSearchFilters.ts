@@ -3,6 +3,7 @@ import DynamicFieldPathAndValidValues, {
   IUserFilterValues,
   IUserFilters,
 } from './DynamicFieldPathAndValidValues';
+import DynamicFilters from './DynamicFilters';
 //
 
 interface IRangeFilter {
@@ -19,95 +20,53 @@ interface IQueryStringFilter {
   };
 }
 
-export default class DynamicSearchFilters extends DynamicFieldPathAndValidValues {
+export default class DynamicSearchFilters {
   filters: (IRangeFilter | IQueryStringFilter)[] = [];
   query: string | number;
+
+  //
+  fieldsMap: DynamicFieldPathAndValidValues['fieldsMap'];
+  userFilters?: DynamicFieldPathAndValidValues['userFilters'];
+  //
 
   constructor(
     query: DynamicSearchFilters['query'],
     fieldsMap: DynamicSearchFilters['fieldsMap'],
     userFilters?: DynamicSearchFilters['userFilters']
   ) {
-    console.log('dsfc', { userFilters });
-    super(fieldsMap, userFilters);
+    // console.log('dsfc', { userFilters });
+    // super(fieldsMap, userFilters);
     //
     this.query = query;
+    //
+    this.fieldsMap = fieldsMap;
+    this.userFilters = userFilters;
   }
 
   generateFilters() {
-    const { userFilters } = this;
+    const { fieldsMap, userFilters } = this;
+    const { formatRangeFilter, formatQueryStringFilter } = DynamicSearchFilters;
 
-    if (userFilters && typeof userFilters === 'object') {
-      console.log('user filters valid');
+    const filters = new DynamicFilters(
+      formatRangeFilter,
+      formatQueryStringFilter,
+      fieldsMap,
+      userFilters
+    ).generateFilters();
 
-      const { fieldsMap } = this;
+    const filtersArray = Object.values(filters).filter(filter => filter);
 
-      const fields = Object.keys(fieldsMap);
-      console.log({ fields });
-
-      const { appendRangeFilter, appendQueryStringFilter } = this;
-
-      fields.forEach(field => {
-        // const values = userFilters[field];
-        // this.appendFilter(field, values);
-
-        this.appendValues(field, appendRangeFilter, appendQueryStringFilter);
-      });
-    }
-
-    return this.filters;
-  }
-
-  // appendFilter(field: string, values: IUserFilterValues) {
-  //   const { fieldsMap } = this;
-
-  //   const { appendRangeFilter, appendQueryStringFilter } = this;
-  //   this.appendValues(field, appendRangeFilter, appendQueryStringFilter);
-  // }
-
-  appendRangeFilter(fieldPath: string, values: IRangeFilterValues) {
-    const { formatRangeFilter } = DynamicSearchFilters;
-
-    //append to search filters
-    this.appendSearchFilter(formatRangeFilter, fieldPath, values);
-  }
-
-  appendQueryStringFilter(fieldPath: string, values: IUserFilterValues) {
-    const { formatQueryStringFilter } = DynamicSearchFilters;
-
-    this.appendSearchFilter(formatQueryStringFilter, fieldPath, values);
-  }
-
-  // appendSearchFilter(filter: IRangeFilter | IQueryStringFilter | null) {
-  //   if (filter) {
-  //     return this.filters.push(filter);
-  //   } else {
-  //     console.info('Invalid filter to append', filter);
-  //   }
-  // }
-
-  appendSearchFilter<
-    T extends (
-      fieldPath: string,
-      values: any
-    ) => IRangeFilter | IQueryStringFilter | null
-  >(formatValuesCB: T, fieldPath: Parameters<T>[0], values: Parameters<T>[1]) {
-    const filter = formatValuesCB(fieldPath, values);
-
-    if (filter) {
-      this.filters.push(filter);
-    } else {
-      console.warn('Invalid formatted search filter' + JSON.stringify(filter));
-    }
+    return filtersArray;
   }
 
   //-------------------------------------------------------------------------
   //static methods
   //-------------------------------------------------------------------------
 
-  static formatQueryStringFilter(fieldPath: string, values: IUserFilterValues) {
+  static formatQueryStringFilter(values: IUserFilterValues, fieldPath: string) {
     try {
-      DynamicSearchFilters.validateFilterValues(values);
+      // console.log({ fieldPath, values });
+      DynamicFieldPathAndValidValues.validateFilterValues(values);
 
       let queryString = '';
 
@@ -128,14 +87,14 @@ export default class DynamicSearchFilters extends DynamicFieldPathAndValidValues
         },
       };
     } catch (error) {
-      console.warn('Eror formatting String Filter', error);
+      console.warn('Error formatting String Filter', error);
 
       return null;
     }
   }
   //--------------------------------------------------------------------
 
-  static formatRangeFilter(fieldPath: string, values: IRangeFilterValues) {
+  static formatRangeFilter(values: IRangeFilterValues, fieldPath: string) {
     if (!Array.isArray(values) || values.length !== 2) {
       return null;
     }

@@ -29,8 +29,6 @@ export default class DynamicFieldPathAndValidValues {
     fieldsMap: DynamicFieldPathAndValidValues['fieldsMap'],
     userFilters?: DynamicFieldPathAndValidValues['userFilters']
   ) {
-    console.log('userFilters', userFilters);
-
     this.fieldsMap = fieldsMap;
     this.userFilters = userFilters;
   }
@@ -50,13 +48,13 @@ export default class DynamicFieldPathAndValidValues {
   ) {
     const { userFilters, fieldsMap } = this;
 
-    console.log('fieldsMap', fieldsMap);
-    console.log({ field });
+    // console.log('fieldsMap', fieldsMap);
+    // console.log({ field });
 
     const fieldMap = fieldsMap[field];
     const fieldMapIsValid =
       typeof fieldMap === 'object' && fieldMap.path && fieldMap.type;
-    console.log({ fieldMap, fieldMapIsValid, userFilters });
+    // console.log({ fieldMap, fieldMapIsValid, userFilters });
 
     if (userFilters && fieldMapIsValid) {
       const fieldPath = fieldMap.path;
@@ -102,7 +100,7 @@ export default class DynamicFieldPathAndValidValues {
     let validatedValues: IUserFilterValues | null = null;
 
     try {
-      this.validateFilterValues(values);
+      DynamicFieldPathAndValidValues.validateFilterValues(values);
 
       validatedValues = values;
     } catch (error) {
@@ -118,7 +116,7 @@ export default class DynamicFieldPathAndValidValues {
     let validatedRange: Parameters<IRangeFilterCB>[1] | null = null;
 
     try {
-      this.validateFilterValues(values);
+      DynamicFieldPathAndValidValues.validateFilterValues(values);
 
       const min = +values[0];
       const max = +values[1];
@@ -137,7 +135,7 @@ export default class DynamicFieldPathAndValidValues {
 
   static checkFilterValuesValidity(values: IUserFilterValues) {
     const isValid = Array.isArray(values) && values.length > 0;
-    console.log({ isValid, values });
+    // console.log({ isValid, values });
 
     return isValid;
   }
@@ -146,7 +144,7 @@ export default class DynamicFieldPathAndValidValues {
 
   static validateFilterValues(values: IUserFilterValues) {
     const isValid = this.checkFilterValuesValidity(values);
-    console.log({ isValid, values });
+    // console.log({ isValid, values });
 
     if (!isValid) {
       throw new Error('Invalid filter values: ' + JSON.stringify(values));
