@@ -1,7 +1,7 @@
 import { filters } from '../../../../utils';
 //
 
-const { generateQueryStringFilter, generateRangeFilter } = filters;
+// const { generateQueryStringFilter, generateRangeFilter } = filters;
 
 const dynamicFieldPaths = {
   rate: 'rate',
@@ -103,18 +103,18 @@ export default class Filters {
 
     const fieldPath = fieldPaths[field];
 
-    const filter = generateRangeFilter(fieldPath, values);
+    // const filter = generateRangeFilter(fieldPath, values);
 
-    if (filter) {
-      if (query) {
-        //append to search filters
-        this.appendSearchFilter(filter);
-      } else {
-        //append to match filters
-        const { gte, lte } = filter.range;
-        this.appendMatchFilter(fieldPath, { $gte: gte, $lte: lte });
-      }
-    }
+    // if (filter) {
+    //   if (query) {
+    //     //append to search filters
+    //     this.appendSearchFilter(filter);
+    //   } else {
+    //     //append to match filters
+    //     const { gte, lte } = filter.range;
+    //     this.appendMatchFilter(fieldPath, { $gte: gte, $lte: lte });
+    //   }
+    // }
   }
 
   appendStringFilter(field: IFieldPaths, values: IGeneralFilter['values']) {
@@ -124,9 +124,9 @@ export default class Filters {
 
     if (query) {
       //append to search filters
-      const filter = generateQueryStringFilter(fieldPath, values);
+      // const filter = generateQueryStringFilter(fieldPath, values);
 
-      this.appendSearchFilter(filter);
+      // this.appendSearchFilter(filter);
     } else {
       //append to match filters
       const filter = values.length === 1 ? values[0] : { $in: [...values] };

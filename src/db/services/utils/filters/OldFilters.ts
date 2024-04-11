@@ -1,5 +1,3 @@
-import { generateQueryStringFilter, generateRangeFilter } from '.';
-import StaticFilters from './StaticFilters';
 //
 
 const dynamicFieldPaths = {
@@ -39,7 +37,13 @@ interface IDynamicFilter {
 }
 type IDynamicFiltersOptions = Record<string, IDynamicFilter>;
 
-export default class SearchFilters extends StaticFilters {
+export default class Filters {
+  static status = 0;
+  static staticFieldPaths = {
+    orgId: 'metaData.orgId',
+    status: 'metaData.status',
+  };
+
   //
   dynamicFiltersOptions: IDynamicFiltersOptions;
 
@@ -53,19 +57,17 @@ export default class SearchFilters extends StaticFilters {
   query: string;
 
   constructor(
-    orgId: SearchFilters['orgId'],
-    query: SearchFilters['query'],
-    dynamicFiltersOptions: SearchFilters['dynamicFiltersOptions']
+    orgId: Filters['orgId'],
+    query: Filters['query'],
+    dynamicFiltersOptions: Filters['dynamicFiltersOptions']
   ) {
-    super(orgId);
-    //
     this.query = query;
     this.orgId = orgId;
     this.dynamicFiltersOptions = dynamicFiltersOptions;
   }
 
   generateFilters(
-    userFilters?: Parameters<SearchFilters['generateDynamicFilters']>[0]
+    userFilters?: Parameters<Filters['generateDynamicFilters']>[0]
   ) {
     this.generateStaticFilters();
     this.generateDynamicFilters(userFilters);
@@ -99,7 +101,7 @@ export default class SearchFilters extends StaticFilters {
       const dynamicFieldPaths = Object.keys(dynamicFiltersOptions);
 
       Object.keys(dynamicFieldPaths).forEach(field => {
-        const values = userSearchFilters[field];
+        const values = userFilters[field];
 
         if (Array.isArray(values) && values.length > 0) {
           this.appendFilter(field, values);
@@ -116,51 +118,51 @@ export default class SearchFilters extends StaticFilters {
 
     if (isRangeFilter) {
       //append to search filters
-      this.appendRangeFilter(field, values);
+      // this.appendRangeFilter(field, values);
     } else {
       //append to match filters
-      this.appendStringFilter(field, values);
+      // this.appendStringFilter(field, values);
     }
   }
 
-  appendRangeFilter(field: string, values: IUserFiltersValues) {
-    const { query } = this;
+  // appendRangeFilter(field: string, values: IUserFiltersValues) {
+  //   const { query } = this;
 
-    const fieldPath = this.getFieldPath(field);
+  //   const fieldPath = this.getFieldPath(field);
 
-    const filter = generateRangeFilter(fieldPath, values);
+  //   const filter = generateRangeFilter(fieldPath, values);
 
-    if (filter) {
-      if (query) {
-        //append to search filters
-        this.appendSearchFilter(filter);
-      } else {
-        //append to match filters
-        const { gte, lte } = filter.range;
-        this.appendMatchFilter(fieldPath, { $gte: gte, $lte: lte });
-      }
-    }
-  }
+  //   if (filter) {
+  //     if (query) {
+  //       //append to search filters
+  //       this.appendSearchFilter(filter);
+  //     } else {
+  //       //append to match filters
+  //       const { gte, lte } = filter.range;
+  //       this.appendMatchFilter(fieldPath, { $gte: gte, $lte: lte });
+  //     }
+  //   }
+  // }
 
-  appendStringFilter(field: string, values: IUserFiltersValues) {
-    const { query } = this;
+  // appendStringFilter(field: string, values: IUserFiltersValues) {
+  //   const { query } = this;
 
-    const fieldPath = this.getFieldPath(field);
+  //   const fieldPath = this.getFieldPath(field);
 
-    if (query) {
-      //append to search filters
-      const filter = generateQueryStringFilter(fieldPath, values);
+  //   if (query) {
+  //     //append to search filters
+  //     const filter = generateQueryStringFilter(fieldPath, values);
 
-      this.appendSearchFilter(filter);
-    } else {
-      //append to match filters
-      const filter = values.length === 1 ? values[0] : { $in: [...values] };
-      this.appendMatchFilter(fieldPath, filter);
-    }
-  }
+  //     this.appendSearchFilter(filter);
+  //   } else {
+  //     //append to match filters
+  //     const filter = values.length === 1 ? values[0] : { $in: [...values] };
+  //     this.appendMatchFilter(fieldPath, filter);
+  //   }
+  // }
 
   appendMatchFilter(field: string, filter: unknown) {
-    this.matchSearchFilters[field] = filter;
+    this.matchFilters[field] = filter;
   }
 
   appendSearchFilter(filter: {}) {

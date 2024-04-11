@@ -1,7 +1,7 @@
 import { filters } from '../../../../utils';
 //
 
-const { generateQueryStringFilter, generateRangeFilter } = filters;
+// const { generateQueryStringFilter, generateRangeFilter } = filters;
 
 const filterFields = ['group'];
 
@@ -44,8 +44,8 @@ export default function generateFilters(
         if (field === 'group') {
           fieldPrefix = 'metaData.';
         }
-
-        filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
+        //todo: replace using Filters class
+        // filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
 
         filters.push(filter);
       }

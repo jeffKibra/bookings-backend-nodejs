@@ -1,12 +1,14 @@
 import { PipelineStage } from 'mongoose';
 //
-import { Filters } from '../utils/filters';
+// import { Filters } from '../utils/filters';
+import { VehiclesFilters } from '../../../utils/filters';
+
 //
 
-import {
-  ISearchVehiclesPagination,
-  IPaginationLastDoc,
-} from '../../../../../types';
+// import {
+//   ISearchVehiclesPagination,
+//   IPaginationLastDoc,
+// } from '../../../../../types';
 
 // function generateFirstSortField(sortOptions?: ISortOptions) {
 //   const sortDirection =
@@ -23,7 +25,8 @@ import {
 
 export default function generateSearchStages(
   query: string | number,
-  filters: Record<string, unknown>[]
+  filters: ReturnType<VehiclesFilters['generateSearchFilters']>
+  // filters: Record<string, unknown>[]
   // userFilters?: Record<string, (string | number | Date)[]>,
   // sortOptions?: ISortOptions
 ) {

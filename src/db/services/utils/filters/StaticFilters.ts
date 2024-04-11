@@ -4,18 +4,18 @@ export default class StaticFilters {
   static statusFieldPath = 'metaData.status';
 
   //
-  orgId: string;
+  // orgId: string;
   //
 
-  constructor(orgId: StaticFilters['orgId']) {
-    this.orgId = orgId;
+  constructor() {
+    // this.orgId = orgId;
   }
 
-  generateStaticFields() {
-    const { orgId } = this;
+  // generateStaticFields() {
+  //   const { orgId } = this;
 
-    return StaticFilters.generateStaticFields(orgId);
-  }
+  //   return StaticFilters.generateStaticFields(orgId);
+  // }
 
   //-------------------------------------------------------------------------
   //static methods
@@ -29,6 +29,44 @@ export default class StaticFilters {
     };
 
     return fields;
+  }
+
+  static generateForSearch(orgId: string) {
+    const {
+      orgId: { path: orgIdPath, value: orgIdValue },
+      status: { path: statusPath, value: statusValue },
+    } = this.generateStaticFields(orgId);
+
+    const searchFilters = [
+      {
+        text: {
+          path: orgIdPath,
+          query: orgIdValue,
+        },
+      },
+      {
+        equals: {
+          path: statusPath,
+          value: statusValue,
+        },
+      },
+    ];
+
+    return searchFilters;
+  }
+
+  static generateForMatch(orgId: string) {
+    const {
+      orgId: { path: orgIdPath, value: orgIdValue },
+      status: { path: statusPath, value: statusValue },
+    } = this.generateStaticFields(orgId);
+
+    const matchFilters = {
+      [orgIdPath]: orgIdValue,
+      [statusPath]: statusValue,
+    };
+
+    return matchFilters;
   }
 
   //--------------------------------------------------------------------

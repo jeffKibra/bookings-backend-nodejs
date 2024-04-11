@@ -1,7 +1,7 @@
 import { filters } from '../../../../../utils';
 //
 
-const { generateQueryStringFilter, generateRangeFilter } = filters;
+// const { generateQueryStringFilter, generateRangeFilter } = filters;
 
 const filterFields = ['make', 'model', 'type', 'color', 'rate'];
 
@@ -39,10 +39,10 @@ export default function generateFilters(
         let filter = {};
 
         if (field === 'rate') {
-          const tempFilter = generateRangeFilter(field, values);
-          if (tempFilter) {
-            filter = tempFilter;
-          }
+          // const tempFilter = generateRangeFilter(field, values);
+          // if (tempFilter) {
+          //   filter = tempFilter;
+          // }
         } else {
           let fieldPrefix = '';
 
@@ -51,7 +51,7 @@ export default function generateFilters(
             fieldPrefix = 'model.';
           }
 
-          filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
+          // filter = generateQueryStringFilter(`${fieldPrefix}${field}`, values);
         }
 
         filters.push(filter);

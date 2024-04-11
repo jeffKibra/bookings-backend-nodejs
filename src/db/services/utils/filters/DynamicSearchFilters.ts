@@ -1,57 +1,34 @@
-import { generateQueryStringFilter, generateRangeFilter } from '.';
-import DynamicFilters from './DynamicFieldPathAndValidValues';
+import DynamicFieldPathAndValidValues, {
+  IRangeFilterValues,
+  IUserFilterValues,
+  IUserFilters,
+} from './DynamicFieldPathAndValidValues';
 //
 
-const dynamicFieldPaths = {
-  rate: 'rate',
-  color: 'color',
-  model: 'model.name',
-  make: 'model.make',
-  type: 'model.type',
-};
-const filterFields = Object.keys(dynamicFieldPaths);
-
-const staticFieldPaths = {
-  orgId: 'metaData.orgId',
-  status: 'metaData.status',
-};
-
-const fieldPaths = {
-  orgId: 'metaData.orgId',
-  status: 'metaData.status',
-  ...dynamicFieldPaths,
-};
-
-type IFieldPaths = keyof typeof fieldPaths;
-//
-
-interface IGeneralFilter {
-  path: string;
-  values: (string | number | Date)[];
+interface IRangeFilter {
+  range: {
+    path: string;
+    gte: number;
+    lte: number;
+  };
+}
+interface IQueryStringFilter {
+  queryString: {
+    defaultPath: string;
+    query: string;
+  };
 }
 
-type IUserFiltersValues = (string | number | Date)[];
-type IUserFilters = Record<string, IUserFiltersValues>;
-
-interface IDynamicFilter {
-  path: string;
-  type: 'range' | 'normal';
-}
-type IDynamicFiltersFieldsMap = Record<string, IDynamicFilter>;
-
-export default class DynamicSearchFilters extends DynamicFilters {
-  //
-  searchFilters: Record<string, unknown>[] = [];
-  matchFilters: Record<string, unknown> = {};
-  //
-  //
-  query: string;
+export default class DynamicSearchFilters extends DynamicFieldPathAndValidValues {
+  filters: (IRangeFilter | IQueryStringFilter)[] = [];
+  query: string | number;
 
   constructor(
     query: DynamicSearchFilters['query'],
     fieldsMap: DynamicSearchFilters['fieldsMap'],
     userFilters?: DynamicSearchFilters['userFilters']
   ) {
+    console.log('dsfc', { userFilters });
     super(fieldsMap, userFilters);
     //
     this.query = query;
@@ -59,139 +36,113 @@ export default class DynamicSearchFilters extends DynamicFilters {
 
   generateFilters() {
     const { userFilters } = this;
-    this._generate(userFilters);
-
-    const { matchFilters, searchFilters } = this;
-
-    console.log('match filters', matchFilters);
-    console.log('search filters', searchFilters);
-
-    const filters = { searchFilters, matchFilters };
-
-    return filters;
-  }
-  // generateDynamicFilters;
-
-  _generate(userFilters?: IUserFilters) {
-    const filters = [];
 
     if (userFilters && typeof userFilters === 'object') {
+      console.log('user filters valid');
+
       const { fieldsMap } = this;
-      const dynamicFieldPaths = Object.keys(fieldsMap);
 
-      Object.keys(dynamicFieldPaths).forEach(field => {
-        const values = userFilters[field];
+      const fields = Object.keys(fieldsMap);
+      console.log({ fields });
 
-        if (Array.isArray(values) && values.length > 0) {
-          this.appendFilter(field, values);
-        }
+      const { appendRangeFilter, appendQueryStringFilter } = this;
+
+      fields.forEach(field => {
+        // const values = userFilters[field];
+        // this.appendFilter(field, values);
+
+        this.appendValues(field, appendRangeFilter, appendQueryStringFilter);
       });
     }
 
-    return filters;
+    return this.filters;
   }
 
-  appendFilter(field: string, values: IUserFiltersValues) {
-    const { fieldsMap } = this;
+  // appendFilter(field: string, values: IUserFilterValues) {
+  //   const { fieldsMap } = this;
 
-    const fieldType = fieldsMap[field].type;
-    const isRangeFilter = fieldType === 'range';
+  //   const { appendRangeFilter, appendQueryStringFilter } = this;
+  //   this.appendValues(field, appendRangeFilter, appendQueryStringFilter);
+  // }
 
-    if (isRangeFilter) {
-      //append to search filters
-      this.appendRangeFilter(field, values);
-    } else {
-      //append to match filters
-      this.appendStringFilter(field, values);
-    }
+  appendRangeFilter(fieldPath: string, values: IRangeFilterValues) {
+    const { formatRangeFilter } = DynamicSearchFilters;
+
+    //append to search filters
+    this.appendSearchFilter(formatRangeFilter, fieldPath, values);
   }
 
-  appendRangeFilter(field: string, values: IUserFiltersValues) {
-    const { query } = this;
+  appendQueryStringFilter(fieldPath: string, values: IUserFilterValues) {
+    const { formatQueryStringFilter } = DynamicSearchFilters;
 
-    const fieldPath = this.getFieldPath(field);
+    this.appendSearchFilter(formatQueryStringFilter, fieldPath, values);
+  }
 
-    const filter = generateRangeFilter(fieldPath, values);
+  // appendSearchFilter(filter: IRangeFilter | IQueryStringFilter | null) {
+  //   if (filter) {
+  //     return this.filters.push(filter);
+  //   } else {
+  //     console.info('Invalid filter to append', filter);
+  //   }
+  // }
+
+  appendSearchFilter<
+    T extends (
+      fieldPath: string,
+      values: any
+    ) => IRangeFilter | IQueryStringFilter | null
+  >(formatValuesCB: T, fieldPath: Parameters<T>[0], values: Parameters<T>[1]) {
+    const filter = formatValuesCB(fieldPath, values);
 
     if (filter) {
-      if (query) {
-        //append to search filters
-        this.appendSearchFilter(filter);
-      } else {
-        //append to match filters
-        const { gte, lte } = filter.range;
-        this.appendMatchFilter(fieldPath, { $gte: gte, $lte: lte });
-      }
-    }
-  }
-
-  appendStringFilter(field: string, values: IUserFiltersValues) {
-    const { query } = this;
-
-    const fieldPath = this.getFieldPath(field);
-
-    if (query) {
-      //append to search filters
-      const filter = generateQueryStringFilter(fieldPath, values);
-
-      this.appendSearchFilter(filter);
+      this.filters.push(filter);
     } else {
-      //append to match filters
-      const filter = values.length === 1 ? values[0] : { $in: [...values] };
-      this.appendMatchFilter(fieldPath, filter);
+      console.warn('Invalid formatted search filter' + JSON.stringify(filter));
     }
-  }
-
-  appendMatchFilter(field: string, filter: unknown) {
-    this.matchFilters[field] = filter;
-  }
-
-  appendSearchFilter(filter: {}) {
-    return this.searchFilters.push(filter);
-  }
-
-  getFieldPath(field: string) {
-    const { fieldsMap } = this;
-
-    return fieldsMap[field].path;
   }
 
   //-------------------------------------------------------------------------
   //static methods
   //-------------------------------------------------------------------------
 
-  static generateQueryStringFilter(
-    fieldPath: string,
-    values: IUserFiltersValues
-  ) {
-    let queryString = '';
+  static formatQueryStringFilter(fieldPath: string, values: IUserFilterValues) {
+    try {
+      DynamicSearchFilters.validateFilterValues(values);
 
-    values.forEach((value, index) => {
-      const subString = String(value);
+      let queryString = '';
 
-      if (index === 0) {
-        queryString = subString;
-      } else {
-        queryString = `${queryString} OR ${subString}`;
-      }
-    });
+      values.forEach((value, index) => {
+        const subString = String(value);
 
-    return {
-      queryString: {
-        defaultPath: fieldPath,
-        query: queryString,
-      },
-    };
+        if (index === 0) {
+          queryString = subString;
+        } else {
+          queryString = `${queryString} OR ${subString}`;
+        }
+      });
+
+      return {
+        queryString: {
+          defaultPath: fieldPath,
+          query: queryString,
+        },
+      };
+    } catch (error) {
+      console.warn('Eror formatting String Filter', error);
+
+      return null;
+    }
   }
   //--------------------------------------------------------------------
 
-  static generateRangeFilter(fieldPath: string, values: IUserFiltersValues) {
-    if (values.length !== 2) {
+  static formatRangeFilter(fieldPath: string, values: IRangeFilterValues) {
+    if (!Array.isArray(values) || values.length !== 2) {
       return null;
     }
 
     const min = +values[0];
     const max = +values[1];
+
     return {
       range: {
         path: fieldPath,

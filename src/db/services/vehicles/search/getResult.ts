@@ -7,7 +7,8 @@ import {
 } from './subPipelines';
 //
 import { sort, pagination } from '../../utils';
-import { Filters } from './utils/filters';
+// import { Filters } from './utils/filters';
+import { VehiclesFilters } from '../../utils/filters';
 
 //
 import {
@@ -43,8 +44,7 @@ const { generateSortBy } = sort;
 function generateOptions(
   orgId: string,
   query: string | number,
-  options?: ISearchVehiclesQueryOptions,
-  retrieveFacets?: boolean
+  options?: ISearchVehiclesQueryOptions
 ) {
   const [sortByField, sortByDirection] = generateSortBy(query, options?.sortBy);
 
@@ -53,13 +53,11 @@ function generateOptions(
   const filters = options?.filters;
 
   //
-  const { matchFilters, searchFilters } = new Filters(
-    orgId,
-    String(query),
-    filters
-  ).generateFilters();
+  const { matchFilters, searchFilters } = new VehiclesFilters(
+    orgId
+  ).generateFilters(query, filters);
 
-  const searchPipelineStages = query
+  const searchPipelineStages = searchFilters
     ? generateSearchStages(query, searchFilters)
     : [];
 
@@ -114,7 +112,7 @@ export default async function getResult(
     page,
     sortByDirection,
     sortByField,
-  } = generateOptions(orgId, query, options, retrieveFacets);
+  } = generateOptions(orgId, query, options);
 
   // aggregation to fetch items not booked.
   return VehicleModel.aggregate<{
