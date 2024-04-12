@@ -1,9 +1,10 @@
 import { PipelineStage } from 'mongoose';
 import { ContactModel } from '../../../models';
+
 //
-import { generateSearchStages } from './subPipelines';
+import { generateSearchStages, transformDocFields } from './subPipelines';
 //
-import { sort, pagination } from '../../utils';
+import { sort, pagination, filters } from '../../utils';
 
 //
 import { IContact, ISearchContactsQueryOptions } from '../../../../types';
@@ -16,10 +17,11 @@ type FacetPipelineStage = PipelineStage.FacetPipelineStage;
 //
 const { generateLimit } = pagination;
 const { generateSortBy } = sort;
+const { ContactsFilters } = filters;
 
 //----------------------------------------------------------------
 
-export default async function getResult(
+function generateAggregationOptions(
   orgId: string,
   query: string | number,
   options?: ISearchContactsQueryOptions
@@ -31,32 +33,72 @@ export default async function getResult(
   //   console.log('pagination', pagination);
   const rawFilters = options?.filters || {};
   const group = options?.group || '';
-  const filters = {
+  const userFilters = {
     ...rawFilters,
     group: [group],
   };
 
-  const searchPipelineStages = generateSearchStages(orgId, query, filters);
+  const { matchFilters, searchFilters } = new ContactsFilters(
+    orgId
+  ).generateFilters(query, userFilters);
+
+  // const searchPipelineStages = searchFilters
+  //   ? generateSearchStages(query, searchFilters)
+  //   : [];
+  const searchPipelineStages = searchFilters
+    ? generateSearchStages(query, searchFilters)
+    : [];
+
+  const matchPipelineStage: FacetPipelineStage = {
+    $match: {
+      ...matchFilters,
+    },
+  };
 
   const page = pagination?.page || 0;
   const limit = generateLimit(pagination);
   const offset = Number(page) * limit;
   //   console.log({ offset, limit, page });
 
+  return {
+    sortByField,
+    sortByDirection,
+    searchPipelineStages,
+    matchPipelineStage,
+    limit,
+    offset,
+  };
+}
+
+//----------------------------------------------------------------
+
+export default async function getResult(
+  orgId: string,
+  query: string | number,
+  options?: ISearchContactsQueryOptions
+) {
+  const {
+    searchPipelineStages,
+    matchPipelineStage,
+    sortByField,
+    sortByDirection,
+    offset,
+    limit,
+  } = generateAggregationOptions(orgId, query, options);
+
+  // console.log({ query, searchPipelineStages, matchPipelineStage });
+
   // aggregation to fetch items not booked.
   return ContactModel.aggregate<{
     contacts: IContact[];
     meta: { count: number };
   }>([
-    ...searchPipelineStages,
+    ...(query ? searchPipelineStages : [matchPipelineStage]),
     {
       $sort: {
         [sortByField]: sortByDirection,
         _id: sortByDirection,
       },
-    },
-    {
-      $skip: offset,
     },
 
     {
@@ -69,21 +111,35 @@ export default async function getResult(
           //   },
           // },
           {
+            $skip: offset,
+          },
+          {
             //limit items returned
             $limit: limit,
+          },
+          {
+            //modify the fields of only the docs to return
+            $set: {
+              ...transformDocFields,
+            },
           },
         ],
         meta: [
           {
-            //must be used before a lookup
-            $replaceWith: {
-              $mergeObjects: '$$SEARCH_META',
-            },
-          },
-          {
-            $limit: 1,
+            $count: 'count',
           },
         ],
+        // meta: [
+        //   {
+        //     //must be used before a lookup
+        //     $replaceWith: {
+        //       $mergeObjects: '$$SEARCH_META',
+        //     },
+        //   },
+        //   {
+        //     $limit: 1,
+        //   },
+        // ],
       },
     },
     {
@@ -92,14 +148,14 @@ export default async function getResult(
         meta: { $arrayElemAt: ['$meta', 0] },
       },
     },
-    {
-      //format metadata
-      $project: {
-        contacts: 1,
-        meta: {
-          count: '$meta.count.lowerBound',
-        },
-      },
-    },
+    // {
+    //   //format metadata
+    //   $project: {
+    //     contacts: 1,
+    //     meta: {
+    //       count: '$meta.count.lowerBound',
+    //     },
+    //   },
+    // },
   ]);
 }

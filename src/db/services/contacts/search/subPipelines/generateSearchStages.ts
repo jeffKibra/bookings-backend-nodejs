@@ -1,19 +1,16 @@
 import { PipelineStage } from 'mongoose';
 //
-import { generateFilters } from '../utils/filters';
+import { ContactsFilters } from '../../../utils/filters';
 //
-import transformDocFields from './transformDocFields';
+//
+// import transformDocFields from './transformDocFields';
 
 export default function generateSearchStages(
-  orgId: string,
   query: string | number,
-  userFilters?: Record<string, (string | number | Date)[]>,
-  retrieveFacets?: false
+  filters: ReturnType<ContactsFilters['generateSearchFilters']>
   // sortOptions?: ISortOptions
 ) {
-  console.log('generate contacts search stages orgId', orgId);
-  const filters = generateFilters(orgId, userFilters);
-  console.log('filters', filters);
+  // console.log('generate contacts search stages filters', filters);
 
   const stages: PipelineStage[] = [
     {
@@ -55,13 +52,6 @@ export default function generateSearchStages(
         searchScore: {
           $meta: 'searchScore',
         },
-        ...transformDocFields,
-        // _id: {
-        //   $toString: '$_id',
-        // },
-        // openingBalance: {
-        //   $toDouble: '$openingBalance',
-        // },
       },
     },
     // {
