@@ -30,6 +30,7 @@ export default class StaticFilters {
 
     return fields;
   }
+  //--------------------------------------------------------------------
 
   static generateForSearch(orgId: string) {
     const {
@@ -54,6 +55,7 @@ export default class StaticFilters {
 
     return searchFilters;
   }
+  //--------------------------------------------------------------------
 
   static generateForMatch(orgId: string) {
     const {
@@ -69,5 +71,12 @@ export default class StaticFilters {
     return matchFilters;
   }
 
+  //--------------------------------------------------------------------
+  static generateFilters(orgId: string) {
+    const searchFilters = StaticFilters.generateForSearch(orgId);
+    const matchFilters = StaticFilters.generateForMatch(orgId);
+
+    return { searchFilters, matchFilters };
+  }
   //--------------------------------------------------------------------
 }

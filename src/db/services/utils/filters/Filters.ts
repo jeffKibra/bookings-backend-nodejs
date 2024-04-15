@@ -84,4 +84,12 @@ export default class Filters {
   }
 
   //--------------------------------------------------------------------
+  //static methods
+  //--------------------------------------------------------------------
+
+  static generateStaticFilters(orgId: string) {
+    return StaticFilters.generateFilters(orgId);
+  }
+
+  //--------------------------------------------------------------------
 }
