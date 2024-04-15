@@ -1,21 +1,19 @@
 import { PipelineStage } from 'mongoose';
 //
-import { generateFilters } from '../utils/filters';
+import { InvoicesFilters } from '../../../../utils/filters';
 //
 
-import {
-  ISearchVehiclesPagination,
-  IPaginationLastDoc,
-} from '../../../../../../types';
+// import {
+//   ISearchVehiclesPagination,
+//   IPaginationLastDoc,
+// } from '../../../../../../types';
 
 export default function generateSearchStages(
   orgId: string,
   query: string | number,
-  userFilters?: Record<string, (string | number | Date)[]>,
-  retrieveFacets = false
+  filters: ReturnType<InvoicesFilters['generateSearchFilters']>
   // sortOptions?: ISortOptions
 ) {
-  const filters = generateFilters(orgId, userFilters);
   console.log('filters', filters);
 
   const compoundOperators = {
@@ -46,33 +44,7 @@ export default function generateSearchStages(
   const stages: PipelineStage[] = [
     {
       $search: {
-        ...(retrieveFacets
-          ? {
-              facet: {
-                operator: {
-                  compound: compoundOperators,
-                },
-                facets: {
-                  // makesFacet: {
-                  //   type: 'string',
-                  //   path: 'make',
-                  // },
-                  modelsFacet: {
-                    type: 'string',
-                    path: 'items.vehicle.model.model',
-                  },
-                  typesFacet: {
-                    type: 'string',
-                    path: 'items.vehicle.model.type',
-                  },
-                  // colorsFacet: {
-                  //   type: 'string',
-                  //   path: 'color',
-                  // },
-                },
-              },
-            }
-          : { compound: compoundOperators }),
+        compound: compoundOperators,
 
         // sort: {
         //   // unused: { $meta: 'searchScore' }, //defaults to desc add order:1 for asc
