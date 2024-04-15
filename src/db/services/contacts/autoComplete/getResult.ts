@@ -1,6 +1,8 @@
 import { PipelineStage } from 'mongoose';
 import { ContactModel } from '../../../models';
 //
+import { ContactsFilters } from '../../utils/filters';
+//
 import { generateSearchStages } from './subPipelines';
 //
 import { sort, pagination } from '../../utils';
@@ -24,11 +26,18 @@ export default async function getResult(
 ) {
   // console.log('options', options);
 
-  const filters = {
+  const userFilters = {
     ...(contactGroup ? { group: [contactGroup] } : {}),
   };
 
-  const searchPipelineStages = generateSearchStages(orgId, query, filters);
+  const filters = new ContactsFilters(orgId).generateSearchFilters(
+    query,
+    userFilters
+  );
+  console.log('autocomplete filters', filters);
+
+  const searchPipelineStages = generateSearchStages(query, filters);
+  console.log('autocomplete searchPipelineStages', searchPipelineStages);
 
   // aggregation to fetch items not booked.
   return ContactModel.aggregate<IContact[]>([

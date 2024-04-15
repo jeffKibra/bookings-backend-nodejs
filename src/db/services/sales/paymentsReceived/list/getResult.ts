@@ -20,8 +20,7 @@ const { generateLimit } = pagination;
 
 export default async function getResult(
   orgId: string,
-  options?: IPaymentsReceivedQueryOptions,
-  retrieveFacets?: boolean
+  options?: IPaymentsReceivedQueryOptions
 ) {
   const [sortByField, sortByDirection] = generateSortBy('', options?.sortBy);
   console.log({ sortByField, sortByDirection, orgId });
@@ -34,7 +33,6 @@ export default async function getResult(
   //   orgId,
   //   query,
   //   filters,
-  //   retrieveFacets
   // );
 
   const page = pagination?.page || 0;

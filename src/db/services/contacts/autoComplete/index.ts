@@ -1,7 +1,7 @@
 //
 import getResult from './getResult';
 //
-import { ISearchContactsQueryOptions } from '../../../../types';
+// import { ISearchContactsQueryOptions } from '../../../../types';
 //
 
 export default async function search(

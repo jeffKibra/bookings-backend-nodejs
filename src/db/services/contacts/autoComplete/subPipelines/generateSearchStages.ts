@@ -1,16 +1,14 @@
 import { PipelineStage } from 'mongoose';
 //
-import { generateFilters } from '../utils/filters';
+// import { generateFilters } from '../utils/filters';
+import { ContactsFilters } from '../../../utils/filters';
 //
 
 export default function generateSearchStages(
-  orgId: string,
   query: string | number,
-  userFilters?: Record<string, (string | number | Date)[]>,
-  retrieveFacets?: false
+  filters: ReturnType<ContactsFilters['generateSearchFilters']>
   // sortOptions?: ISortOptions
 ) {
-  const filters = generateFilters(orgId, userFilters);
   console.log('filters', filters);
 
   const compoundOperators = {
