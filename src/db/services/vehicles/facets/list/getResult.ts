@@ -3,7 +3,7 @@ import { VehicleModel } from '../../../../models';
 //
 
 //
-import { Filters } from '../../search/utils/filters';
+import { Filters } from '../../../utils/filters';
 
 //
 import {
