@@ -1,8 +1,10 @@
-import { ObjectId } from 'mongodb';
+// import { ObjectId } from 'mongodb';
 //
-import { IPaginationCursor, IPaginationParams } from '../../../../../../types';
+import {
+  IPaginationCursor,
+  // IPaginationParams
+} from '../../../../../../types';
 
-export * as filters from './filters';
 export { default as generateSortBy } from './generateSortBy';
 
 export function formatCursor(cursor?: IPaginationCursor) {

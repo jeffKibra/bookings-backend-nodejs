@@ -1,6 +1,8 @@
 import { PipelineStage } from 'mongoose';
 import { InvoiceModel } from '../../../../models';
 //
+import { InvoicesFilters } from '../../../utils/filters';
+//
 import { generateSearchStages, calculateBalanceStages } from './subPipelines';
 import { pagination, sort } from '../../../utils';
 import { generateSortBy } from './utils';
@@ -8,17 +10,16 @@ import { generateSortBy } from './utils';
 import { IInvoice, IInvoicesQueryOptions } from '../../../../../types';
 //
 
-// type FacetPipelineStage = PipelineStage.FacetPipelineStage;
+type FacetPipelineStage = PipelineStage.FacetPipelineStage;
 
 //----------------------------------------------------------------
 
 const { generateLimit } = pagination;
 //----------------------------------------------------------------
 
-export default async function getResult(
+function generateAggregationOptions(
   orgId: string,
-  options?: IInvoicesQueryOptions,
-  retrieveFacets?: boolean
+  options?: IInvoicesQueryOptions
 ) {
   const pagination = options?.pagination;
   //   console.log('pagination', pagination);
@@ -29,9 +30,24 @@ export default async function getResult(
   console.log('list invoices getResult fn options', options);
   console.log('list invoices getResult fn filters', filters);
 
-  const searchPipelineStages = generateSearchStages(orgId, customerId, {
+  const userFilters = {
     ...filters,
-  });
+    customerId: [customerId],
+  };
+
+  const { matchFilters, searchFilters } = new InvoicesFilters(
+    orgId
+  ).generateFilters('', userFilters);
+
+  const searchPipelineStages = searchFilters
+    ? generateSearchStages('', searchFilters)
+    : null;
+
+  const matchPipelineStage: FacetPipelineStage = {
+    $match: {
+      ...matchFilters,
+    },
+  };
 
   const balanceStages = calculateBalanceStages(orgId, paymentId);
 
@@ -45,13 +61,42 @@ export default async function getResult(
     options?.sortBy
   );
 
+  return {
+    searchPipelineStages,
+    matchPipelineStage,
+    balanceStages,
+    offset,
+    limit,
+    sortByField,
+    sortByDirection,
+  };
+}
+
+//----------------------------------------------------------------
+
+export default async function getResult(
+  orgId: string,
+  options?: IInvoicesQueryOptions
+) {
+  const {
+    sortByField,
+    sortByDirection,
+    searchPipelineStages,
+    matchPipelineStage,
+    balanceStages,
+    offset,
+    limit,
+  } = generateAggregationOptions(orgId, options);
+
   return InvoiceModel.aggregate<{
     invoices: IInvoice[];
     meta: {
       count: number;
     };
   }>([
-    ...searchPipelineStages,
+    // ...(query ? searchPipelineStages : [matchPipelineStage]),
+    matchPipelineStage,
+
     // {
     //   $match: {
     //     'metaData.status': 0,
@@ -96,18 +141,37 @@ export default async function getResult(
     },
     {
       //change count field from array to object
-      $set: {
-        count: { $arrayElemAt: ['$count', 0] },
-      },
-    },
-    {
-      //format metadata
       $project: {
         invoices: 1,
         meta: {
-          count: '$count.value',
+          count: {
+            $getField: {
+              input: { $arrayElemAt: ['$count', 0] },
+              field: 'value',
+            },
+          },
         },
       },
     },
+    // {
+    //   //change count field from array to object
+    //   $set: {
+    //     count: {
+    //       $getField: {
+    //         input: { $arrayElemAt: ['$count', 0] },
+    //         field: 'value',
+    //       },
+    //     },
+    //   },
+    // },
+    // {
+    //   //format metadata
+    //   $project: {
+    //     invoices: 1,
+    //     meta: {
+    //       count: '$count.value',
+    //     },
+    //   },
+    // },
   ]);
 }

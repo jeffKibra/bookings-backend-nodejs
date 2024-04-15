@@ -30,7 +30,7 @@ export default async function search(
   // console.log({ retrieveFacets, requestedPage, filtersIsEmpty });
 
   // aggregation to fetch items not booked.
-  const result = await getResult(orgId, query, options, retrieveFacets);
+  const result = await getResult(orgId, query, options);
   // console.log('result', result);
 
   const { vehicles, meta: resultMeta } = result[0];

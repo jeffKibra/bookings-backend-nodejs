@@ -1,20 +1,19 @@
 import { PipelineStage } from 'mongoose';
 //
-import { generateFilters } from '../utils/filters';
+// import { generateFilters } from '../utils/filters';
+import { InvoicesFilters } from '../../../../utils/filters';
 //
 
-import {
-  ISearchVehiclesPagination,
-  IPaginationLastDoc,
-} from '../../../../../../types';
+// import {
+//   ISearchVehiclesPagination,
+//   IPaginationLastDoc,
+// } from '../../../../../../types';
 
 export default function generateSearchStages(
-  orgId: string,
-  customerId?: string,
-  userFilters?: Record<string, (string | number | Date)[]>
+  query: string,
+  filters: ReturnType<InvoicesFilters['generateSearchFilters']>
   // sortOptions?: ISortOptions
 ) {
-  const filters = generateFilters(orgId, customerId, userFilters);
   console.log('filters', filters);
 
   const compoundOperators = {

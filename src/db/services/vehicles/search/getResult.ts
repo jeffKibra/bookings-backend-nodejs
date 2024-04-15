@@ -100,8 +100,7 @@ function generateOptions(
 export default async function getResult(
   orgId: string,
   query: string | number,
-  options?: ISearchVehiclesQueryOptions,
-  retrieveFacets?: boolean
+  options?: ISearchVehiclesQueryOptions
 ) {
   const {
     availableVehiclesPipelineStages,
