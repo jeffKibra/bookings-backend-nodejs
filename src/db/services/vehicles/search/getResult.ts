@@ -120,20 +120,28 @@ export default async function getResult(
     count: Record<string, unknown>;
   }>([
     ...(query ? searchPipelineStages : [matchPipelineStage]),
+
     {
-      $sort: {
-        [sortByField]: sortByDirection,
-        _id: sortByDirection,
+      $set: {
+        _id: {
+          $toString: '$_id',
+        },
       },
     },
-    // {
-    //   $skip: offset,
-    // },
+    ...availableVehiclesPipelineStages,
+
     {
       $facet: {
         vehicles: [
-          ...availableVehiclesPipelineStages,
           {
+            //sort b4 paginating and skipping for consistency in the returned list
+            $sort: {
+              [sortByField]: sortByDirection,
+              _id: sortByDirection,
+            },
+          },
+          {
+            //paginate
             $skip: offset,
           },
           {

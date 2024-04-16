@@ -19,7 +19,7 @@ export default function generateAvailableItemsStages(
     {
       $lookup: {
         from: 'invoices',
-        localField: 'id',
+        localField: '_id',
         foreignField: 'items.0.itemId',
         pipeline: [
           {
